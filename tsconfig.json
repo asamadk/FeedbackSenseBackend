@@ -1,0 +1,18 @@
+{
+  "compilerOptions": {
+    "experimentalDecorators": true,
+    "module": "commonjs",
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
+    "target": "es6",
+    "moduleResolution": "node",
+    "sourceMap": true,
+    "outDir": "dist",
+    "emitDecoratorMetadata": true,
+    "strict": false,
+    "types": ["jest"],
+    "typeRoots": ["node_modules/@types"],
+  },
+  "include": ["src/**/*"],
+  "lib": ["es2015"]
+}
