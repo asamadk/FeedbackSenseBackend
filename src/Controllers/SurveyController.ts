@@ -2,37 +2,54 @@ import express from 'express';
 import { isLoggedIn } from '../MiddleWares/AuthMiddleware';
 import { createSurvey, enableDisableSurvey, getAllSurveys, getDetailedSurvey, moveSurveyToFolder, saveSurveyFlow, softDeleteSurvey,saveSurveyDesign, updateSurveyConfig, getSurveyConfigData, updateSurveyName } from '../Service/SurveyService';
 import { responseRest } from '../Types/ApiTypes';
+import { getCustomResponse } from '../Helpers/ServiceUtils';
 
 const router = express.Router();
 
 router.get('/details/:surveyId', async (req,res) => {
-    const surveyId = req.params.surveyId;
-    const response = await getDetailedSurvey(surveyId);
-    res.statusCode = response.statusCode;
-    res.json(response);
+    try {
+        const surveyId = req.params.surveyId;
+        const response = await getDetailedSurvey(surveyId);
+        res.statusCode = response.statusCode;
+        res.json(response);     
+    } catch (error) {
+        res.status(500).json(getCustomResponse([], 500, 'An exception occurred', false));
+    }
 });
 
 
 router.get('/list/:orgId' , async (req , res ) => {
-    const orgId : string = req.params.orgId;
-    const response = await getAllSurveys(orgId);
-    res.statusCode = response.statusCode;
-    res.json(response);
+    try {
+        const orgId : string = req.params.orgId;
+        const response = await getAllSurveys(orgId);
+        res.statusCode = response.statusCode;
+        res.json(response);    
+    } catch (error) {
+        res.status(500).json(getCustomResponse([], 500, 'An exception occurred', false));
+    }
 });
 
 router.post('/create/:surveyTypeId', async (req : any , res) => {
-    const surveyTypeId : string = req.params.surveyTypeId;
-    const response : responseRest = await createSurvey(surveyTypeId,req.user);
-    res.statusCode = response.statusCode;
-    res.json(response);
+    try {
+        const surveyTypeId : string = req.params.surveyTypeId;
+        const response : responseRest = await createSurvey(surveyTypeId,req.user);
+        res.statusCode = response.statusCode;
+        res.json(response);    
+    } catch (error) {
+        res.status(500).json(getCustomResponse([], 500, 'An exception occurred', false));
+    }
 });
 
 router.post('/move/:folderId/:surveyId', async (req,res) => {
-    const folderId = req.params.folderId;
-    const surveyId = req.params.surveyId;
-    const response = await moveSurveyToFolder(folderId,surveyId);
-    res.statusCode = response.statusCode;
-    res.json(response);
+    try {
+        const folderId = req.params.folderId;
+        const surveyId = req.params.surveyId;
+        const response = await moveSurveyToFolder(folderId,surveyId);
+        res.statusCode = response.statusCode;
+        res.json(response);    
+    } catch (error) {
+        res.status(500).json(getCustomResponse([], 500, 'An exception occurred', false));
+    }
 })
 
 router.post('/disable/:surveyId', async (req,res) => {
@@ -42,7 +59,7 @@ router.post('/disable/:surveyId', async (req,res) => {
         res.statusCode = response.statusCode;
         res.json(response);    
     } catch (error) {
-        console.log("🚀 ~ file: SurveyController.ts:45 ~ router.post ~ error:", error)
+        res.status(500).json(getCustomResponse([], 500, 'An exception occurred', false));
     }
 })
 
@@ -53,7 +70,7 @@ router.post('/enable/:surveyId', async (req,res) => {
         res.statusCode = response.statusCode;
         res.json(response);    
     } catch (error) {
-        console.log("🚀 ~ file: SurveyController.ts:56 ~ router.post ~ error:", error)
+        res.status(500).json(getCustomResponse([], 500, 'An exception occurred', false));
     }
 })
 
@@ -64,7 +81,7 @@ router.post('/delete/:surveyId', async (req,res) => {
         res.statusCode = response.statusCode;
         res.json(response);    
     } catch (error) {
-        console.log("🚀 ~ file: SurveyController.ts:67 ~ router.post ~ error:", error)
+        res.status(500).json(getCustomResponse([], 500, 'An exception occurred', false));
     }
 })
 
@@ -76,7 +93,7 @@ router.post('/save/flow/:surveyId', async (req,res) => {
         res.statusCode = response.statusCode;
         res.json(response);    
     } catch (error) {
-        console.log("🚀 ~ file: SurveyController.ts:79 ~ router.post ~ error:", error)
+        res.status(500).json(getCustomResponse([], 500, 'An exception occurred', false));
     }
 });
 
@@ -88,7 +105,7 @@ router.post('/save/design/:surveyId', async (req,res) => {
         res.statusCode = response.statusCode;
         res.json(response);    
     } catch (error) {
-        console.log("🚀 ~ file: SurveyController.ts:91 ~ router.post ~ error:", error)
+        res.status(500).json(getCustomResponse([], 500, 'An exception occurred', false));
     }
 });
 
@@ -101,6 +118,7 @@ router.post('/config/update/:surveyId',async(req,res) => {
         res.json(response);    
     } catch (error) {
         console.log("🚀 ~ file: SurveyController.ts:103 ~ router.post ~ error:", error)
+        res.status(500).json(getCustomResponse([], 500, 'An exception occurred', false));
     }
 });
 
@@ -112,6 +130,7 @@ router.get('/config/detail/:surveyId', async (req,res) => {
         res.json(response);    
     } catch (error) {
         console.log("🚀 ~ file: SurveyController.ts:114 ~ router.get ~ error:", error)
+        res.status(500).json(getCustomResponse([], 500, 'An exception occurred', false));
     }
 });
 
@@ -124,6 +143,7 @@ router.post('/update/name/:surveyId',async(req,res) => {
         res.json(response);    
     } catch (error) {
         console.log("🚀 ~ file: SurveyController.ts:126 ~ router.post ~ error:", error)
+        res.status(500).json(getCustomResponse([], 500, 'An exception occurred', false));
     }
 });
 

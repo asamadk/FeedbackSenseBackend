@@ -6,16 +6,34 @@ import { getUserAfterLogin } from "../Service/AuthService";
 const router = express.Router();
 
 router.get('/login/success', async (req:any , res) => {
-    const response = await getUserAfterLogin(req.user);
-    res.statusCode = response.statusCode;
-    res.json(response);
+    try {
+        const response = await getUserAfterLogin(req.user);
+        res.statusCode = response.statusCode;
+        res.json(response);    
+    } catch (error) {
+        res.status(500).json({
+            statusCode : 500,
+            data : null,
+            message : 'An exception occurred.',
+            success : false
+        }); 
+    }
 });
 
 router.get("/login/failed", (req, res) => {
-	res.status(401).json({
-		error: true,
-		message: "Log in failure",
-	});
+    try {
+        res.status(401).json({
+            error: true,
+            message: "Log in failure",
+        });       
+    } catch (error) {
+        res.status(500).json({
+            statusCode : 500,
+            data : null,
+            message : 'An exception occurred.',
+            success : false
+        });
+    }
 });
 
 router.get(
@@ -37,8 +55,17 @@ router.get(
 
 
 router.get("/logout", (req : any , res) => {
-	req.logout();
-	res.redirect(process.env.CLIENT_URL);
+    try {
+        req.logout();
+        res.redirect(process.env.CLIENT_URL);       
+    } catch (error) {
+        res.status(500).json({
+            statusCode : 500,
+            data : null,
+            message : 'An exception occurred.',
+            success : false
+        });
+    }
 });
 
 export default router;

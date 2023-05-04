@@ -1,11 +1,12 @@
 import { DataSource } from "typeorm"
 
 export const getDataSource = (isTest: boolean): DataSource => {
-    if (isTest === true) {
-        return testDataSource;
-    } else {
-        return mainDataSource
-    }
+    // if (isTest === true) {
+    //     return testDataSource;
+    // } else {
+    //     return mainDataSource
+    // }
+    return testDataSource;
 }
 
 
@@ -32,6 +33,7 @@ export const testDataSource = new DataSource({
     "password": "password",
     "database": "test_feedbackSense",
     "synchronize": true,
+    "migrationsRun": false,
     "logging": false,
     "dropSchema": true,
     "entities": ["dist/Entity/*.{js,ts}"],

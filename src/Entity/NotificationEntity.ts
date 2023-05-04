@@ -18,6 +18,6 @@ export class Notification {
   @Column()
   is_read: boolean;
 
-  @ManyToOne(type => User, user => user.notifications)
+  @ManyToOne(type => User, user => user.notifications,{onDelete : 'CASCADE'})
   user: User;
 }

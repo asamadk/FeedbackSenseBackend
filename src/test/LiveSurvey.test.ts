@@ -18,6 +18,10 @@ afterAll(async () => {
     await mockConnection.close();
 });
 
+afterEach(async () => {
+    await mockConnection.clear();
+});
+
 describe("LiveSurveyService", () => {
     describe("getLiveSurveyNodes", () => {
         test("returns error response when survey does not exist", async () => {

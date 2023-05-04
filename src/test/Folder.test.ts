@@ -15,6 +15,11 @@ beforeAll(async () => {
     new StartUp().startExecution();
 });
 
+afterEach(async () => {
+    jest.useFakeTimers();
+    await mockConnection.clear();
+});
+
 afterAll(async () => {
     await mockConnection.close();
 });

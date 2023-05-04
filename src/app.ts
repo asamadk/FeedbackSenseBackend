@@ -15,6 +15,7 @@ import SurveyTypeController from './Controllers/SurveyTypeController';
 import SubscriptionController from './Controllers/SubscriptionController';
 import PlanController from './Controllers/PlanController'
 import LiveSurveyController from './Controllers/LiveSurveyController';
+import AnalysisController from './Controllers/AnalysisController';
 
 import { getDataSource } from './Config/AppDataSource';
 import { handleSuccessfulLogin } from './Service/AuthService';
@@ -26,9 +27,9 @@ const app = express();
 const port = process.env.PORT;
 
 app.use(cors({
-    origin: "http://localhost:3000",
-		methods: "GET,POST,PUT,DELETE",
-		credentials: true,
+  origin: "http://localhost:3000",
+  methods: "GET,POST,PUT,DELETE",
+  credentials: true,
 }));
 
 app.use(
@@ -43,7 +44,6 @@ app.use(passport.session());
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }))
 
-
 passport.use(
   new Strategy(
     {
@@ -52,7 +52,7 @@ passport.use(
       callbackURL: process.env.GOOGLE_CALLBACK_URL,
       scope: ["profile", "email"],
     },
-    async function (accessToken, refreshToken, profile, callback) { 
+    async function (accessToken, refreshToken, profile, callback) {
       handleSuccessfulLogin(profile);
       callback(null, profile);
     }
@@ -68,17 +68,18 @@ passport.deserializeUser((user, done) => {
 });
 
 
-app.use('/auth',AuthController)
-app.use('/live',LiveSurveyController);
+app.use('/auth', AuthController)
+app.use('/live', LiveSurveyController);
 //TODO add auth middleware here
-app.use('/home',HomeController);
-app.use('/org',isLoggedIn, OrgController);
+app.use('/home', HomeController);
+app.use('/org', isLoggedIn, OrgController);
 app.use('/survey', SurveyController);
-app.use('/folder',FolderController);
-app.use('/user',UserController);
-app.use('/survey/type',SurveyTypeController);
-app.use('/subscription',SubscriptionController);
-app.use('/plan',PlanController);
+app.use('/folder', FolderController);
+app.use('/user', UserController);
+app.use('/survey/type', SurveyTypeController);
+app.use('/subscription', SubscriptionController);
+app.use('/plan', PlanController);
+app.use('/analysis', AnalysisController)
 
 getDataSource(false)
   .initialize()
@@ -94,5 +95,13 @@ getDataSource(false)
 app.listen(port, () => {
   return console.log(`Express is listening at http://localhost:${port}`);
 });
+
+process
+  .on('unhandledRejection', (reason, p) => {
+    console.error(reason, 'Unhandled Rejection at Promise', p);
+  })
+  .on('uncaughtException', err => {
+    console.error(err, 'Uncaught Exception thrown');
+  });
 
 export default app;

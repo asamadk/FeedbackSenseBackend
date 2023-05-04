@@ -16,8 +16,6 @@ export const getLiveSurveyNodes = async(surveyId : string) : Promise<responseRes
             id : surveyId
         });
 
-        // console.log("🚀 ~ file: LiveSurveyService.ts:18 ~ getLiveSurveyNodes ~ surveyObj:", surveyObj)
-
         if(surveyObj == null || surveyObj.is_published === false){
             return getCustomResponse({},410,'This survey is not published',false);   
         }

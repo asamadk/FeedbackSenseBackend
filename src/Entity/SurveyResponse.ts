@@ -24,7 +24,7 @@ export class SurveyResponse {
   @UpdateDateColumn()
   updated_at!: Date;
 
-  @ManyToOne(() => Survey, survey => survey.responses)
+  @ManyToOne(() => Survey, survey => survey.responses,{onDelete : 'CASCADE'})
   @JoinColumn({ name: 'survey_id' })
   survey!: Survey;
 }

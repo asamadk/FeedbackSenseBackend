@@ -19,7 +19,7 @@ afterAll(async () => {
     await mockConnection.close();
 });
 
-beforeEach(async () => {
+afterEach(async () => {
     await mockConnection.clear();
 });
 

@@ -62,3 +62,8 @@ export const sortSurveyFlowNodes = (nodes : any[] , edges: any[]) : any[] => {
     return newNodes;
 }
 
+export const getPercentage = (partialValue : number, totalValue : number) : string => {
+    const percentage = (100 * partialValue) / totalValue;
+    return percentage.toFixed();
+ } 
+

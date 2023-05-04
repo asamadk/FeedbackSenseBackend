@@ -8,10 +8,10 @@ export class Subscription {
     @PrimaryGeneratedColumn("uuid")
     id: string;
 
-    @ManyToOne(() => User, user => user.subscriptions)
+    @ManyToOne(() => User, user => user.subscriptions,{onDelete : 'CASCADE'})
     user: User;
 
-    @ManyToOne(() => Plan, plan => plan.subscriptions)
+    @ManyToOne(() => Plan, plan => plan.subscriptions,{onDelete : 'CASCADE'})
     plan: Plan;
 
     @Column()
