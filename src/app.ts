@@ -23,6 +23,7 @@ import { isLoggedIn } from './MiddleWares/AuthMiddleware';
 import { StartUp } from './Helpers/Startup';
 
 dotenv.config();
+
 const app = express();
 const port = process.env.PORT;
 
