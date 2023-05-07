@@ -74,6 +74,7 @@ export const createSurvey = async (surveyTypeId: string, user: any): Promise<res
     surveyObj.user_id = savedUser.id;
     surveyObj.name = 'New survey - ' + new Date().toDateString();
     surveyObj.survey_type_id = surveyType.id;
+    surveyObj.survey_design_json = '{"theme":{"id":0,"header":"Lavendar & Blue","text":"Trending","color":["#AA77FF","#C9EEFF"],"textColor":"#000000"}}';
 
     await surveyRepository.save(surveyObj);
     response.data = surveyObj;

@@ -37,20 +37,30 @@ const processBulkResult = (key: number, value: any[]): any => {
     }
 }
 
-const processWelcomeMessageComp = (data: any[]): any => {
+export const processWelcomeMessageComp = (data: any[]): any => {
+
+    if(data == null){
+        return [];
+    }
+
     const actionSet = new Set<string>();
-    data.forEach(d => {
+    data?.forEach(d => {
         actionSet.add(d?.data?.click);
     });
     return {
         actions: [...actionSet],
-        clickFrequency: data.length
+        clickFrequency: data?.length
     }
 }
 
-const processSingleSelectionComp = (data: any[]): any => {
+export const processSingleSelectionComp = (data: any[]): any => {
+
+    if(data == null){
+        return [];
+    }
+
     const answerFreq = new Map<string, number>();
-    data.forEach(d => {
+    data?.forEach(d => {
         const selectedVal = d?.data?.selectedVal;
         let val = answerFreq.get(selectedVal);
         if (val == null || Number.isNaN(val)) {
@@ -64,15 +74,20 @@ const processSingleSelectionComp = (data: any[]): any => {
     for (const [key, value] of answerFreq) {
         rtnArr.push({
             name: key,
-            freq: getPercentage(value, data.length)
+            freq: getPercentage(value, data?.length)
         })
     }
     return rtnArr;
 }
 
 const processMultipleSelectionComp = (data: any[]): any => {
+
+    if(data == null){
+        return [];
+    }
+
     const answerFreq = new Map<string, number>();
-    data.forEach(d => {
+    data?.forEach(d => {
         const selectedVal: string[] = d?.data?.selectedVal;
         selectedVal.forEach(selVal => {
             let val = answerFreq.get(selVal);
@@ -88,15 +103,20 @@ const processMultipleSelectionComp = (data: any[]): any => {
     for (const [key, value] of answerFreq) {
         rtnArr.push({
             name: key,
-            freq: getPercentage(value, data.length)
+            freq: getPercentage(value, data?.length)
         })
     }
     return rtnArr;
 }
 
 const processTextAnswerComp = (data: any[]): any => {
+
+    if(data == null){
+        return [];
+    }
+
     const rtn = [];
-    data.forEach(d => {
+    data?.forEach(d => {
         const answer: string = d?.data?.answer;
         rtn.push(answer);
     });
@@ -104,12 +124,17 @@ const processTextAnswerComp = (data: any[]): any => {
 }
 
 const processSmileyComp = (data: any[]): any => {
+
+    if(data == null){
+        return [];
+    }
+
     let extUns = 0;
     let uns = 0;
     let neutral = 0;
     let happy = 0;
     let extHpp = 0;
-    data.forEach(d => {
+    data?.forEach(d => {
         const emojiId: string = d?.data?.emojiId;
         if (emojiId == '0') {
             extUns++;
@@ -127,36 +152,41 @@ const processSmileyComp = (data: any[]): any => {
     return [
         {
             name: 'EU',
-            percentage: getPercentage(extUns, data.length),
+            percentage: getPercentage(extUns, data?.length),
             satisfaction: 'Extremely Unsatisfied'
         },
         {
             name: 'U',
-            percentage: getPercentage(uns, data.length),
+            percentage: getPercentage(uns, data?.length),
             satisfaction: 'Unsatisfied'
         },
         {
             name: 'N',
-            percentage: getPercentage(neutral, data.length),
+            percentage: getPercentage(neutral, data?.length),
             satisfaction: 'Neutral'
         },
         {
             name: 'HP',
-            percentage: getPercentage(happy, data.length),
+            percentage: getPercentage(happy, data?.length),
             satisfaction: 'Happy'
         },
         {
             name: 'H',
-            percentage: getPercentage(extHpp, data.length),
+            percentage: getPercentage(extHpp, data?.length),
             satisfaction: 'Extremely Happy'
         },
     ]
 }
 
 const processRatingComp = (data: any[]): any => {
+
+    if(data == null){
+        return [];
+    }
+
     const freqMap = new Map<number, number>();
     let maxRange = 0;
-    data.forEach(d => {
+    data?.forEach(d => {
         const selectedValue: number = d?.data?.value;
         const tempRange = d?.compData?.range;
         if (tempRange > maxRange) {
@@ -175,18 +205,23 @@ const processRatingComp = (data: any[]): any => {
         rtnObj.push({
             name: 'Range' + key,
             range: key,
-            percentage: getPercentage(value, data.length),
+            percentage: getPercentage(value, data?.length),
         });
     }
     return rtnObj;
 }
 
 const processNPSComp = (data: any[]): any => {
+
+    if(data == null){
+        return [];
+    }
+
     const freqMap = new Map<number, number>();
     let promoters = 0;
     let detractors = 0;
 
-    data.forEach(d => {
+    data?.forEach(d => {
         const selectedNps = parseInt(d?.data?.value);
         if (Number.isNaN(selectedNps) === false) {
             if (selectedNps >= 9) {
@@ -210,7 +245,7 @@ const processNPSComp = (data: any[]): any => {
             value = 0;
         }
 
-        const percentageStr = getPercentage(value, data.length);
+        const percentageStr = getPercentage(value, data?.length);
         let percentage = parseInt(percentageStr);
         if (Number.isNaN(percentage) === true) {
             percentage = 0;
@@ -222,7 +257,7 @@ const processNPSComp = (data: any[]): any => {
         });
     }
 
-    const totalRespondents = data.length;
+    const totalRespondents = data?.length;
     const promoterPercentage = (promoters / totalRespondents) * 100;
     const detractorPercentage = (detractors / totalRespondents) * 100;
 
@@ -238,11 +273,16 @@ const processNPSComp = (data: any[]): any => {
 }
 
 const contactInfoComp = (data: any[]): any => {
+
+    if(data == null){
+        return [];
+    }
+
     let columnArr = []
     const rowArr = [];
     let count = 0;
-    data.forEach(d => {
-        const contactInfo: object = d.data;
+    data?.forEach(d => {
+        const contactInfo: object = d?.data;
         if (count === 0) {
             columnArr = [...Object.keys(contactInfo)];
         }
@@ -257,12 +297,17 @@ const contactInfoComp = (data: any[]): any => {
 }
 
 const dateComp = (data: any[]): any => {
+
+    if(data == null){
+        return [];
+    }
+
     const actionSet = new Set<string>();
-    data.forEach(d => {
+    data?.forEach(d => {
         actionSet.add(d?.data);
     });
     return {
         actions: [...actionSet],
-        clickFrequency: data.length
+        clickFrequency: data?.length
     }
 }

@@ -5,6 +5,7 @@ import { getFeedbackResponseList, getOverAllComponentsData, getOverallResponse, 
 import { SurveyResponse } from "../Entity/SurveyResponse";
 import { createSurveyFlow, createTestSurvey } from "./TestUtils.ts/SurveyTestUtils";
 import { populateSurveyResponse } from "./TestUtils.ts/AnalysisUtils";
+import { processSingleSelectionComp, processWelcomeMessageComp } from "../Helpers/OverAllComponentHelper";
 
 let connection : DataSource ;
 
@@ -132,3 +133,30 @@ describe('OverAllAnalysis Test', () => {
     })
 
 });
+
+//TODO test all components one by one
+describe('OverAllComponentHelper tests', () => {
+    test('Test OverAll Welcome component helper',async () => {
+        const result : any[] = processWelcomeMessageComp(null);
+        expect(result.length === 0);
+        
+        const dataStr = '[{"id":1,"data":{"click":"next"},"compData":{"welcomeText":"Welcome to FeedbackSense","buttonText":"Next"}},{"id":1,"data":{"click":"next"},"compData":{"welcomeText":"Welcome to FeedbackSense","buttonText":"Next"}},{"id":1,"data":{"click":"next"},"compData":{"welcomeText":"Welcome to FeedbackSense","buttonText":"Next"}}]';
+        const res = processWelcomeMessageComp(JSON.parse(dataStr));
+        expect(res != null);
+        expect(res.clickFrequency === 3);
+    });
+
+    test('Test overall Single selection component',async () => {
+        const result = processSingleSelectionComp(null);
+        expect(result.length === 0);
+        
+        const dataStr = '[{"id":3,"data":{"type":"single","selectedVal":"No"},"compData":{"question":"You f****d you","answerList":[null],"type":"single"}},{"id":3,"data":{"type":"single","selectedVal":"Yes"},"compData":{"question":"You f****d you","answerList":[null],"type":"single"}},{"id":3,"data":{"type":"single","selectedVal":"Yes"},"compData":{"question":"You f****d you","answerList":[null],"type":"single"}}]';      
+        const res = processSingleSelectionComp(JSON.parse(dataStr));
+        expect(res != null);
+        expect(res?.length === 2);
+        expect(res[0].name === 'No');
+        expect(res[0].freq === '33');
+        expect(res[1].name === 'Yes');
+        expect(res[1].freq === '67');
+    });
+})

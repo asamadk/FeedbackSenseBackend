@@ -8,6 +8,8 @@
     "execute": "typeorm migration:run -d dist/Config/AppDataSource.js",
     "revert": "typeorm migration:revert -d dist/Config/AppDataSource.js",
     "start": "tsc && node dist/app.js",
+    "dev": "nodemon -L -e ts --exec \"npm run build && npm start\"",
+    "build": "tsc",
     "lint": "eslint . --ext .ts",
     "test": "jest"
   },
@@ -22,18 +24,19 @@
     "@types/express": "^4.17.17",
     "@types/jest": "^29.5.0",
     "@types/node": "^18.15.11",
+    "@types/pg": "^8.6.6",
     "@typescript-eslint/eslint-plugin": "^5.56.0",
     "@typescript-eslint/parser": "^5.56.0",
+    "dotenv": "^16.0.3",
     "eslint": "^8.36.0",
     "jest": "^29.5.0",
     "nodemon": "^2.0.22",
     "nyc": "^15.1.0",
-    "typescript": "^5.0.2"
+    "typescript": "^5.0.4"
   },
   "dependencies": {
     "cookie-session": "^2.0.0",
     "cors": "^2.8.5",
-    "dotenv": "^16.0.3",
     "express": "^4.18.2",
     "mock-express-request": "^0.2.2",
     "mock-express-response": "^0.3.0",
