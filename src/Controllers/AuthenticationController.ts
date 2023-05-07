@@ -1,6 +1,10 @@
 import express from "express";
 import passport from "passport";
 import dotenv from "dotenv";
+
+dotenv.config();
+const clienT_URL = process.env.CLIENT_URL;
+
 import { getUserAfterLogin } from "../Service/AuthService";
 
 const router = express.Router();
@@ -39,7 +43,7 @@ router.get("/login/failed", (req, res) => {
 router.get(
     "/oauth2/redirect",
     passport.authenticate("google", {
-        successRedirect: 'http://localhost:3000/',
+        successRedirect: clienT_URL,
         failureRedirect: "/login/failed",
         prompt : 'select_account'
     })
