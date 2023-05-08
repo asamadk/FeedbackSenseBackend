@@ -10,7 +10,7 @@ export const getSubScriptionDetailsHome = async(userId : string) : Promise<respo
         }
         let subscriptionObj : any;
         const subscriptionList = await getDataSource(false).query(
-            `SELECT s.sub_limit,s.end_date,p.name, s.billing_cycle FROM Subscription s LEFT JOIN Plan p on s.planId = p.id
+            `SELECT s.sub_limit,s.end_date,p.name, s.billing_cycle FROM subscription s LEFT JOIN Plan p on s.planId = p.id
             WHERE s.userId  = '${userId}' LIMIT 1`
         );
 

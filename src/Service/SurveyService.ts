@@ -34,7 +34,7 @@ export const getAllSurveys = async (orgId: string): Promise<responseRest> => {
     const response = getDefaultResponse('Survey retrieved successfully');
 
     const surveyList = await getDataSource(false).query(
-        `SELECT * FROM Survey as s WHERE s.user_id in (SELECT u.id FROM User as u WHERE u.organization_id = '${orgId}')
+        `SELECT * FROM survey as s WHERE s.user_id in (SELECT u.id FROM user as u WHERE u.organization_id = '${orgId}')
         AND s.is_deleted = false`
     );
 
