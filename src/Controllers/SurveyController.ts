@@ -3,6 +3,7 @@ import { isLoggedIn } from '../MiddleWares/AuthMiddleware';
 import { createSurvey, enableDisableSurvey, getAllSurveys, getDetailedSurvey, moveSurveyToFolder, saveSurveyFlow, softDeleteSurvey,saveSurveyDesign, updateSurveyConfig, getSurveyConfigData, updateSurveyName } from '../Service/SurveyService';
 import { responseRest } from '../Types/ApiTypes';
 import { getCustomResponse } from '../Helpers/ServiceUtils';
+import { getUserEmailFromRequest } from '../Helpers/RestUtils';
 
 const router = express.Router();
 
@@ -18,10 +19,10 @@ router.get('/details/:surveyId', async (req,res) => {
 });
 
 
-router.get('/list/:orgId' , async (req , res ) => {
+router.get('/list' , async (req , res ) => {
     try {
-        const orgId : string = req.params.orgId;
-        const response = await getAllSurveys(orgId);
+        const userEmail = getUserEmailFromRequest(req);
+        const response = await getAllSurveys(userEmail);
         res.statusCode = response.statusCode;
         res.json(response);    
     } catch (error) {
@@ -36,6 +37,7 @@ router.post('/create/:surveyTypeId', async (req : any , res) => {
         res.statusCode = response.statusCode;
         res.json(response);    
     } catch (error) {
+        console.log("🚀 ~ file: SurveyController.ts:41 ~ router.post ~ error:", error)
         res.status(500).json(getCustomResponse([], 500, 'An exception occurred', false));
     }
 });

@@ -4,10 +4,10 @@ import { responseRest } from '../Types/ApiTypes';
 import { getCustomResponse } from '../Helpers/ServiceUtils';
 const router = express.Router();
 
-router.get('/list/org/:orgId', async (req,res) => {
+router.get('/list/org', async (req : any,res) => {
     try {
-        const orgId : string = req.params.orgId;
-        const response : responseRest = await getAllUsersOfSameOrg(orgId);
+        const userEmail = req.user._json.email;
+        const response : responseRest = await getAllUsersOfSameOrg(userEmail);
         res.statusCode = response.statusCode;
         res.json(response);
     } catch (error) {

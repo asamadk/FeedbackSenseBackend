@@ -5,10 +5,13 @@ import { getCustomResponse } from '../Helpers/ServiceUtils';
 
 const router = express.Router();
 
-router.get('/list/:orgId', async (req,res) => {
+router.get('/list', async (req : any,res) => {
     try {
-        const orgId : string = req.params.orgId;
-        const response : responseRest = await getFolders(orgId);
+        const userEmail = req.user._json.email;
+        if(userEmail == null){
+            res.status(500).json(getCustomResponse([], 401, 'User not authorized', false));
+        }
+        const response : responseRest = await getFolders(userEmail);
         res.statusCode = response.statusCode;
         res.json(response);    
     } catch (error) {
@@ -16,11 +19,11 @@ router.get('/list/:orgId', async (req,res) => {
     }
 });
 
-router.post('/create/:orgId/:folderName', async (req,res) => {
+router.post('/create/:folderName', async (req : any,res) => {
     try {
-        const orgId : string = req.params.orgId;
+        const userEmail = req.user._json.email;
         const foldername : string = req.params.folderName;
-        const response = await createFolders(foldername,orgId);
+        const response = await createFolders(foldername,userEmail);
         res.statusCode = response.statusCode;
         res.json(response);
     } catch (error) {

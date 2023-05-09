@@ -5,10 +5,10 @@ import { getCustomResponse } from '../Helpers/ServiceUtils';
 
 const router = express.Router();
 
-router.get('/sub/details/:userId',async(req,res) => {
+router.get('/sub/details',async(req : any,res) => {
     try {
-        const userId : string = req.params.userId;
-        const response : responseRest = await getSubScriptionDetailsHome(userId);
+        const userEmail = req.user._json.email;
+        const response : responseRest = await getSubScriptionDetailsHome(userEmail);
         res.statusCode = response.statusCode;
         res.json(response);
     } catch (error) {

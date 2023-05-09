@@ -30,11 +30,11 @@ export const getDetailedSurvey = async (surveyId: string): Promise<responseRest>
     return response;
 }
 
-export const getAllSurveys = async (orgId: string): Promise<responseRest> => {
+export const getAllSurveys = async (userEmail: string): Promise<responseRest> => {
     const response = getDefaultResponse('Survey retrieved successfully');
 
     const surveyList = await getDataSource(false).query(
-        `SELECT * FROM survey as s WHERE s.user_id in (SELECT u.id FROM user as u WHERE u.organization_id = '${orgId}')
+        `SELECT * FROM survey as s WHERE s.user_id in (SELECT u.id FROM user as u WHERE u.email = '${userEmail}')
         AND s.is_deleted = false`
     );
 
@@ -60,6 +60,12 @@ export const createSurvey = async (surveyTypeId: string, user: any): Promise<res
         response.success = false;
         response.statusCode = 404;
         return response;
+    }
+
+    const userEmail : string = user?._json?.email;
+
+    if(userEmail == null || userEmail.length < 1){
+        return getCustomResponse(null,404,'User not found',false);
     }
 
     const savedUser = await userRepository.findOneBy({

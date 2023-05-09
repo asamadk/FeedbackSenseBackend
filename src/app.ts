@@ -4,6 +4,7 @@ import passport from "passport";
 import cookieSession from 'cookie-session';
 import dotenv from "dotenv";
 import { Strategy } from 'passport-google-oauth20';
+import cookieParser from 'cookie-parser';
 
 import OrgController from './Controllers/OrgController';
 import HomeController from './Controllers/HomeController'
@@ -32,6 +33,8 @@ app.use(cors({
   methods: "GET,POST,PUT,DELETE",
   credentials: true,
 }));
+
+app.use(cookieParser());
 
 app.use(
   cookieSession({
@@ -68,19 +71,20 @@ passport.deserializeUser((user, done) => {
   done(null, user);
 });
 
-
+//Open endpoints
 app.use('/auth', AuthController)
 app.use('/live', LiveSurveyController);
-//TODO add auth middleware here
-app.use('/home', HomeController);
+
+//authenticated endpoints
+app.use('/home',isLoggedIn, HomeController);
 app.use('/org', isLoggedIn, OrgController);
-app.use('/survey', SurveyController);
-app.use('/folder', FolderController);
-app.use('/user', UserController);
-app.use('/survey/type', SurveyTypeController);
-app.use('/subscription', SubscriptionController);
-app.use('/plan', PlanController);
-app.use('/analysis', AnalysisController)
+app.use('/survey',isLoggedIn,SurveyController);
+app.use('/folder',isLoggedIn, FolderController);
+app.use('/user',isLoggedIn, UserController);
+app.use('/survey/type',isLoggedIn, SurveyTypeController);
+app.use('/subscription',isLoggedIn, SubscriptionController);
+app.use('/plan', isLoggedIn,PlanController);
+app.use('/analysis',isLoggedIn, AnalysisController)
 
 getDataSource(false)
   .initialize()

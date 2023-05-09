@@ -3,39 +3,50 @@ import { getDataSource } from '../Config/AppDataSource';
 import { Folder } from "../Entity/FolderEntity";
 import { getCustomResponse, getDefaultResponse } from "../Helpers/ServiceUtils";
 import { Survey } from "../Entity/SurveyEntity";
+import { User } from "../Entity/UserEntity";
 
 
-export const getFolders = async (orgId : string) : Promise<responseRest> => {
+export const getFolders = async (userEmail : string) : Promise<responseRest> => {
     const response = getDefaultResponse('Retrieved folders successfully');
     const folderRepository = getDataSource(false).getRepository(Folder);
+    const userRepo = getDataSource(false).getRepository(User);
 
-    if(orgId == null || orgId == ''){
-        return getCustomResponse([],404,'Organization id is not present',false);
+    const user = await userRepo.findOneBy({
+        email : userEmail
+    });
+    
+    if(user == null || user.organization_id == null){
+        return getCustomResponse(null,401,'User not found',false);
     }
 
     const folderList = await folderRepository.findBy({
-        organization_id : orgId
+        organization_id : user.organization_id
     });
 
     response.data = folderList;
     return response;
 }
 
-export const createFolders = async (folderName : string , orgId : string) : Promise<responseRest> => {
+export const createFolders = async (folderName : string , userEmail : string) : Promise<responseRest> => {
     const response = getDefaultResponse(`Folder ${folderName} created successfully`);
     const folderRepository = getDataSource(false).getRepository(Folder);
+    const userRepo = getDataSource(false).getRepository(User);
+
+    const user = await userRepo.findOneBy({
+        email : userEmail
+    });
+    
+    if(user == null || user.organization_id == null){
+        return getCustomResponse(null,401,'User not found',false);
+    }
 
     if(folderName == null || folderName == ''){
         return getCustomResponse([],404,'Folder name is not present',false);
     }
 
-    if(orgId == null || orgId == ''){
-        return getCustomResponse([],404,'Organization id is not present',false);
-    }
-
     const folderObj = new Folder();
     folderObj.name = folderName;
-    folderObj.organization_id = orgId;
+    folderObj.organization_id = user.organization_id;
 
     await folderRepository.save(folderObj);
     response.data = folderObj;

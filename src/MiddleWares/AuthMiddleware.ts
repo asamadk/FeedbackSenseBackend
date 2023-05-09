@@ -1,8 +1,7 @@
 import { responseRest } from "../Types/ApiTypes";
 
 export const isLoggedIn = (req, res, next) => {
-    if (req.user) {
-        // console.log('User ', req.user);
+    if (req.user && req.user._json.email) {
         next();
     } else {
         res.statusCode = 401;
@@ -10,11 +9,11 @@ export const isLoggedIn = (req, res, next) => {
     }
 }
 
-export const getUnAuthorizedResponse = () : responseRest => {
+export const getUnAuthorizedResponse = (): responseRest => {
     return {
-        success : false,
-        message : 'User is not authorized',
-        data : [],
-        statusCode : 401
+        success: false,
+        message: 'User is not authorized',
+        data: [],
+        statusCode: 401
     }
 }
