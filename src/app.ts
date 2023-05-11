@@ -22,6 +22,8 @@ import { getDataSource } from './Config/AppDataSource';
 import { handleSuccessfulLogin } from './Service/AuthService';
 import { isLoggedIn } from './MiddleWares/AuthMiddleware';
 import { StartUp } from './Helpers/Startup';
+import { logger } from './Config/LoggerConfig';
+import { logRequest } from './MiddleWares/LogMiddleware';
 
 dotenv.config();
 
@@ -29,7 +31,7 @@ const app = express();
 const port = process.env.PORT;
 
 app.use(cors({
-  origin: ["http://localhost:3000","http://www.feedbacksense.tech","https://www.feedbacksense.tech"],
+  origin: ["http://localhost:3000", "http://www.feedbacksense.tech", "https://www.feedbacksense.tech"],
   methods: "GET,POST,PUT,DELETE",
   credentials: true,
 }));
@@ -72,41 +74,41 @@ passport.deserializeUser((user, done) => {
 });
 
 //Open endpoints
-app.use('/auth', AuthController)
-app.use('/live', LiveSurveyController);
+app.use('/auth', logRequest, AuthController)
+app.use('/live', logRequest, LiveSurveyController);
 
 //authenticated endpoints
-app.use('/home',isLoggedIn, HomeController);
-app.use('/org', isLoggedIn, OrgController);
-app.use('/survey',isLoggedIn,SurveyController);
-app.use('/folder',isLoggedIn, FolderController);
-app.use('/user',isLoggedIn, UserController);
-app.use('/survey/type',isLoggedIn, SurveyTypeController);
-app.use('/subscription',isLoggedIn, SubscriptionController);
-app.use('/plan', isLoggedIn,PlanController);
-app.use('/analysis',isLoggedIn, AnalysisController)
+app.use('/home', isLoggedIn, logRequest, HomeController);
+app.use('/org', isLoggedIn, logRequest, OrgController);
+app.use('/survey', isLoggedIn, logRequest, SurveyController);
+app.use('/folder', isLoggedIn, logRequest, FolderController);
+app.use('/user', isLoggedIn, logRequest, UserController);
+app.use('/survey/type', isLoggedIn, logRequest, SurveyTypeController);
+app.use('/subscription', isLoggedIn, logRequest, SubscriptionController);
+app.use('/plan', isLoggedIn, logRequest, PlanController);
+app.use('/analysis', isLoggedIn, logRequest, AnalysisController)
 
 getDataSource(false)
   .initialize()
   .then(() => {
-    console.log("Database");
-    console.log("Data Source has been initialized!");
+    logger.info('Data source is initialized');
     new StartUp().startExecution();
   })
-  .catch((err) => {
-    console.error("Error during Data Source initialization:", err)
+  .catch((error) => {
+    logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
   })
 
 app.listen(port, () => {
-  return console.log(`Express is listening at http://localhost:${port}`);
+  logger.info(`Server started.`)
+  logger.info(`Express is listening at http://localhost:${port}`);
 });
 
 process
   .on('unhandledRejection', (reason, p) => {
-    console.error(reason, 'Unhandled Rejection at Promise', p);
+    logger.error(`Unhandled Rejection at Promise : Reason - ${reason}, Promise - ${p}`);
   })
-  .on('uncaughtException', err => {
-    console.error(err, 'Uncaught Exception thrown');
+  .on('uncaughtException', error => {
+    logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
   });
 
 export default app;

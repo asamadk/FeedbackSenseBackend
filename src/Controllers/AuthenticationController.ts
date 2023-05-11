@@ -6,6 +6,8 @@ dotenv.config();
 const clienT_URL = process.env.CLIENT_URL;
 
 import { getUserAfterLogin } from "../Service/AuthService";
+import { getCustomResponse } from "../Helpers/ServiceUtils";
+import { logger } from "../Config/LoggerConfig";
 
 const router = express.Router();
 
@@ -15,12 +17,8 @@ router.get('/login/success', async (req:any , res) => {
         res.statusCode = response.statusCode;
         res.json(response);    
     } catch (error) {
-        res.status(500).json({
-            statusCode : 500,
-            data : null,
-            message : 'An exception occurred.',
-            success : false
-        }); 
+        logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
+        res.status(500).json(getCustomResponse(null,500,error.message,false));
     }
 });
 
@@ -31,12 +29,8 @@ router.get("/login/failed", (req, res) => {
             message: "Log in failure",
         });       
     } catch (error) {
-        res.status(500).json({
-            statusCode : 500,
-            data : null,
-            message : 'An exception occurred.',
-            success : false
-        });
+        logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
+        res.status(500).json(getCustomResponse(null,500,error.message,false));
     }
 });
 
@@ -63,12 +57,8 @@ router.get("/logout", (req : any , res) => {
         req.logout();
         res.redirect(process.env.CLIENT_URL);       
     } catch (error) {
-        res.status(500).json({
-            statusCode : 500,
-            data : null,
-            message : 'An exception occurred.',
-            success : false
-        });
+        logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
+        res.status(500).json(getCustomResponse(null,500,error.message,false));
     }
 });
 

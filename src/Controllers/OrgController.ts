@@ -1,5 +1,7 @@
 import express from 'express';
 import { createOrganizationForUser, getAllOrgList, pointOrgToUser } from '../Service/OrgService';
+import { logger } from '../Config/LoggerConfig';
+import { getCustomResponse } from '../Helpers/ServiceUtils';
 
 const router = express.Router();
 
@@ -10,12 +12,8 @@ router.get('/create/:orgName',async (req : any,res) => {
         res.statusCode = response.statusCode;
         res.json(response);
     } catch (error) {
-        res.status(500).json({
-            statusCode : 500,
-            data : null,
-            message : 'An exception occurred.',
-            success : false
-        });
+        logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
+        res.status(500).json(getCustomResponse(null,500,error.message,false));
     }
 });
 
@@ -26,12 +24,8 @@ router.post('/point',async (req : any ,res) => {
         res.statusCode = response.statusCode;
         res.json(response);    
     } catch (error) {
-        res.status(500).json({
-            statusCode : 500,
-            data : null,
-            message : 'An exception occurred.',
-            success : false
-        });
+        logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
+        res.status(500).json(getCustomResponse(null,500,error.message,false));
     }
 })
 
@@ -41,15 +35,9 @@ router.get('/list',async(req,res) => {
         res.statusCode = response.statusCode;
         res.json(response);    
     } catch (error) {
-        res.status(500).json({
-            statusCode : 500,
-            data : null,
-            message : 'An exception occurred.',
-            success : false
-        });
+        logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
+        res.status(500).json(getCustomResponse(null,500,error.message,false));
     }
 })
-
-//TODO app org to user endpoint
 
 export default router;

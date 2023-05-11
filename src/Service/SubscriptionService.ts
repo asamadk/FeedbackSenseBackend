@@ -1,11 +1,12 @@
 import { getDataSource } from "../Config/AppDataSource";
+import { logger } from "../Config/LoggerConfig";
 import { Subscription } from "../Entity/SubscriptionEntity";
 import { getCustomResponse, getDefaultResponse } from "../Helpers/ServiceUtils";
 import { responseRest } from "../Types/ApiTypes";
 
 export const getSubScriptionDetailsHome = async (userEmail: string): Promise<responseRest> => {
-    const response = getDefaultResponse('Subscription fetched.');
     try {
+        const response = getDefaultResponse('Subscription fetched.');
         let subscriptionObj: any;
 
         const subscriptionRepo = getDataSource(false).getRepository(Subscription);
@@ -38,9 +39,9 @@ export const getSubScriptionDetailsHome = async (userEmail: string): Promise<res
             endDate: subscriptionObj.end_date
         }
         response.data = responseData;
-
+        return response;
     } catch (error) {
-        console.log('Exception :: getSubScriptionDetailsHome :: err ', error);
+        logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
+        return getCustomResponse(null, 500, error.message, false)
     }
-    return response;
 }

@@ -1,4 +1,5 @@
 import { getDataSource } from "../Config/AppDataSource";
+import { logger } from "../Config/LoggerConfig";
 import { SurveyResponse } from "../Entity/SurveyResponse";
 import { Workflow } from "../Entity/WorkflowEntity";
 import { processCombinedComponents } from "../Helpers/OverAllComponentHelper";
@@ -7,8 +8,8 @@ import { getPercentage } from "../Helpers/SurveyUtils";
 import { responseRest } from "../Types/ApiTypes";
 
 export const getFeedbackResponseList = async (surveyId : string) : Promise<responseRest> => {
-    const response = getDefaultResponse('Survey retrieved');
     try {
+        const response = getDefaultResponse('Survey retrieved');
         if(surveyId == null || surveyId === ''){
             return getCustomResponse({},404,'Survey Id not provided',false);
         }
@@ -16,16 +17,15 @@ export const getFeedbackResponseList = async (surveyId : string) : Promise<respo
         const surveyList = await surveyResponseRepo.findBy({survey_id : surveyId});
         response.data = surveyList;
         return response;
-        
     } catch (error) {
-        console.warn("🚀 ~ file: AnalysisService.ts:14 ~ getFeedbackResponseList ~ error):", error)
-        return getCustomResponse({},500,'Exception occurred',false);
+        logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
+        return getCustomResponse(null, 500, error.message, false)
     }
 }
 
 export const deleteFeedbackResponse = async(surveyResponseId : string) : Promise<responseRest> => {
-    const response = getDefaultResponse('Survey response deleted');
     try {
+        const response = getDefaultResponse('Survey response deleted');
         if(surveyResponseId == null || surveyResponseId === '' || surveyResponseId.length < 1){
             return getCustomResponse({},404,'Survey response Id not provided',false);
         }
@@ -35,14 +35,14 @@ export const deleteFeedbackResponse = async(surveyResponseId : string) : Promise
         });
         return response;
     } catch (error) {
-        console.warn("🚀 ~ file: AnalysisService.ts:28 ~ deleteFeedbackResponse ~ error:", error)
-        return getCustomResponse({},500,'Exception occurred',false);
+        logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
+        return getCustomResponse(null, 500, error.message, false)
     }
 }
 
 export const getOverallResponse = async(surveyId : string) : Promise<responseRest> => {
-    const response = getDefaultResponse('Overall survey response fetched');
     try {
+        const response = getDefaultResponse('Overall survey response fetched');
         //TODO handle limit
         const surveyResponseRepo = getDataSource(false).getRepository(SurveyResponse);
         const surveyResponse = await surveyResponseRepo.createQueryBuilder('survey_response')
@@ -60,14 +60,14 @@ export const getOverallResponse = async(surveyId : string) : Promise<responseRes
         response.data = surveyResponse;
         return response;
     } catch (error) {
-        console.warn("🚀 ~ file: AnalysisService.ts:44 ~ getOverallResponse ~ error:", error);
-        return getCustomResponse({},500,'Exception occurred',false);
+        logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
+        return getCustomResponse(null, 500, error.message, false)
     }
 }
 
 export const getSubDataResponse = async(surveyId : string) : Promise<responseRest> => {
-    const response = getDefaultResponse('Sub-data fetched.');
     try {
+        const response = getDefaultResponse('Sub-data fetched.');
         const surveyResponseRepo = getDataSource(false).getRepository(SurveyResponse);
         const surveyFlowRepo = getDataSource(false).getRepository(Workflow);
         const surveyResponse = await surveyResponseRepo.find({
@@ -124,14 +124,14 @@ export const getSubDataResponse = async(surveyId : string) : Promise<responseRes
         response.data = Object.fromEntries(resMap);
         return response;
     } catch (error) {
-        console.warn("🚀 ~ file: AnalysisService.ts:123 ~ getSubDataResponse ~ error:", error)
-        return getCustomResponse({},500,'Exception occurred',false);
+        logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
+        return getCustomResponse(null, 500, error.message, false)
     }
 }
 
 export const getOverAllComponentsData = async(surveyId : string) : Promise<responseRest> => {
-    const response = getDefaultResponse('OverAll component data fetched.');
     try {
+        const response = getDefaultResponse('OverAll component data fetched.');
         const surveyResponseRepo = getDataSource(false).getRepository(SurveyResponse);
         const surveyResponses = await surveyResponseRepo.findBy({
             survey_id : surveyId
@@ -161,7 +161,7 @@ export const getOverAllComponentsData = async(surveyId : string) : Promise<respo
         );
         return response;
     } catch (error) {
-        console.warn("🚀 ~ file: AnalysisService.ts:131 ~ getOverAllComponentsData ~ error:", error)
-        return getCustomResponse({},500,'Exception occurred',false);
+        logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
+        return getCustomResponse(null, 500, error.message, false)
     }
 }

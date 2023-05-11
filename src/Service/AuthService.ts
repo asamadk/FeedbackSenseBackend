@@ -5,6 +5,7 @@ import { getCustomResponse, getDefaultResponse } from "../Helpers/ServiceUtils";
 import { Plan } from "../Entity/PlanEntity";
 import { MONTHLY_BILLING, STARTER_PLAN } from "../Helpers/Constants";
 import { Subscription } from "../Entity/SubscriptionEntity";
+import { logger } from "../Config/LoggerConfig";
 
 
 export const handleSuccessfulLogin = async (user : any) : Promise<void> => {
@@ -48,8 +49,8 @@ export const handleSuccessfulLogin = async (user : any) : Promise<void> => {
             subscObj.billing_cycle = MONTHLY_BILLING;
             await subscriptionRepo.save(subscObj);
         }
-    }catch(err){
-        console.error('Exception :: handleSuccessfulLogin :: ',err);
+    }catch(error){
+        logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
     }
 }
 
@@ -63,21 +64,26 @@ export const getFreeSubscriptionLimit = () : string => {
 }
 
 export const getUserAfterLogin = async (user : any) : Promise<responseRest> => {
-    const response = getDefaultResponse('Login success');
-    const userRepository = getDataSource(false).getRepository(User);
+    try {
+        const response = getDefaultResponse('Login success');
+        const userRepository = getDataSource(false).getRepository(User);
+        
+        if(user == null){
+            return getCustomResponse(null,403,'Not Authorized',false);
+        }
     
-    if(user == null){
-        return getCustomResponse(null,403,'Not Authorized',false);
-    }
-
-    const userObj = await userRepository.findOneBy({
-        email : user?._json?.email
-    });
-
-    if(userObj == null){
-        return getCustomResponse(null,404,'User not found',false);
-    }
+        const userObj = await userRepository.findOneBy({
+            email : user?._json?.email
+        });
     
-    response.data = userObj;
-    return response;
+        if(userObj == null){
+            return getCustomResponse(null,404,'User not found',false);
+        }
+        
+        response.data = userObj;
+        return response;
+    } catch (error) {
+        logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
+        return getCustomResponse(null,500,error.message,false)
+    }
 }

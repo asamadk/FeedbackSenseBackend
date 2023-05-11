@@ -4,6 +4,7 @@ import { createSurvey, enableDisableSurvey, getAllSurveys, getDetailedSurvey, mo
 import { responseRest } from '../Types/ApiTypes';
 import { getCustomResponse } from '../Helpers/ServiceUtils';
 import { getUserEmailFromRequest } from '../Helpers/RestUtils';
+import { logger } from '../Config/LoggerConfig';
 
 const router = express.Router();
 
@@ -14,7 +15,8 @@ router.get('/details/:surveyId', async (req,res) => {
         res.statusCode = response.statusCode;
         res.json(response);     
     } catch (error) {
-        res.status(500).json(getCustomResponse([], 500, 'An exception occurred', false));
+        logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
+        res.status(500).json(getCustomResponse(null,500,error.message,false));
     }
 });
 
@@ -26,7 +28,8 @@ router.get('/list' , async (req , res ) => {
         res.statusCode = response.statusCode;
         res.json(response);    
     } catch (error) {
-        res.status(500).json(getCustomResponse([], 500, 'An exception occurred', false));
+        logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
+        res.status(500).json(getCustomResponse(null,500,error.message,false));
     }
 });
 
@@ -37,8 +40,8 @@ router.post('/create/:surveyTypeId', async (req : any , res) => {
         res.statusCode = response.statusCode;
         res.json(response);    
     } catch (error) {
-        console.log("🚀 ~ file: SurveyController.ts:41 ~ router.post ~ error:", error)
-        res.status(500).json(getCustomResponse([], 500, 'An exception occurred', false));
+        logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
+        res.status(500).json(getCustomResponse(null,500,error.message,false));
     }
 });
 
@@ -50,7 +53,8 @@ router.post('/move/:folderId/:surveyId', async (req,res) => {
         res.statusCode = response.statusCode;
         res.json(response);    
     } catch (error) {
-        res.status(500).json(getCustomResponse([], 500, 'An exception occurred', false));
+        logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
+        res.status(500).json(getCustomResponse(null,500,error.message,false));
     }
 })
 
@@ -61,7 +65,8 @@ router.post('/disable/:surveyId', async (req,res) => {
         res.statusCode = response.statusCode;
         res.json(response);    
     } catch (error) {
-        res.status(500).json(getCustomResponse([], 500, 'An exception occurred', false));
+        logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
+        res.status(500).json(getCustomResponse(null,500,error.message,false));
     }
 })
 
@@ -72,7 +77,8 @@ router.post('/enable/:surveyId', async (req,res) => {
         res.statusCode = response.statusCode;
         res.json(response);    
     } catch (error) {
-        res.status(500).json(getCustomResponse([], 500, 'An exception occurred', false));
+        logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
+        res.status(500).json(getCustomResponse(null,500,error.message,false));
     }
 })
 
@@ -83,7 +89,8 @@ router.post('/delete/:surveyId', async (req,res) => {
         res.statusCode = response.statusCode;
         res.json(response);    
     } catch (error) {
-        res.status(500).json(getCustomResponse([], 500, 'An exception occurred', false));
+        logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
+        res.status(500).json(getCustomResponse(null,500,error.message,false));
     }
 })
 
@@ -95,7 +102,8 @@ router.post('/save/flow/:surveyId', async (req,res) => {
         res.statusCode = response.statusCode;
         res.json(response);    
     } catch (error) {
-        res.status(500).json(getCustomResponse([], 500, 'An exception occurred', false));
+        logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
+        res.status(500).json(getCustomResponse(null,500,error.message,false));
     }
 });
 
@@ -107,7 +115,8 @@ router.post('/save/design/:surveyId', async (req,res) => {
         res.statusCode = response.statusCode;
         res.json(response);    
     } catch (error) {
-        res.status(500).json(getCustomResponse([], 500, 'An exception occurred', false));
+        logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
+        res.status(500).json(getCustomResponse(null,500,error.message,false));
     }
 });
 
@@ -119,8 +128,8 @@ router.post('/config/update/:surveyId',async(req,res) => {
         res.statusCode = response.statusCode;
         res.json(response);    
     } catch (error) {
-        console.log("🚀 ~ file: SurveyController.ts:103 ~ router.post ~ error:", error)
-        res.status(500).json(getCustomResponse([], 500, 'An exception occurred', false));
+        logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
+        res.status(500).json(getCustomResponse(null,500,error.message,false));
     }
 });
 
@@ -131,8 +140,8 @@ router.get('/config/detail/:surveyId', async (req,res) => {
         res.statusCode = response.statusCode;
         res.json(response);    
     } catch (error) {
-        console.log("🚀 ~ file: SurveyController.ts:114 ~ router.get ~ error:", error)
-        res.status(500).json(getCustomResponse([], 500, 'An exception occurred', false));
+        logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
+        res.status(500).json(getCustomResponse(null,500,error.message,false));
     }
 });
 
@@ -144,8 +153,8 @@ router.post('/update/name/:surveyId',async(req,res) => {
         res.statusCode = response.statusCode;
         res.json(response);    
     } catch (error) {
-        console.log("🚀 ~ file: SurveyController.ts:126 ~ router.post ~ error:", error)
-        res.status(500).json(getCustomResponse([], 500, 'An exception occurred', false));
+        logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
+        res.status(500).json(getCustomResponse(null,500,error.message,false));
     }
 });
 

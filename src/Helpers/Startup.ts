@@ -3,6 +3,7 @@ import { getDataSource } from "../Config/AppDataSource"
 import { Plan } from "../Entity/PlanEntity";
 import { SurveyType } from "../Entity/SurveyTypeEntity";
 import { ENTERPRISE_PLAN, GROWTH_PLAN, STARTER_PLAN, ULTIMATE_PLAN } from "./Constants";
+import { logger } from "../Config/LoggerConfig";
 
 export class StartUp {
     
@@ -13,6 +14,7 @@ export class StartUp {
     planNameDescription : Map<string,string>
 
     startExecution(){
+        logger.info('StartUp script executing...');
         this.init();
         this.populatePlanAmount();
         this.populatePlanDescription();
@@ -26,7 +28,7 @@ export class StartUp {
         this.toCreatePlanList = [];
         this.planNamePrice = new Map<string,number>();
         this.planNameDescription = new Map<string,string>();
-        
+        logger.info('Startup class Initialized.');
     }
 
     populatePlanAmount(){
@@ -34,6 +36,7 @@ export class StartUp {
         this.planNamePrice.set(GROWTH_PLAN,97);
         this.planNamePrice.set(ENTERPRISE_PLAN,135);
         this.planNamePrice.set(ULTIMATE_PLAN,175);
+        logger.info('Plan prices populated');
     }
 
     populatePlanDescription(){
@@ -96,6 +99,7 @@ export class StartUp {
             ]
             
         }));
+        logger.info('Plan description populated.');
     }
 
     async createPlans(){
@@ -122,6 +126,7 @@ export class StartUp {
         });
 
         await this.insertPlan();
+        logger.info('Plans created.');
     }
 
     async insertPlan(){
@@ -154,6 +159,8 @@ export class StartUp {
         // surveyObj1.label = 'Website or App Survey';
         // surveyObj1.name = 'app/site';
         // this.surveyTypeRepo.save(surveyObj1);
+
+        logger.info('Survey type created.');
     }
 
 }

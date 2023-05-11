@@ -21,7 +21,7 @@ const databaseConfig : any = {
     database: process.env.DB_NAME,
     entities: ["dist/Entity/*.js"],
     migrations: ["dist/migration/*.js"],
-    logging: true,
+    logging: false,
     synchronize: false,
     migrationsTableName: "feedbackSense_migration_table",
 }

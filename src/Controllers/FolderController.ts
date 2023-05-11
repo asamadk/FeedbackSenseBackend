@@ -2,6 +2,7 @@ import express from 'express';
 import { createFolders, deleteFolder, getFolders } from '../Service/FolderService';
 import { responseRest } from '../Types/ApiTypes';
 import { getCustomResponse } from '../Helpers/ServiceUtils';
+import { logger } from '../Config/LoggerConfig';
 
 const router = express.Router();
 
@@ -15,7 +16,8 @@ router.get('/list', async (req : any,res) => {
         res.statusCode = response.statusCode;
         res.json(response);    
     } catch (error) {
-        res.status(500).json(getCustomResponse([], 500, 'An exception occurred', false));
+        logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
+        res.status(500).json(getCustomResponse(null,500,error.message,false));
     }
 });
 
@@ -27,7 +29,8 @@ router.post('/create/:folderName', async (req : any,res) => {
         res.statusCode = response.statusCode;
         res.json(response);
     } catch (error) {
-        res.status(500).json(getCustomResponse([], 500, 'An exception occurred', false));
+        logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
+        res.status(500).json(getCustomResponse(null,500,error.message,false));
     }
 });
 
@@ -38,7 +41,8 @@ router.delete('/delete/:folderId', async (req,res) => {
         res.statusCode = response.statusCode;
         res.json(response);
     } catch (error) {
-        res.status(500).json(getCustomResponse([], 500, 'An exception occurred', false));
+        logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
+        res.status(500).json(getCustomResponse(null,500,error.message,false));
     }
 })
 

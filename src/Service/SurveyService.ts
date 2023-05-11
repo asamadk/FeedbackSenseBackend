@@ -8,135 +8,139 @@ import { getCustomResponse, getDefaultResponse } from "../Helpers/ServiceUtils";
 import { Workflow } from "../Entity/WorkflowEntity";
 import { Subscription } from "../Entity/SubscriptionEntity";
 import { cleanSurveyFlowJSON } from "../Helpers/SurveyUtils";
+import { logger } from "../Config/LoggerConfig";
 
 
 export const getDetailedSurvey = async (surveyId: string): Promise<responseRest> => {
-    const response = getDefaultResponse('Survey retrieved successfully');
-    const surveyRepository = getDataSource(false).getRepository(Survey);
-    const surveyDetail = await surveyRepository.find({
-        relations: {
-            user: true,
-            surveyType: true,
-            workflows: true,
-            folder: true
-        },
-        where: {
-            id: surveyId,
+    try {
+        const response = getDefaultResponse('Survey retrieved successfully');
+        const surveyRepository = getDataSource(false).getRepository(Survey);
+        const surveyDetail = await surveyRepository.find({
+            relations: {
+                user: true,
+                surveyType: true,
+                workflows: true,
+                folder: true
+            },
+            where: {
+                id: surveyId,
+            }
+        });
+        if (surveyDetail.length > 0) {
+            response.data = surveyDetail[0];
         }
-    });
-    if (surveyDetail.length > 0) {
-        response.data = surveyDetail[0];
+        return response;
+    } catch (error) {
+        logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
+        return getCustomResponse(null, 500, error.message, false)
     }
-    return response;
 }
 
 export const getAllSurveys = async (userEmail: string): Promise<responseRest> => {
-    const response = getDefaultResponse('Survey retrieved successfully');
-
-    const surveyList = await getDataSource(false).query(
-        `SELECT * FROM survey as s WHERE s.user_id in (SELECT u.id FROM user as u WHERE u.email = '${userEmail}')
-        AND s.is_deleted = false`
-    );
-
-    response.data = surveyList;
-    return response;
+    try {
+        const response = getDefaultResponse('Survey retrieved successfully');
+        const surveyList = await getDataSource(false).query(
+            `SELECT * FROM survey as s WHERE s.user_id in (SELECT u.id FROM user as u WHERE u.email = '${userEmail}')
+            AND s.is_deleted = false`
+        );
+        response.data = surveyList;
+        return response;
+    } catch (error) {
+        logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
+        return getCustomResponse(null, 500, error.message, false)
+    }
 }
 
 
 
 export const createSurvey = async (surveyTypeId: string, user: any): Promise<responseRest> => {
-    const response = getDefaultResponse('Survey created successfully');
-
-    const surveyRepository = getDataSource(false).getRepository(Survey);
-    const surveyTypeRepo = getDataSource(false).getRepository(SurveyType);
-    const userRepository = getDataSource(false).getRepository(User);
-
-    const surveyType = await surveyTypeRepo.findOneBy({
-        id: surveyTypeId
-    });
-
-    if (surveyType == null) {
-        response.message = ' The survey type does not exists ';
-        response.success = false;
-        response.statusCode = 404;
+    try {
+        const response = getDefaultResponse('Survey created successfully');
+        const surveyRepository = getDataSource(false).getRepository(Survey);
+        const surveyTypeRepo = getDataSource(false).getRepository(SurveyType);
+        const userRepository = getDataSource(false).getRepository(User);
+        const surveyType = await surveyTypeRepo.findOneBy({
+            id: surveyTypeId
+        });
+        if (surveyType == null) {
+            response.message = ' The survey type does not exists ';
+            response.success = false;
+            response.statusCode = 404;
+            return response;
+        }
+        const userEmail: string = user?._json?.email;
+        if (userEmail == null || userEmail.length < 1) {
+            return getCustomResponse(null, 404, 'User not found', false);
+        }
+        const savedUser = await userRepository.findOneBy({
+            email: user?._json?.email
+        });
+        if (savedUser == null) {
+            return getCustomResponse([], 404, ' The user does not exists ', false);
+        }
+        const surveyObj = new Survey();
+        surveyObj.user_id = savedUser.id;
+        surveyObj.name = 'New survey - ' + new Date().toDateString();
+        surveyObj.survey_type_id = surveyType.id;
+        surveyObj.survey_design_json = '{"theme":{"id":0,"header":"Lavendar & Blue","text":"Trending","color":["#AA77FF","#C9EEFF"],"textColor":"#000000"}}';
+        await surveyRepository.save(surveyObj);
+        response.data = surveyObj;
         return response;
+    } catch (error) {
+        logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
+        return getCustomResponse(null, 500, error.message, false)
     }
-
-    const userEmail : string = user?._json?.email;
-
-    if(userEmail == null || userEmail.length < 1){
-        return getCustomResponse(null,404,'User not found',false);
-    }
-
-    const savedUser = await userRepository.findOneBy({
-        email: user?._json?.email
-    });
-
-    if (savedUser == null) {
-        return getCustomResponse([], 404, ' The user does not exists ', false);
-    }
-
-    const surveyObj = new Survey();
-    surveyObj.user_id = savedUser.id;
-    surveyObj.name = 'New survey - ' + new Date().toDateString();
-    surveyObj.survey_type_id = surveyType.id;
-    surveyObj.survey_design_json = '{"theme":{"id":0,"header":"Lavendar & Blue","text":"Trending","color":["#AA77FF","#C9EEFF"],"textColor":"#000000"}}';
-
-    await surveyRepository.save(surveyObj);
-    response.data = surveyObj;
-    return response;
 }
 
 export const moveSurveyToFolder = async (folderId: string, surveyId: string): Promise<responseRest> => {
-    const response = getDefaultResponse('Survey moved successfully');
-    if (folderId == null || folderId.length == 0) {
-        return getCustomResponse([], 404, ' Folder id is not present ', false);
+    try {
+        const response = getDefaultResponse('Survey moved successfully');
+        if (folderId == null || folderId.length == 0) {
+            return getCustomResponse([], 404, ' Folder id is not present ', false);
+        }
+        const surveyRepository = getDataSource(false).getRepository(Survey);
+        const surveyObj = await surveyRepository.findOneBy({
+            id: surveyId
+        });
+        if (surveyObj == null) {
+            return getCustomResponse([], 404, ' Survey not found ', false);
+        }
+        surveyObj.folder_id = folderId;
+        await surveyRepository.save(surveyObj);
+        response.data = surveyObj;
+        return response;
+    } catch (error) {
+        logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
+        return getCustomResponse(null, 500, error.message, false)
     }
-
-    const surveyRepository = getDataSource(false).getRepository(Survey);
-    const surveyObj = await surveyRepository.findOneBy({
-        id: surveyId
-    });
-
-    if (surveyObj == null) {
-        return getCustomResponse([], 404, ' Survey not found ', false);
-    }
-
-    surveyObj.folder_id = folderId;
-    await surveyRepository.save(surveyObj);
-    response.data = surveyObj;
-
-    return response;
 }
 
 export const enableDisableSurvey = async (surveyId: string, enable: boolean): Promise<responseRest> => {
-    const response = getDefaultResponse(`Survey ${enable == true ? ' enabled ' : ' disabled '} successfully`);
-    const surveyRepository = getDataSource(false).getRepository(Survey);
-
-    const surveyObj = await surveyRepository.findOneBy({
-        id: surveyId
-    });
-
-    if (surveyObj == null) {
-        response.message = ' The survey does not exists ';
-        response.success = false;
-        response.statusCode = 404;
+    try {
+        const response = getDefaultResponse(`Survey ${enable == true ? ' enabled ' : ' disabled '} successfully`);
+        const surveyRepository = getDataSource(false).getRepository(Survey);
+        const surveyObj = await surveyRepository.findOneBy({
+            id: surveyId
+        });
+        if (surveyObj == null) {
+            response.message = ' The survey does not exists ';
+            response.success = false;
+            response.statusCode = 404;
+            return response;
+        }
+        surveyObj.is_published = enable;
+        const result: boolean = await updateActiveSurveyLimit(enable, surveyObj.user_id);
+        if (result == false) {
+            response.message = 'Active survey limit reached. Please disable some survey to activate this survey.';
+            response.success = false;
+            return response;
+        }
+        await surveyRepository.save(surveyObj);
         return response;
+    } catch (error) {
+        logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
+        return getCustomResponse(null, 500, error.message, false)
     }
-
-    surveyObj.is_published = enable;
-
-    const result: boolean = await updateActiveSurveyLimit(enable, surveyObj.user_id);
-    if (result == false) {
-        response.message = 'Active survey limit reached. Please disable some survey to activate this survey.';
-        response.success = false;
-        return response;
-    }
-
-
-    await surveyRepository.save(surveyObj);
-
-    return response;
 }
 
 const updateActiveSurveyLimit = async (enable: boolean, userId: string): Promise<boolean> => {
@@ -170,41 +174,39 @@ const updateActiveSurveyLimit = async (enable: boolean, userId: string): Promise
 }
 
 export const softDeleteSurvey = async (surveyId: string): Promise<responseRest> => {
-    const response = getDefaultResponse('Survey deleted successfully');
-    const surveyRepository = getDataSource(false).getRepository(Survey);
+    try {
+        const response = getDefaultResponse('Survey deleted successfully');
+        const surveyRepository = getDataSource(false).getRepository(Survey);
+        const surveyObj = await surveyRepository.findOneBy({
+            id: surveyId
+        });
+        if (surveyObj == null) {
+            response.message = 'The survey does not exists ';
+            response.success = false;
+            response.statusCode = 404;
+            return response;
+        }
+        const wasSurveyPublished = surveyObj.is_published;
+        surveyObj.is_deleted = true;
+        surveyObj.is_published = false;
 
-    const surveyObj = await surveyRepository.findOneBy({
-        id: surveyId
-    });
-
-    if (surveyObj == null) {
-        response.message = 'The survey does not exists ';
-        response.success = false;
-        response.statusCode = 404;
+        await surveyRepository.save(surveyObj);
+        if (wasSurveyPublished === true) {
+            await updateActiveSurveyLimit(false, surveyObj.user_id);
+        }
         return response;
+    } catch (error) {
+        logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
+        return getCustomResponse(null, 500, error.message, false)
     }
-
-    const wasSurveyPublished = surveyObj.is_published;
-
-    surveyObj.is_deleted = true;
-    surveyObj.is_published = false;
-
-    await surveyRepository.save(surveyObj);
-    if(wasSurveyPublished === true){
-        await updateActiveSurveyLimit(false, surveyObj.user_id);
-    }
-
-    return response;
 }
 
 export const saveSurveyFlow = async (surveyId: string, surveyJSON: string): Promise<responseRest> => {
     const response = getDefaultResponse('Survey flow saved successfully');
-
     try {
         if (surveyId == null || surveyId === '') {
             return getCustomResponse([], 404, ' Survey id not found ', false);
         }
-
         const surveyRepository = getDataSource(false).getRepository(Survey);
         const surveyData = await surveyRepository.findOneBy({ id: surveyId });
         const surveyFlowId: string = surveyData.workflow_id;
@@ -216,10 +218,9 @@ export const saveSurveyFlow = async (surveyId: string, surveyJSON: string): Prom
         } else {
             await updateSurveyFlow(surveyJSON, surveyFlowId);
         }
-
     } catch (error) {
-        response.success = false;
-        response.statusCode = 500;
+        logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
+        return getCustomResponse(null, 500, error.message, false)
     }
 
     return response;
@@ -233,20 +234,16 @@ const updateSurveyFlow = async (surveyJson: string, surveyFlowId: string): Promi
 }
 
 export const createSurveyFlow = (surveyJson: string, surveyId: string): Promise<Workflow> => {
-    try {
-        const flowRepository = getDataSource(false).getRepository(Workflow);
-        const flowObj = new Workflow();
-        flowObj.json = surveyJson
-        flowObj.surveyId = surveyId;
-        return flowRepository.save(flowObj);    
-    } catch (error) {
-        console.log("🚀 ~ file: SurveyService.ts:237 ~ createSurveyFlow ~ error:", error)
-    }
+    const flowRepository = getDataSource(false).getRepository(Workflow);
+    const flowObj = new Workflow();
+    flowObj.json = surveyJson
+    flowObj.surveyId = surveyId;
+    return flowRepository.save(flowObj);
 }
 
 export const saveSurveyDesign = async (surveyId: string, surveyJSON: string): Promise<responseRest> => {
-    const response = getDefaultResponse('Survey design saved successfully');
     try {
+        const response = getDefaultResponse('Survey design saved successfully');
         if (surveyId == null || surveyId === '') {
             return getCustomResponse([], 404, ' Survey id not found ', false);
         }
@@ -258,16 +255,16 @@ export const saveSurveyDesign = async (surveyId: string, surveyJSON: string): Pr
         surveyData.survey_design_json = surveyJSON;
         await surveyRepository.save(surveyData);
         response.data = surveyData;
+        return response;
     } catch (error) {
-        response.success = false;
-        response.statusCode = 500;
+        logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
+        return getCustomResponse(null, 500, error.message, false)
     }
-    return response;
 }
 
 export const updateSurveyConfig = async (surveyId: string, configObj: any): Promise<responseRest> => {
-    const response = getDefaultResponse('Survey configurations saved successfully');
     try {
+        const response = getDefaultResponse('Survey configurations saved successfully');
         if (surveyId == null || surveyId === '') {
             return getCustomResponse([], 404, ' Survey id not found ', false);
         }
@@ -295,18 +292,16 @@ export const updateSurveyConfig = async (surveyId: string, configObj: any): Prom
         // console.log("🚀 ~ file: SurveyService.ts:229 ~ updateSurveyConfig ~ surveyConfigObj:", surveyConfigObj)
         await surveyConfigRepo.save(surveyConfigObj);
         response.data = surveyConfigObj;
-
+        return response;
     } catch (error) {
-        console.log(`Exception in updateSurveyConfig ${error}`)
-        response.success = false;
-        response.statusCode = 500;
+        logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
+        return getCustomResponse(null, 500, error.message, false)
     }
-    return response;
 }
 
 export const getSurveyConfigData = async (surveyId: string): Promise<responseRest> => {
-    const response = getDefaultResponse('Survey fetched successfully');
     try {
+        const response = getDefaultResponse('Survey fetched successfully');
         const surveyConfigRepo = getDataSource(false).getRepository(SurveyConfig);
         if (surveyId == null || surveyId === '') {
             return getCustomResponse([], 404, ' Survey id not found ', false);
@@ -320,37 +315,31 @@ export const getSurveyConfigData = async (surveyId: string): Promise<responseRes
             return getCustomResponse([], 404, ' Survey config not found ', false);
         }
         response.data = surveyConfigObj;
+        return response;
     } catch (error) {
-        console.log(`Exception in getSurveyConfigData ${error}`)
-        response.success = false;
-        response.statusCode = 500;
+        logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
+        return getCustomResponse(null, 500, error.message, false)
     }
-    return response;
 }
 
-export const updateSurveyName = async (surveyId : string,payload : any) : Promise<responseRest> => {
-    const response = getDefaultResponse('Survey name updated successfully');
-    try{
+export const updateSurveyName = async (surveyId: string, payload: any): Promise<responseRest> => {
+    try {
+        const response = getDefaultResponse('Survey name updated successfully');
         const surveyRepo = getDataSource(false).getRepository(Survey);
         const surveyObj = await surveyRepo.findOneBy({
-            id : surveyId
+            id: surveyId
         });
-
-        if(surveyObj == null){
+        if (surveyObj == null) {
             return getCustomResponse([], 404, ' Survey config not found ', false);
         }
-
         surveyObj.name = payload.surveyName;
         await surveyRepo.save(surveyObj);
-
         response.data = surveyObj;
-
-    }catch(err){
-        console.log(`Exception in getSurveyConfigData ${err}`)
-        response.success = false;
-        response.statusCode = 500;
+        return response;
+    } catch (error) {
+        logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
+        return getCustomResponse(null, 500, error.message, false)
     }
-    return response;
 }
 
 // export const duplicate
