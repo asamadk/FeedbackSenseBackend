@@ -1,3 +1,4 @@
+import { USER_UNAUTH_TEXT } from "../Helpers/Constants";
 import { responseRest } from "../Types/ApiTypes";
 
 export const isLoggedIn = (req, res, next) => {
@@ -12,7 +13,7 @@ export const isLoggedIn = (req, res, next) => {
 export const getUnAuthorizedResponse = (): responseRest => {
     return {
         success: false,
-        message: 'User is not authorized',
+        message: USER_UNAUTH_TEXT,
         data: [],
         statusCode: 401
     }
