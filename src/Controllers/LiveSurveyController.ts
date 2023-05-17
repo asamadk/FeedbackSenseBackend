@@ -20,6 +20,7 @@ router.get('/survey/:surveyId',async (req,res) => {
         
         const response : responseRest = await getLiveSurveyNodes(surveyId);
         res.statusCode = response.statusCode;
+        res.setHeader('Cache-Control', 'no-store');
         res.json(response);
     } catch (error) {
         logger.error(`message - ${error.message}, stack trace - ${error.stack}`);

@@ -39,7 +39,7 @@ const processBulkResult = (key: number, value: any[]): any => {
 
 export const processWelcomeMessageComp = (data: any[]): any => {
 
-    if(data == null){
+    if (data == null) {
         return [];
     }
 
@@ -54,12 +54,11 @@ export const processWelcomeMessageComp = (data: any[]): any => {
 }
 
 export const processSingleSelectionComp = (data: any[]): any => {
-
-    if(data == null){
-        return [];
+    if (data == null) {
+        return {};
     }
-
     const answerFreq = new Map<string, number>();
+    let question: string;
     data?.forEach(d => {
         const selectedVal = d?.data?.selectedVal;
         let val = answerFreq.get(selectedVal);
@@ -67,6 +66,7 @@ export const processSingleSelectionComp = (data: any[]): any => {
             val = 0;
         }
         val++;
+        question = d?.compData?.question
         answerFreq.set(selectedVal, val);
     });
 
@@ -77,16 +77,20 @@ export const processSingleSelectionComp = (data: any[]): any => {
             freq: getPercentage(value, data?.length)
         })
     }
-    return rtnArr;
+
+    return {
+        question: question,
+        statsArr: rtnArr
+    }
 }
 
 const processMultipleSelectionComp = (data: any[]): any => {
-
-    if(data == null){
-        return [];
+    if (data == null) {
+        return {};
     }
 
     const answerFreq = new Map<string, number>();
+    let question: string;
     data?.forEach(d => {
         const selectedVal: string[] = d?.data?.selectedVal;
         selectedVal.forEach(selVal => {
@@ -95,6 +99,7 @@ const processMultipleSelectionComp = (data: any[]): any => {
                 val = 0;
             }
             val++;
+            question = d?.compData?.question
             answerFreq.set(selVal, val);
         })
     });
@@ -106,29 +111,35 @@ const processMultipleSelectionComp = (data: any[]): any => {
             freq: getPercentage(value, data?.length)
         })
     }
-    return rtnArr;
+    return {
+        question: question,
+        statsArr: rtnArr
+    }
 }
 
 const processTextAnswerComp = (data: any[]): any => {
-
-    if(data == null){
-        return [];
+    if (data == null) {
+        return {};
     }
-
     const rtn = [];
+    let question: string;
     data?.forEach(d => {
         const answer: string = d?.data?.answer;
+        question = d?.compData?.question
         rtn.push(answer);
     });
-    return rtn;
+
+    return {
+        question: question,
+        statsArr: rtn
+    }
 }
 
 const processSmileyComp = (data: any[]): any => {
-
-    if(data == null){
-        return [];
+    if (data == null) {
+        return {};
     }
-
+    let question: string;
     let extUns = 0;
     let uns = 0;
     let neutral = 0;
@@ -147,43 +158,46 @@ const processSmileyComp = (data: any[]): any => {
         } else if (emojiId == '4') {
             extHpp++;
         }
+        question = d?.compData?.question
     });
 
-    return [
-        {
-            name: 'EU',
-            percentage: getPercentage(extUns, data?.length),
-            satisfaction: 'Extremely Unsatisfied'
-        },
-        {
-            name: 'U',
-            percentage: getPercentage(uns, data?.length),
-            satisfaction: 'Unsatisfied'
-        },
-        {
-            name: 'N',
-            percentage: getPercentage(neutral, data?.length),
-            satisfaction: 'Neutral'
-        },
-        {
-            name: 'HP',
-            percentage: getPercentage(happy, data?.length),
-            satisfaction: 'Happy'
-        },
-        {
-            name: 'H',
-            percentage: getPercentage(extHpp, data?.length),
-            satisfaction: 'Extremely Happy'
-        },
-    ]
+    return {
+        question: question,
+        statsArr: [
+            {
+                name: 'EU',
+                percentage: getPercentage(extUns, data?.length),
+                satisfaction: 'Extremely Unsatisfied'
+            },
+            {
+                name: 'U',
+                percentage: getPercentage(uns, data?.length),
+                satisfaction: 'Unsatisfied'
+            },
+            {
+                name: 'N',
+                percentage: getPercentage(neutral, data?.length),
+                satisfaction: 'Neutral'
+            },
+            {
+                name: 'HP',
+                percentage: getPercentage(happy, data?.length),
+                satisfaction: 'Happy'
+            },
+            {
+                name: 'H',
+                percentage: getPercentage(extHpp, data?.length),
+                satisfaction: 'Extremely Happy'
+            },
+        ]
+    }
 }
 
 const processRatingComp = (data: any[]): any => {
-
-    if(data == null){
-        return [];
+    if (data == null) {
+        return {};
     }
-
+    let question: string;
     const freqMap = new Map<number, number>();
     let maxRange = 0;
     data?.forEach(d => {
@@ -198,6 +212,7 @@ const processRatingComp = (data: any[]): any => {
         }
         freq++;
         freqMap.set(selectedValue, freq);
+        question = d?.compData?.question
     });
 
     const rtnObj = [];
@@ -208,15 +223,17 @@ const processRatingComp = (data: any[]): any => {
             percentage: getPercentage(value, data?.length),
         });
     }
-    return rtnObj;
+    return {
+        question: question,
+        statsArr: rtnObj
+    }
 }
 
 const processNPSComp = (data: any[]): any => {
-
-    if(data == null){
+    if (data == null) {
         return [];
     }
-
+    let question: string;
     const freqMap = new Map<number, number>();
     let promoters = 0;
     let detractors = 0;
@@ -236,6 +253,7 @@ const processNPSComp = (data: any[]): any => {
             freq++;
             freqMap.set(selectedNps, freq);
         }
+        question = d?.compData?.question
     });
 
     const rtnObj = [];
@@ -268,16 +286,15 @@ const processNPSComp = (data: any[]): any => {
 
     return {
         chart: rtnObj,
-        nps: nps
+        nps: nps,
+        question: question
     };
 }
 
 const contactInfoComp = (data: any[]): any => {
-
-    if(data == null){
+    if (data == null) {
         return [];
     }
-
     let columnArr = []
     const rowArr = [];
     let count = 0;
@@ -297,17 +314,18 @@ const contactInfoComp = (data: any[]): any => {
 }
 
 const dateComp = (data: any[]): any => {
-
-    if(data == null){
+    if (data == null) {
         return [];
     }
-
+    let question: string;
     const actionSet = new Set<string>();
     data?.forEach(d => {
         actionSet.add(d?.data);
+        question = d?.compData?.question
     });
     return {
         actions: [...actionSet],
-        clickFrequency: data?.length
+        clickFrequency: data?.length,
+        question: question
     }
 }
