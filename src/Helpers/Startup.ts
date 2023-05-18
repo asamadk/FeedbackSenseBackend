@@ -2,7 +2,7 @@ import { Repository } from "typeorm";
 import { getDataSource } from "../Config/AppDataSource"
 import { Plan } from "../Entity/PlanEntity";
 import { SurveyType } from "../Entity/SurveyTypeEntity";
-import { ENTERPRISE_PLAN, GROWTH_PLAN, STARTER_PLAN, ULTIMATE_PLAN } from "./Constants";
+import { ENTERPRISE_PLAN, FREE_PLAN, GROWTH_PLAN, STARTER_PLAN, ULTIMATE_PLAN } from "./Constants";
 import { logger } from "../Config/LoggerConfig";
 
 export class StartUp {
@@ -32,6 +32,7 @@ export class StartUp {
     }
 
     populatePlanAmount(){
+        this.planNamePrice.set(FREE_PLAN,0);
         this.planNamePrice.set(STARTER_PLAN,49);
         this.planNamePrice.set(GROWTH_PLAN,97);
         this.planNamePrice.set(ENTERPRISE_PLAN,135);
@@ -40,6 +41,7 @@ export class StartUp {
     }
 
     populatePlanDescription(){
+        this.planNameDescription.set(FREE_PLAN,'{}');
         this.planNameDescription.set(STARTER_PLAN, JSON.stringify({
             description : `Empower your company with a comprehensive solution to streamline customer feedback automation from a single source.`,
             features : [
@@ -104,6 +106,7 @@ export class StartUp {
 
     async createPlans(){
         const planNames : string[] = [
+            FREE_PLAN,
             ULTIMATE_PLAN,
             STARTER_PLAN,
             GROWTH_PLAN,

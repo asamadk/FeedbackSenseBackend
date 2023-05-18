@@ -24,6 +24,7 @@ import { isLoggedIn } from './MiddleWares/AuthMiddleware';
 import { StartUp } from './Helpers/Startup';
 import { logger } from './Config/LoggerConfig';
 import { logRequest } from './MiddleWares/LogMiddleware';
+import { globalAPILimiter } from './Config/RateLimitConfig';
 
 dotenv.config();
 
@@ -47,6 +48,7 @@ app.use(
 )
 app.use(passport.initialize());
 app.use(passport.session());
+app.use(globalAPILimiter);
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }))
 

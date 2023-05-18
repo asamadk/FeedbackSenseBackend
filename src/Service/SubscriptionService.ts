@@ -7,12 +7,20 @@ import { responseRest } from "../Types/ApiTypes";
 export const getSubScriptionDetailsHome = async (userEmail: string): Promise<responseRest> => {
     try {
         const response = getDefaultResponse('Subscription fetched.');
-        let subscriptionObj: any;
+        let subscriptionObj: Subscription;
 
         const subscriptionRepo = getDataSource(false).getRepository(Subscription);
+        // const subscription = await subscriptionRepo
+        //     .createQueryBuilder('subscription')
+        //     .innerJoin('subscription.user', 'user')
+        //     .where('user.email = :userEmail', { userEmail })
+        //     .getOne();
+
         const subscription = await subscriptionRepo
             .createQueryBuilder('subscription')
             .innerJoin('subscription.user', 'user')
+            .innerJoin('subscription.plan', 'plan')
+            .select(['subscription', 'plan.name'])
             .where('user.email = :userEmail', { userEmail })
             .getOne();
 
@@ -32,7 +40,7 @@ export const getSubScriptionDetailsHome = async (userEmail: string): Promise<res
             usedSurveyLimit = subLimitObj.usedSurveyLimit;
         }
         const responseData = {
-            name: subscriptionObj.name,
+            name: subscriptionObj.plan.name,
             totalSurveyLimit: activeSurveyLimit,
             surveyLimitUsed: usedSurveyLimit,
             billingCycle: subscriptionObj.billing_cycle,

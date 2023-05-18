@@ -3,7 +3,7 @@ import { getDataSource } from '../Config/AppDataSource';
 import { responseRest } from "../Types/ApiTypes";
 import { getCustomResponse, getDefaultResponse } from "../Helpers/ServiceUtils";
 import { Plan } from "../Entity/PlanEntity";
-import { MONTHLY_BILLING, STARTER_PLAN } from "../Helpers/Constants";
+import { FREE_PLAN, MONTHLY_BILLING, STARTER_PLAN } from "../Helpers/Constants";
 import { Subscription } from "../Entity/SubscriptionEntity";
 import { logger } from "../Config/LoggerConfig";
 
@@ -26,7 +26,7 @@ export const handleSuccessfulLogin = async (user : any) : Promise<void> => {
         });
 
         const planObj = await planRepo.findOneBy({
-            name : STARTER_PLAN
+            name : FREE_PLAN
         });
     
         if(savedUser != null){return;}

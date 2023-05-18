@@ -1,3 +1,4 @@
+export const FREE_PLAN = 'Free'
 export const STARTER_PLAN = 'Starter';
 export const GROWTH_PLAN = 'Growth';
 export const ENTERPRISE_PLAN = 'Enterprise';
