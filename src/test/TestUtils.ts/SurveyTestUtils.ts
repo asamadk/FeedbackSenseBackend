@@ -8,13 +8,12 @@ import { Workflow } from "../../Entity/WorkflowEntity";
 export const createTestSurvey = async(connection : DataSource) : Promise<Survey> => {
     const surveyTypeRepo = connection.getRepository(SurveyType);
     const surveyRepo = connection.getRepository(Survey);
-    const { data } = await createFolders('TEMP_FOLDER', '1234');
-
     const surveyTypeObj = await surveyTypeRepo.findOneBy({
         label : 'Email or link Survey'
     })
-
+    
     const tempUser = await createTestUser(connection);
+    const { data } = await createFolders('TEMP_FOLDER', tempUser.email);
     const mockSurvey = new Survey();
     mockSurvey.folder_id = data.id;
     mockSurvey.user_id = tempUser.id;
