@@ -9,6 +9,7 @@ import { Workflow } from "../Entity/WorkflowEntity";
 import { Subscription } from "../Entity/SubscriptionEntity";
 import { cleanSurveyFlowJSON } from "../Helpers/SurveyUtils";
 import { logger } from "../Config/LoggerConfig";
+import { SurveyResponse } from "../Entity/SurveyResponse";
 
 
 export const getDetailedSurvey = async (surveyId: string): Promise<responseRest> => {
@@ -201,13 +202,14 @@ export const softDeleteSurvey = async (surveyId: string): Promise<responseRest> 
     }
 }
 
-export const saveSurveyFlow = async (surveyId: string, surveyJSON: string): Promise<responseRest> => {
+export const saveSurveyFlow = async (surveyId: string, surveyJSON: string,deleteResponses : boolean): Promise<responseRest> => {
     const response = getDefaultResponse('Survey flow saved successfully');
     try {
         if (surveyId == null || surveyId === '') {
             return getCustomResponse([], 404, ' Survey id not found ', false);
         }
         const surveyRepository = getDataSource(false).getRepository(Survey);
+        const surveyResponseRepo = getDataSource(false).getRepository(SurveyResponse);
         const surveyData = await surveyRepository.findOneBy({ id: surveyId });
         const surveyFlowId: string = surveyData.workflow_id;
         surveyJSON = cleanSurveyFlowJSON(surveyJSON);
@@ -218,12 +220,35 @@ export const saveSurveyFlow = async (surveyId: string, surveyJSON: string): Prom
         } else {
             await updateSurveyFlow(surveyJSON, surveyFlowId);
         }
+        if(deleteResponses === true){
+            await surveyResponseRepo.delete({
+                survey_id : surveyId
+            });
+        }
     } catch (error) {
         logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
         return getCustomResponse(null, 500, error.message, false)
     }
 
     return response;
+}
+
+export const checkIfSurveyHasResponse = async (surveyId: string): Promise<responseRest> => {
+    try {
+        const response = getDefaultResponse('Survey checked.');
+        const surveyResponseRepo = getDataSource(false).getRepository(SurveyResponse);
+        const responseCount = await surveyResponseRepo.count({
+            where : {
+                survey_id : surveyId
+            }
+        });
+        response.data = {};
+        response.data.alreadyHasResponse = responseCount > 0 ? true : false;
+        return response;
+    } catch (error) {
+        logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
+        return getCustomResponse(null, 500, error.message, false)
+    }
 }
 
 const updateSurveyFlow = async (surveyJson: string, surveyFlowId: string): Promise<Workflow> => {

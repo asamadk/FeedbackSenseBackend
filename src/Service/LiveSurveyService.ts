@@ -1,10 +1,11 @@
 import { getDataSource } from "../Config/AppDataSource";
 import { logger } from "../Config/LoggerConfig";
+import { SurveyConfig } from "../Entity/SurveyConfigEntity";
 import { Survey } from "../Entity/SurveyEntity";
 import { SurveyResponse } from "../Entity/SurveyResponse";
 import { Workflow } from "../Entity/WorkflowEntity";
 import { getCustomResponse, getDefaultResponse } from "../Helpers/ServiceUtils";
-import { sortSurveyFlowNodes } from "../Helpers/SurveyUtils";
+import { hasSurveyReachedResponseLimit, isSurveyEnded, sortSurveyFlowNodes } from "../Helpers/SurveyUtils";
 import { responseRest } from "../Types/ApiTypes";
 import { surveyFlowType, surveyTheme } from "../Types/SurveyTypes";
 
@@ -13,6 +14,19 @@ export const getLiveSurveyNodes = async (surveyId: string): Promise<responseRest
     try {
         const surveyRepo = getDataSource(false).getRepository(Survey);
         const surveyFlow = getDataSource(false).getRepository(Workflow);
+        const surveyConfigRepo = getDataSource(false).getRepository(SurveyConfig);
+
+
+        const surveyConfig = await surveyConfigRepo.findOne({ where: { survey_id: surveyId } });
+        if(surveyConfig != null){
+            const isEnded = isSurveyEnded(surveyConfig.time_limit);
+            const isResLimitReached = await hasSurveyReachedResponseLimit(surveyConfig.response_limit, surveyId);
+    
+            if (isEnded === true || isResLimitReached === true) {
+                return getCustomResponse({}, 410, 'Survey Closed, The survey is no longer accepting responses.', false);
+            }
+        }
+
         const surveyObj = await surveyRepo.findOneBy({
             id: surveyId
         });

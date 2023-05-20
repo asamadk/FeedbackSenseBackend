@@ -1,6 +1,6 @@
 import express from 'express';
 import { isLoggedIn } from '../MiddleWares/AuthMiddleware';
-import { createSurvey, enableDisableSurvey, getAllSurveys, getDetailedSurvey, moveSurveyToFolder, saveSurveyFlow, softDeleteSurvey,saveSurveyDesign, updateSurveyConfig, getSurveyConfigData, updateSurveyName } from '../Service/SurveyService';
+import { createSurvey, enableDisableSurvey, getAllSurveys, getDetailedSurvey, moveSurveyToFolder, saveSurveyFlow, softDeleteSurvey,saveSurveyDesign, updateSurveyConfig, getSurveyConfigData, updateSurveyName, checkIfSurveyHasResponse } from '../Service/SurveyService';
 import { responseRest } from '../Types/ApiTypes';
 import { getCustomResponse } from '../Helpers/ServiceUtils';
 import { getUserEmailFromRequest } from '../Helpers/RestUtils';
@@ -98,7 +98,8 @@ router.post('/save/flow/:surveyId', async (req,res) => {
     try {
         const reqBody = req.body;
         const surveyId = req.params.surveyId;
-        const response = await saveSurveyFlow(surveyId,JSON.stringify(reqBody));
+        const deleteResponses = req.query?.delete;
+        const response = await saveSurveyFlow(surveyId,JSON.stringify(reqBody),deleteResponses === 'true');
         res.statusCode = response.statusCode;
         res.json(response);    
     } catch (error) {
@@ -106,6 +107,17 @@ router.post('/save/flow/:surveyId', async (req,res) => {
         res.status(500).json(getCustomResponse(null,500,error.message,false));
     }
 });
+
+router.get('/save/check/:surveyId',async (req,res) => {
+    try {
+        const surveyId = req.params.surveyId;
+        const response = await checkIfSurveyHasResponse(surveyId);
+        res.status(response.statusCode).json(response);
+    } catch (error) {
+        logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
+        res.status(500).json(getCustomResponse(null,500,error.message,false));
+    }
+})
 
 router.post('/save/design/:surveyId', async (req,res) => {
     try {

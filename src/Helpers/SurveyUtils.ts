@@ -1,3 +1,6 @@
+import { getDataSource } from "../Config/AppDataSource";
+import { SurveyResponse } from "../Entity/SurveyResponse";
+
 export const cleanSurveyFlowJSON = (surveyJSON: string) : string => {
     if(surveyJSON == null || surveyJSON.length < 1){
         return surveyJSON;
@@ -67,3 +70,31 @@ export const getPercentage = (partialValue : number, totalValue : number) : stri
     return percentage.toFixed();
  } 
 
+export const isSurveyEnded = (timeLimit : string) : boolean => {
+    if(timeLimit == null){
+        return false;
+    }
+    const dateString = timeLimit;
+    const targetDate = new Date(dateString);
+    const today = new Date();
+    // Remove the time portion from both dates to compare only the dates
+    const targetDateWithoutTime = new Date(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate());
+    const todayWithoutTime = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    
+    if (targetDateWithoutTime < todayWithoutTime) {
+        return true;
+    }   
+    return false;
+}
+
+export const hasSurveyReachedResponseLimit = async(resLimit : number,surveyId : string) : Promise<boolean> => {
+    if(resLimit == null || resLimit === 0){
+        return false;
+    }
+    const surveyResponseRepo = getDataSource(false).getRepository(SurveyResponse);
+    const surveyResponseCount = await surveyResponseRepo.count({where : {survey_id : surveyId}})
+    if(surveyResponseCount >= resLimit){
+        return true;
+    }
+    return false;
+}
