@@ -1,5 +1,9 @@
 import { getDataSource } from "../Config/AppDataSource";
+import { logger } from "../Config/LoggerConfig";
+import { Subscription } from "../Entity/SubscriptionEntity";
+import { SurveyConfig } from "../Entity/SurveyConfigEntity";
 import { SurveyResponse } from "../Entity/SurveyResponse";
+import { AuthUserDetails } from "./AuthHelper/AuthUserDetails";
 
 export const cleanSurveyFlowJSON = (surveyJSON: string): string => {
     if (surveyJSON == null || surveyJSON.length < 1) {
@@ -78,4 +82,44 @@ export const hasSurveyReachedResponseLimit = async (resLimit: number, surveyId: 
         return true;
     }
     return false;
+}
+
+const getSubscriptionLimit = (userSubscription : Subscription) => {
+    const subLimit = userSubscription.sub_limit;
+    if(subLimit == null || subLimit.length < 1){
+        logger.error('User subscription has no sub_limit.');
+        throw 'User subscription has no sub_limit.';
+    }
+    return JSON.parse(subLimit);
+}
+
+export const getMaxResponseLimit = async () => {
+    const userDetails = AuthUserDetails.getInstance().getUserDetails();
+    const userEmail = userDetails?._json?.email;
+
+    const subscriptionRepo = getDataSource(false).getRepository(Subscription);
+    const userSubscription = await subscriptionRepo.findOne({where : {user : {email : userEmail}}});
+    const subLimitObj = getSubscriptionLimit(userSubscription);
+    const responseCapacity = subLimitObj?.responseCapacity;
+    return parseInt(responseCapacity);
+}
+
+export const createSurveyConfig = async (userId : string,surveyId : string) => {
+    const subscriptionRepo = getDataSource(false).getRepository(Subscription);
+    const surveyConfigRepo = getDataSource(false).getRepository(SurveyConfig);
+
+    const userSubscription = await subscriptionRepo.findOne({where : {user : {id : userId}}});
+    const subLimitObj = getSubscriptionLimit(userSubscription);
+
+    let responseCapacity = subLimitObj?.responseCapacity;
+    if(responseCapacity == null){
+        responseCapacity = 0;
+    }
+
+    await surveyConfigRepo.save({
+        response_limit : parseInt(responseCapacity),
+        time_limit : null,
+        survey_id : surveyId,
+    })
+
 }

@@ -9,6 +9,9 @@ export class Organization {
   @Column()
   name!: string;
 
+  @Column({ nullable: true })
+  payment_customerId?: string
+
   @CreateDateColumn()
   created_at!: Date;
 

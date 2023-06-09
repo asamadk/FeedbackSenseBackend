@@ -6,14 +6,15 @@ import { ENTERPRISE_PLAN, FREE_PLAN, GROWTH_PLAN, STARTER_PLAN, ULTIMATE_PLAN } 
 import { logger } from "../Config/LoggerConfig";
 
 export class StartUp {
-    
-    surveyTypeRepo : Repository<SurveyType>
-    planRepo : Repository<Plan>
-    toCreatePlanList : Plan[]
-    planNamePrice : Map<string,number>
-    planNameDescription : Map<string,string>
 
-    startExecution(){
+    surveyTypeRepo: Repository<SurveyType>
+    planRepo: Repository<Plan>
+    toCreatePlanList: Plan[]
+    planNamePrice: Map<string, number>
+    planLimits: Map<string, string>
+    planNameDescription: Map<string, string>
+
+    startExecution() {
         logger.info('StartUp script executing...');
         this.init();
         this.populatePlanAmount();
@@ -21,44 +22,63 @@ export class StartUp {
         this.createSurveyType();
         this.createPlans();
     }
-    
-    init(){
+
+    init() {
         this.surveyTypeRepo = getDataSource(false).getRepository(SurveyType);
         this.planRepo = getDataSource(false).getRepository(Plan);
         this.toCreatePlanList = [];
-        this.planNamePrice = new Map<string,number>();
-        this.planNameDescription = new Map<string,string>();
+        this.planNamePrice = new Map<string, number>();
+        this.planNameDescription = new Map<string, string>();
         logger.info('Startup class Initialized.');
     }
 
-    populatePlanAmount(){
-        this.planNamePrice.set(FREE_PLAN,0);
-        this.planNamePrice.set(STARTER_PLAN,49);
-        this.planNamePrice.set(GROWTH_PLAN,97);
-        this.planNamePrice.set(ENTERPRISE_PLAN,135);
-        this.planNamePrice.set(ULTIMATE_PLAN,175);
+    populatePlanLimit() {
+        this.planLimits.set(FREE_PLAN, JSON.stringify(
+            { activeSurveyLimit: 1, responseStoreLimit: 50, responseCapacity: 50 }
+        ));
+        this.planLimits.set(STARTER_PLAN, JSON.stringify(
+            { activeSurveyLimit: 7, responseStoreLimit: 500, responseCapacity: 500 }
+        ));
+    }
+
+    populatePlanAmount() {
+        this.planNamePrice.set(FREE_PLAN, 0);
+        this.planNamePrice.set(STARTER_PLAN, 25);
+        // this.planNamePrice.set(GROWTH_PLAN,97);
+        // this.planNamePrice.set(ENTERPRISE_PLAN,135);
+        // this.planNamePrice.set(ULTIMATE_PLAN,175);
         logger.info('Plan prices populated');
     }
 
-    populatePlanDescription(){
-        this.planNameDescription.set(FREE_PLAN,'{}');
+    populatePlanDescription() {
+        this.planNameDescription.set(FREE_PLAN, JSON.stringify({
+            description: `Get Started for Free: Unlock the Power of FeedbackSense Without Cost`,
+            features: [
+                '1 Active Surveys',
+                '50 Response / month',
+                '1 User',
+                'Basic analysis',
+                'FeedbackSense will always have a free plan'
+            ]
+        }));
         this.planNameDescription.set(STARTER_PLAN, JSON.stringify({
-            description : `Empower your company with a comprehensive solution to streamline customer feedback automation from a single source.`,
-            features : [
-                'Get feedback from 250 customers per month',
-                '3 active survey',
-                '1 Distribution channel',
-                'Unlimited free users',
-                'Custom survey design',
-                'Result export (CSV, XLS)',
-                'Charts exports (PDF, PNG)',
-                'Custom “thank you” screen',
+            description: `Empower your company with a comprehensive solution to streamline customer feedback automation from a single source.`,
+            features: [
+                '5 Active Surveys',
+                '500 Response / month',
+                'Unlimited users',
+                'Detailed analysis',
+                'Unlimited users'
+                // 'Custom survey design',
+                // 'Result export (CSV, XLS)',
+                // 'Charts exports (PDF, PNG)',
+                // 'Custom “thank you” screen',
             ]
         }));
 
         this.planNameDescription.set(GROWTH_PLAN, JSON.stringify({
-            description : `Ideal for businesses seeking advanced research capabilities with robust and sophisticated features.`,
-            features : [
+            description: `Ideal for businesses seeking advanced research capabilities with robust and sophisticated features.`,
+            features: [
                 'Get feedback from 500 customers per month',
                 '5 active survey',
                 'All Distribution channel',
@@ -71,8 +91,8 @@ export class StartUp {
         }));
 
         this.planNameDescription.set(ENTERPRISE_PLAN, JSON.stringify({
-            description : `An excellent choice for companies seeking increased flexibility and automation options for their customer feedback workflows.`,
-            features : [
+            description: `An excellent choice for companies seeking increased flexibility and automation options for their customer feedback workflows.`,
+            features: [
                 'Get feedback from 1000 customers per month',
                 '7 active survey',
                 'Advanced Targeting',
@@ -83,12 +103,12 @@ export class StartUp {
                 'Sentiment analysis',
                 'Conditional notification',
             ]
-            
+
         }));
 
         this.planNameDescription.set(ULTIMATE_PLAN, JSON.stringify({
-            description : `The perfect solution for companies seeking to centralize and align their teams around customer feedback, all in one unified platform`,
-            features : [
+            description: `The perfect solution for companies seeking to centralize and align their teams around customer feedback, all in one unified platform`,
+            features: [
                 'Get feedback from 2500 customers per month',
                 '10 active survey',
                 'Folder',
@@ -99,31 +119,31 @@ export class StartUp {
                 'Team collaboration',
                 'User roles'
             ]
-            
+
         }));
         logger.info('Plan description populated.');
     }
 
-    async createPlans(){
-        const planNames : string[] = [
+    async createPlans() {
+        const planNames: string[] = [
             FREE_PLAN,
-            ULTIMATE_PLAN,
             STARTER_PLAN,
-            GROWTH_PLAN,
-            ENTERPRISE_PLAN
+            // ULTIMATE_PLAN,
+            // GROWTH_PLAN,
+            // ENTERPRISE_PLAN
         ];
 
-        const planList = await getDataSource(false).createQueryBuilder(Plan,'plan')
-            .where('plan.name IN (:names)',{ names : [...planNames]})
+        const planList = await getDataSource(false).createQueryBuilder(Plan, 'plan')
+            .where('plan.name IN (:names)', { names: [...planNames] })
             .getMany();
 
-        const planNameSet : Set<string> = new Set<string>();
+        const planNameSet: Set<string> = new Set<string>();
         planList.forEach(plan => {
             planNameSet.add(plan.name);
         });
 
         planNames.forEach(planName => {
-            if(planNameSet.has(planName) === false){
+            if (planNameSet.has(planName) === false) {
                 this.createPlan(planName);
             }
         });
@@ -132,26 +152,27 @@ export class StartUp {
         logger.info('Plans created.');
     }
 
-    async insertPlan(){
-        if(this.toCreatePlanList.length < 1){return;}
+    async insertPlan() {
+        if (this.toCreatePlanList.length < 1) { return; }
         await this.planRepo.save(this.toCreatePlanList);
     }
 
-    createPlan(name : string){
+    createPlan(name: string) {
         const planObj = new Plan();
         planObj.name = name;
         planObj.price_cents = this.planNamePrice.get(name);
         planObj.description = this.planNameDescription.get(name);
+        planObj.sub_limit = this.planLimits.get(name);
         this.toCreatePlanList.push(planObj);
     }
 
-    async createSurveyType(){
+    async createSurveyType() {
 
         let surveyObj = await this.surveyTypeRepo.findOneBy({
-            name : 'email/link'
+            name: 'email/link'
         });
 
-        if(surveyObj == null){
+        if (surveyObj == null) {
             surveyObj = new SurveyType();
             surveyObj.label = 'Email or link Survey';
             surveyObj.name = 'email/link';

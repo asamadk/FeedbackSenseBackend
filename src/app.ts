@@ -17,6 +17,9 @@ import SubscriptionController from './Controllers/SubscriptionController';
 import PlanController from './Controllers/PlanController'
 import LiveSurveyController from './Controllers/LiveSurveyController';
 import AnalysisController from './Controllers/AnalysisController';
+import StripeController from './Controllers/StripeController';
+import WebhookController from './Controllers/WebhooksController'
+import schedule from 'node-schedule';
 
 import { getDataSource } from './Config/AppDataSource';
 import { handleSuccessfulLogin } from './Service/AuthService';
@@ -25,6 +28,7 @@ import { StartUp } from './Helpers/Startup';
 import { logger } from './Config/LoggerConfig';
 import { logRequest } from './MiddleWares/LogMiddleware';
 import { globalAPILimiter } from './Config/RateLimitConfig';
+import { SubscriptionHelper } from './Helpers/SubscriptionHelper';
 
 dotenv.config();
 
@@ -49,7 +53,6 @@ app.use(
 app.use(passport.initialize());
 app.use(passport.session());
 app.use(globalAPILimiter);
-app.use(express.json());
 app.use(express.urlencoded({ extended: false }))
 
 passport.use(
@@ -75,6 +78,12 @@ passport.deserializeUser((user, done) => {
   done(null, user);
 });
 
+//This endpoint do not use JSON
+app.use('/webhook', express.raw({ type: 'application/json' }), logRequest, WebhookController);
+
+
+//these endpoint use JSON
+app.use(express.json());
 //Open endpoints
 app.use('/auth', logRequest, AuthController)
 app.use('/live', logRequest, LiveSurveyController);
@@ -88,13 +97,19 @@ app.use('/user', isLoggedIn, logRequest, UserController);
 app.use('/survey/type', isLoggedIn, logRequest, SurveyTypeController);
 app.use('/subscription', isLoggedIn, logRequest, SubscriptionController);
 app.use('/plan', isLoggedIn, logRequest, PlanController);
-app.use('/analysis', isLoggedIn, logRequest, AnalysisController)
+app.use('/analysis', isLoggedIn, logRequest, AnalysisController);
+app.use('/stripe', isLoggedIn, logRequest, StripeController);
 
 getDataSource(false)
   .initialize()
-  .then(() => {
+  .then(async() => {
     logger.info('Data source is initialized');
     new StartUp().startExecution();
+    // await new SubscriptionHelper().init();
+    // schedule.scheduleJob('*/9 * * * * *', () => {
+    // schedule.scheduleJob('0 1 * * *', () => {
+    //   new SubscriptionHelper().init();
+    // });
   })
   .catch((error) => {
     logger.error(`message - ${error.message}, stack trace - ${error.stack}`);

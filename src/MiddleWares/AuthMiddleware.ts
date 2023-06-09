@@ -1,8 +1,10 @@
+import { AuthUserDetails } from "../Helpers/AuthHelper/AuthUserDetails";
 import { USER_UNAUTH_TEXT } from "../Helpers/Constants";
 import { responseRest } from "../Types/ApiTypes";
 
 export const isLoggedIn = (req, res, next) => {
     if (req.user && req.user._json.email) {
+        AuthUserDetails.getInstance().setUserDetails(req.user);
         next();
     } else {
         res.statusCode = 401;

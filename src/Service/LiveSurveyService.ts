@@ -30,9 +30,13 @@ export const getLiveSurveyNodes = async (surveyId: string): Promise<responseRest
         const surveyObj = await surveyRepo.findOneBy({
             id: surveyId
         });
-
+        
         if (surveyObj == null || surveyObj.is_published === false) {
             return getCustomResponse({}, 410, 'This survey is not published', false);
+        }
+
+        if(surveyObj.workflow_id == null){
+            return getCustomResponse({}, 410, 'This survey is empty', false);
         }
 
         if (surveyObj == null || surveyObj.is_deleted === true || surveyObj.is_archived === true) {

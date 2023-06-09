@@ -10,11 +10,8 @@ export const getAllPlans = async() : Promise<responseRest> => {
         const response = getDefaultResponse('Plans fetched successfully');
         const planRepo = getDataSource(false).getRepository(Plan);
          const planList = await planRepo.find({
-            where : {
-                price_cents : MoreThan(0)
-            },
             order : {
-                price_cents : "ASC"
+                price_cents : "DESC"
             }
          });
         response.data = planList;

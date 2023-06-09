@@ -14,6 +14,9 @@ export class Plan {
   @Column({ type: 'int', nullable: false })
   price_cents: number;
 
+  @Column()
+  sub_limit : string
+
   @Column({type : 'varchar', nullable : true})
   currency : string
 

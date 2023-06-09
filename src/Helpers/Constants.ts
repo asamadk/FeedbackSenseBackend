@@ -7,3 +7,6 @@ export const ULTIMATE_PLAN = 'Ultimate Growth';
 export const MONTHLY_BILLING = 'Monthly';
 
 export const USER_UNAUTH_TEXT = 'User is not authorized';
+
+export const WEBHOOK_SUBSCRIPTION_CREATE = 'create';
+export const WEBHOOK_SUBSCRIPTION_UPDATE = 'update';

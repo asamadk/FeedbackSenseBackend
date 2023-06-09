@@ -5,6 +5,7 @@ import { User } from "../Entity/UserEntity";
 import { getCustomResponse, getDefaultResponse } from "../Helpers/ServiceUtils";
 import { getUnAuthorizedResponse } from "../MiddleWares/AuthMiddleware";
 import { responseRest } from "../Types/ApiTypes";
+import { createCustomer } from "./StripeService";
 
 export const createOrganizationForUser = async (user : any, orgName : string) : Promise<responseRest> => {
     try {
@@ -29,9 +30,11 @@ export const createOrganizationForUser = async (user : any, orgName : string) : 
         if(validUser == null){
             return getCustomResponse([],404,' The user does not exists ',false);
         }
-    
+        
+        const stripeCustomer = await createCustomer();
         const orgObj = new Organization();
         orgObj.name = orgName;
+        orgObj.payment_customerId = stripeCustomer.id;
         await orgRepo.save(orgObj);
     
         validUser.organization_id = orgObj.id;

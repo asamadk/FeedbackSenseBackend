@@ -58,7 +58,8 @@ export const getFreeSubscriptionLimit = () : string => {
     const freeSubLimit = {
         usedSurveyLimit : 0,
         activeSurveyLimit : 1,
-        responseStoreLimit : 5000
+        responseStoreLimit : 500,
+        responseCapacity : 500
     }
     return JSON.stringify(freeSubLimit);
 }

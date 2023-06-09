@@ -7,7 +7,7 @@ import { SurveyConfig } from "../Entity/SurveyConfigEntity";
 import { getCustomResponse, getDefaultResponse } from "../Helpers/ServiceUtils";
 import { Workflow } from "../Entity/WorkflowEntity";
 import { Subscription } from "../Entity/SubscriptionEntity";
-import { cleanSurveyFlowJSON } from "../Helpers/SurveyUtils";
+import { cleanSurveyFlowJSON, createSurveyConfig, getMaxResponseLimit } from "../Helpers/SurveyUtils";
 import { logger } from "../Config/LoggerConfig";
 import { SurveyResponse } from "../Entity/SurveyResponse";
 
@@ -85,6 +85,8 @@ export const createSurvey = async (surveyTypeId: string, user: any): Promise<res
         surveyObj.survey_type_id = surveyType.id;
         surveyObj.survey_design_json = '{"theme":{"id":0,"header":"Lavendar & Blue","text":"Trending","color":["#AA77FF","#C9EEFF"],"textColor":"#000000"}}';
         await surveyRepository.save(surveyObj);
+
+        await createSurveyConfig(savedUser.id, surveyObj.id);
         response.data = surveyObj;
         return response;
     } catch (error) {
@@ -202,7 +204,7 @@ export const softDeleteSurvey = async (surveyId: string): Promise<responseRest> 
     }
 }
 
-export const saveSurveyFlow = async (surveyId: string, surveyJSON: string,deleteResponses : boolean): Promise<responseRest> => {
+export const saveSurveyFlow = async (surveyId: string, surveyJSON: string, deleteResponses: boolean): Promise<responseRest> => {
     const response = getDefaultResponse('Survey flow saved successfully');
     try {
         if (surveyId == null || surveyId === '') {
@@ -220,9 +222,9 @@ export const saveSurveyFlow = async (surveyId: string, surveyJSON: string,delete
         } else {
             await updateSurveyFlow(surveyJSON, surveyFlowId);
         }
-        if(deleteResponses === true){
+        if (deleteResponses === true) {
             await surveyResponseRepo.delete({
-                survey_id : surveyId
+                survey_id: surveyId
             });
         }
     } catch (error) {
@@ -238,8 +240,8 @@ export const checkIfSurveyHasResponse = async (surveyId: string): Promise<respon
         const response = getDefaultResponse('Survey checked.');
         const surveyResponseRepo = getDataSource(false).getRepository(SurveyResponse);
         const responseCount = await surveyResponseRepo.count({
-            where : {
-                survey_id : surveyId
+            where: {
+                survey_id: surveyId
             }
         });
         response.data = {};
@@ -302,6 +304,16 @@ export const updateSurveyConfig = async (surveyId: string, configObj: any): Prom
             surveyConfigObj = new SurveyConfig();
         }
 
+        const maxResponseLimit = await getMaxResponseLimit();
+        if (maxResponseLimit !== 0 && configObj.stopCount > maxResponseLimit) {
+            return getCustomResponse(
+                [],
+                400,
+                `Your current subscription allows a maximum of ${maxResponseLimit} responses. Please upgrade your subscription to increase the allowed number of responses.`,
+                false
+            );
+        }
+
         surveyConfigObj.survey_id = surveyId;
         if (configObj.stopCount != null) {
             surveyConfigObj.response_limit = configObj.stopCount;
@@ -314,6 +326,7 @@ export const updateSurveyConfig = async (surveyId: string, configObj: any): Prom
         } else {
             surveyConfigObj.time_limit = null;
         }
+
         // console.log("🚀 ~ file: SurveyService.ts:229 ~ updateSurveyConfig ~ surveyConfigObj:", surveyConfigObj)
         await surveyConfigRepo.save(surveyConfigObj);
         response.data = surveyConfigObj;

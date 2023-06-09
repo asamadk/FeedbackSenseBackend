@@ -20,10 +20,16 @@ const databaseConfig : any = {
     password: process.env.DB_PASSWORD,
     database: process.env.DB_NAME,
     entities: ["dist/Entity/*.js"],
-    migrations: ["dist/migration/*.js"],
+    // migrations: ["dist/migration/*.js"],
+    migrations: [
+        "src/migration/**/*.ts"
+      ],
     logging: false,
     synchronize: false,
-    migrationsTableName: "feedbackSense_migration_table",
+    cli : {
+        migrationsDir: "src/migration",
+    }
+    // migrationsTableName: "feedbackSense_migration_table",
 }
 
 
