@@ -28,10 +28,10 @@ router.get('/survey/:surveyId',async (req,res) => {
     }
 });
 
-router.post('/survey/response/:surveyId',(req,res) => {
+router.post('/survey/response/:surveyId',async(req,res) => {
     try {
         const surveyId = req.params.surveyId
-        saveSurveyResponse(surveyId,req.body);
+        await saveSurveyResponse(surveyId,req.body);
         res.status(200).json({});
     } catch (error) {
         logger.error(`message - ${error.message}, stack trace - ${error.stack}`);

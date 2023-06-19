@@ -31,6 +31,12 @@ export class User {
 
     @Column()
     emailVerified!: boolean;
+
+    @Column({ nullable: true })
+    address!: string;
+
+    @Column({ nullable: true })
+    image!: string;
     
     surveys: any;
     notifications: any;

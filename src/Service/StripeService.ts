@@ -25,17 +25,18 @@ export const getCustomerId = async (): Promise<string> => {
     return orgDetails.payment_customerId;
 }
 
-export const createCustomer = async () => {
+export const createCustomer = async (currentUser: User) => {
     const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: '2022-11-15' });
     const userDetails = AuthUserDetails.getInstance().getUserDetails();
+    const address = JSON.parse(currentUser?.address);
     const customer = await stripe.customers.create({
         name: userDetails._json.name,
         email: userDetails._json.email,
         address: {
-            line1: '510 Townsend St',
-            postal_code: '210001',
-            city: 'Banda',
-            state: 'UP',
+            line1: address?.address,
+            postal_code: address?.pinCode,
+            city: address?.country,
+            state: address?.country,
             country: 'US',
         },
     });
@@ -69,7 +70,7 @@ export const calculateOrderAmount = async (item: string) => {
 export const getCurrentPlanIdFromStrip = async (stripe: Stripe, amount: number): Promise<string> => {
     const plans = await stripe.plans.list();
     let finalPlanId: string;
-    if(amount !== 0){
+    if (amount !== 0) {
         amount = amount * 100
     }
     plans.data.forEach(plan => {
@@ -96,8 +97,8 @@ export const cancelCurrentSubscription = async (): Promise<responseRest> => {
                     user: {
                         email: AuthUserDetails.getInstance().getUserDetails()?._json?.email
                     },
-                    plan : {
-                        price_cents  : Not(0)
+                    plan: {
+                        price_cents: Not(0)
                     }
                 },
             },

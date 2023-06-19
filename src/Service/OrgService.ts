@@ -6,11 +6,18 @@ import { getCustomResponse, getDefaultResponse } from "../Helpers/ServiceUtils";
 import { getUnAuthorizedResponse } from "../MiddleWares/AuthMiddleware";
 import { responseRest } from "../Types/ApiTypes";
 import { createCustomer } from "./StripeService";
+import {UserProfile} from '../Types/AuthTypes'
 
-export const createOrganizationForUser = async (user : any, orgName : string) : Promise<responseRest> => {
+export const createOrganizationForUser = async (user : UserProfile, reqBody : any) : Promise<responseRest> => {
     try {
         const response = getDefaultResponse('Organization created successfully');
-        
+        const orgName : string = reqBody?.orgName;
+        const address : any = {
+            address : reqBody?.address,
+            country : reqBody?.country,
+            pinCode : reqBody?.pinCode
+        }
+
         const userRepository = getDataSource(false).getRepository(User);
         const orgRepo = getDataSource(false).getRepository(Organization);
     
@@ -30,8 +37,15 @@ export const createOrganizationForUser = async (user : any, orgName : string) : 
         if(validUser == null){
             return getCustomResponse([],404,' The user does not exists ',false);
         }
+
+        if(user?.photos?.length > 0){
+            validUser.image = user?.photos[0].value;
+        }
+        validUser.address = JSON.stringify(address);
+
+        await userRepository.save(validUser);
         
-        const stripeCustomer = await createCustomer();
+        const stripeCustomer = await createCustomer(validUser);
         const orgObj = new Organization();
         orgObj.name = orgName;
         orgObj.payment_customerId = stripeCustomer.id;

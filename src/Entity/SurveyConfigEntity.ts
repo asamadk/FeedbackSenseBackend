@@ -12,6 +12,9 @@ export class SurveyConfig {
   @Column({nullable : true})
   time_limit!: string;
 
+  @Column({nullable : true})
+  emails!: string;
+
   @Column()
   response_limit!: number;
 

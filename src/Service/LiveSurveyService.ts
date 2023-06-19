@@ -8,6 +8,8 @@ import { getCustomResponse, getDefaultResponse } from "../Helpers/ServiceUtils";
 import { hasSurveyReachedResponseLimit, isSurveyEnded, sortSurveyFlowNodes } from "../Helpers/SurveyUtils";
 import { responseRest } from "../Types/ApiTypes";
 import { surveyFlowType, surveyTheme } from "../Types/SurveyTypes";
+import { MailHelper } from "../Utils/MailUtils/MailHelper";
+import { generateSurveyFilledEmailHtml } from "../Utils/MailUtils/MailMarkup/SurveyMarkup";
 
 export const getLiveSurveyNodes = async (surveyId: string): Promise<responseRest> => {
     const response = getDefaultResponse('Survey retrieved');
@@ -18,10 +20,10 @@ export const getLiveSurveyNodes = async (surveyId: string): Promise<responseRest
 
 
         const surveyConfig = await surveyConfigRepo.findOne({ where: { survey_id: surveyId } });
-        if(surveyConfig != null){
+        if (surveyConfig != null) {
             const isEnded = isSurveyEnded(surveyConfig.time_limit);
             const isResLimitReached = await hasSurveyReachedResponseLimit(surveyConfig.response_limit, surveyId);
-    
+
             if (isEnded === true || isResLimitReached === true) {
                 return getCustomResponse({}, 410, 'Survey Closed, The survey is no longer accepting responses.', false);
             }
@@ -30,12 +32,12 @@ export const getLiveSurveyNodes = async (surveyId: string): Promise<responseRest
         const surveyObj = await surveyRepo.findOneBy({
             id: surveyId
         });
-        
+
         if (surveyObj == null || surveyObj.is_published === false) {
             return getCustomResponse({}, 410, 'This survey is not published', false);
         }
 
-        if(surveyObj.workflow_id == null){
+        if (surveyObj.workflow_id == null) {
             return getCustomResponse({}, 410, 'This survey is empty', false);
         }
 
@@ -47,6 +49,7 @@ export const getLiveSurveyNodes = async (surveyId: string): Promise<responseRest
             surveyDesignStr = '{"id":1,"header":"Default","text":"default","color":["#f1f1f1","#D81159"],"textColor":"#000000"}';
         }
         const surveyDesign: surveyTheme = JSON.parse(surveyDesignStr)?.theme;
+        const surveyBackground = JSON.parse(surveyDesignStr)?.background;
         const surveyFlowObj = await surveyFlow.findOneBy({
             id: surveyObj.workflow_id
         });
@@ -65,6 +68,7 @@ export const getLiveSurveyNodes = async (surveyId: string): Promise<responseRest
         }
 
         const resData = {
+            background: surveyBackground,
             theme: surveyDesign,
             nodes: sortSurveyFlowNodes(surveyDetail.nodes, surveyDetail.edges)
         }
@@ -93,6 +97,7 @@ export const saveSurveyResponse = async (surveyId: string, responseData: any) =>
 
         if (surveyResponse == null) {
             surveyResponse = new SurveyResponse();
+            await sendSurveyEmailToAdmin(surveyId, annUserId);
         }
 
         surveyResponse.survey_id = surveyId;
@@ -110,4 +115,28 @@ export const saveSurveyResponse = async (surveyId: string, responseData: any) =>
         logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
         return getCustomResponse(null, 500, error.message, false)
     }
+}
+
+const sendSurveyEmailToAdmin = async (surveyId: string, responseId: string) => {
+    const surveyRepo = getDataSource(false).getRepository(Survey);
+    const surveyConfig = getDataSource(false).getRepository(SurveyConfig);
+
+    const surveyConf = await surveyConfig.findOne({ where: { survey_id: surveyId } });
+    if (surveyConf.emails == null) {
+        return;
+    }
+    const survey = await surveyRepo.findOneBy({
+        id: surveyId
+    });
+
+    const emailList = surveyConf.emails.split(',');
+    emailList.forEach(email => {
+        MailHelper.sendMail({
+            html: generateSurveyFilledEmailHtml(survey.name, responseId),
+            subject: 'New Survey Response Notification',
+            to: email,
+            from: process.env.MAIL_SENDER
+        }, 'customers');
+    })
+
 }

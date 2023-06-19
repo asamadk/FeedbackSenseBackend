@@ -6,6 +6,8 @@ import { Plan } from "../Entity/PlanEntity";
 import { FREE_PLAN, MONTHLY_BILLING, STARTER_PLAN } from "../Helpers/Constants";
 import { Subscription } from "../Entity/SubscriptionEntity";
 import { logger } from "../Config/LoggerConfig";
+import { MailHelper } from "../Utils/MailUtils/MailHelper";
+import { generateLoginEmailHtml } from "../Utils/MailUtils/MailMarkup/LoginMarkup";
 
 
 export const handleSuccessfulLogin = async (user : any) : Promise<void> => {
@@ -49,6 +51,14 @@ export const handleSuccessfulLogin = async (user : any) : Promise<void> => {
             subscObj.billing_cycle = MONTHLY_BILLING;
             await subscriptionRepo.save(subscObj);
         }
+        await MailHelper.sendMail(
+            {
+                html : generateLoginEmailHtml(userEntity.name),
+                subject : 'Welcome to FeedbackSense - Let\'s Get Started!',
+                to : userEntity.email,
+                from : process.env.MAIL_SENDER
+            },'customers'
+        );
     }catch(error){
         logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
     }

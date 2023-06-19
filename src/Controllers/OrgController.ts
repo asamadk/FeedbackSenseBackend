@@ -5,10 +5,10 @@ import { getCustomResponse } from '../Helpers/ServiceUtils';
 
 const router = express.Router();
 
-router.get('/create/:orgName',async (req : any,res) => {
+router.post('/create',async (req : any,res) => {
     try {
-        const orgName : string = req.params.orgName;
-        const response = await createOrganizationForUser(req.user,orgName);
+        const reqBody = req.body;
+        const response = await createOrganizationForUser(req.user,reqBody);
         res.statusCode = response.statusCode;
         res.json(response);
     } catch (error) {

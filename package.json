@@ -46,6 +46,7 @@
     "mock-express-response": "^0.3.0",
     "mysql": "^2.18.1",
     "node-schedule": "^2.1.1",
+    "nodemailer": "^6.9.3",
     "passport": "^0.5.3",
     "passport-google-oauth20": "^2.0.0",
     "reflect-metadata": "^0.1.13",

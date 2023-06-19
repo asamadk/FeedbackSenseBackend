@@ -14,7 +14,7 @@ router.get('/list', async (req : any,res) => {
         }
         const response : responseRest = await getFolders(userEmail);
         res.statusCode = response.statusCode;
-        res.json(response);    
+        res.json(response);
     } catch (error) {
         logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
         res.status(500).json(getCustomResponse(null,500,error.message,false));

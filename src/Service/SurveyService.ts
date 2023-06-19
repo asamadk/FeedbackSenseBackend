@@ -41,8 +41,11 @@ export const getAllSurveys = async (userEmail: string): Promise<responseRest> =>
     try {
         const response = getDefaultResponse('Survey retrieved successfully');
         const surveyList = await getDataSource(false).query(
-            `SELECT * FROM survey as s WHERE s.user_id in (SELECT u.id FROM user as u WHERE u.email = '${userEmail}')
-            AND s.is_deleted = false`
+            `SELECT s.*, u.image,u.name as username
+            FROM survey AS s
+            JOIN user AS u ON u.id = s.user_id
+            WHERE u.email = '${userEmail}' AND s.is_deleted = false;
+            `
         );
         response.data = surveyList;
         return response;
@@ -83,7 +86,7 @@ export const createSurvey = async (surveyTypeId: string, user: any): Promise<res
         surveyObj.user_id = savedUser.id;
         surveyObj.name = 'New survey - ' + new Date().toDateString();
         surveyObj.survey_type_id = surveyType.id;
-        surveyObj.survey_design_json = '{"theme":{"id":0,"header":"Lavendar & Blue","text":"Trending","color":["#AA77FF","#C9EEFF"],"textColor":"#000000"}}';
+        surveyObj.survey_design_json = '{"theme":{"id":0,"header":"Lavender","text":"Trending","color":["#8943FF","#C9EEFF"],"textColor":"#ffffff","shade":"#E4D3FF"},"background":{"id":0,"name":"Plain","value":"plain"}}';
         await surveyRepository.save(surveyObj);
 
         await createSurveyConfig(savedUser.id, surveyObj.id);
@@ -269,6 +272,7 @@ export const createSurveyFlow = (surveyJson: string, surveyId: string): Promise<
 }
 
 export const saveSurveyDesign = async (surveyId: string, surveyJSON: string): Promise<responseRest> => {
+    // console.log("🚀 ~ file: SurveyService.ts:272 ~ saveSurveyDesign ~ surveyJSON:", surveyJSON)
     try {
         const response = getDefaultResponse('Survey design saved successfully');
         if (surveyId == null || surveyId === '') {
@@ -325,6 +329,12 @@ export const updateSurveyConfig = async (surveyId: string, configObj: any): Prom
             surveyConfigObj.time_limit = configObj.stopTime;
         } else {
             surveyConfigObj.time_limit = null;
+        }
+
+        if (configObj.emails != null) {
+            surveyConfigObj.emails = configObj.emails;
+        } else {
+            surveyConfigObj.emails = null;
         }
 
         // console.log("🚀 ~ file: SurveyService.ts:229 ~ updateSurveyConfig ~ surveyConfigObj:", surveyConfigObj)
