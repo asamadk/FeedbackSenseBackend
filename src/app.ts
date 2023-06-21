@@ -36,7 +36,7 @@ const app = express();
 const port = process.env.PORT;
 
 app.use(cors({
-  origin: ["http://localhost:3000", "https://www.feedbacksense.io"],
+  origin: ["http://localhost:3000", "https://www.feedbacksense.io","https://app.feedbacksense.io"],
   methods: "GET,POST,PUT,DELETE",
   credentials: true,
 }));
