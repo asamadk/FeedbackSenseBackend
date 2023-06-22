@@ -15,12 +15,16 @@ export class StartUp {
     planNameDescription: Map<string, string>
 
     startExecution() {
-        logger.info('StartUp script executing...');
-        this.init();
-        this.populatePlanAmount();
-        this.populatePlanDescription();
-        this.createSurveyType();
-        this.createPlans();
+        try {
+            logger.info('StartUp script executing...');
+            this.init();
+            this.populatePlanAmount();
+            this.populatePlanDescription();
+            this.createSurveyType();
+            this.createPlans();
+        } catch (error) {
+            logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
+        }
     }
 
     init() {
@@ -65,62 +69,58 @@ export class StartUp {
             description: `Empower your company with a comprehensive solution to streamline customer feedback automation from a single source.`,
             features: [
                 '5 Active Surveys',
-                '500 Response / month',
+                '2000 Response / month',
                 'Unlimited users',
                 'Detailed analysis',
                 'Unlimited users'
-                // 'Custom survey design',
-                // 'Result export (CSV, XLS)',
-                // 'Charts exports (PDF, PNG)',
-                // 'Custom “thank you” screen',
             ]
         }));
 
-        this.planNameDescription.set(GROWTH_PLAN, JSON.stringify({
-            description: `Ideal for businesses seeking advanced research capabilities with robust and sophisticated features.`,
-            features: [
-                'Get feedback from 500 customers per month',
-                '5 active survey',
-                'All Distribution channel',
-                'Unlimited free users',
-                `All from ${STARTER_PLAN}, plus`,
-                'Slack Notifications',
-                'Remove FeedbackSense Branding',
-                'Thank you screen actions',
-            ]
-        }));
+        // this.planNameDescription.set(GROWTH_PLAN, JSON.stringify({
+        //     description: `Ideal for businesses seeking advanced research capabilities with robust and sophisticated features.`,
+        //     features: [
+        //         'Get feedback from 500 customers per month',
+        //         '5 active survey',
+        //         'All Distribution channel',
+        //         'Unlimited free users',
+        //         `All from ${STARTER_PLAN}, plus`,
+        //         'Slack Notifications',
+        //         'Remove FeedbackSense Branding',
+        //         'Thank you screen actions',
+        //     ]
+        // }));
 
-        this.planNameDescription.set(ENTERPRISE_PLAN, JSON.stringify({
-            description: `An excellent choice for companies seeking increased flexibility and automation options for their customer feedback workflows.`,
-            features: [
-                'Get feedback from 1000 customers per month',
-                '7 active survey',
-                'Advanced Targeting',
-                'Unlimited free users',
-                'Custom survey design',
-                `All from ${GROWTH_PLAN}, plus`,
-                'Google Sheets export',
-                'Sentiment analysis',
-                'Conditional notification',
-            ]
+        // this.planNameDescription.set(ENTERPRISE_PLAN, JSON.stringify({
+        //     description: `An excellent choice for companies seeking increased flexibility and automation options for their customer feedback workflows.`,
+        //     features: [
+        //         'Get feedback from 1000 customers per month',
+        //         '7 active survey',
+        //         'Advanced Targeting',
+        //         'Unlimited free users',
+        //         'Custom survey design',
+        //         `All from ${GROWTH_PLAN}, plus`,
+        //         'Google Sheets export',
+        //         'Sentiment analysis',
+        //         'Conditional notification',
+        //     ]
 
-        }));
+        // }));
 
-        this.planNameDescription.set(ULTIMATE_PLAN, JSON.stringify({
-            description: `The perfect solution for companies seeking to centralize and align their teams around customer feedback, all in one unified platform`,
-            features: [
-                'Get feedback from 2500 customers per month',
-                '10 active survey',
-                'Folder',
-                'Unlimited free users',
-                'Custom survey design',
-                `All from ${ENTERPRISE_PLAN}, plus`,
-                'Export API feature',
-                'Team collaboration',
-                'User roles'
-            ]
+        // this.planNameDescription.set(ULTIMATE_PLAN, JSON.stringify({
+        //     description: `The perfect solution for companies seeking to centralize and align their teams around customer feedback, all in one unified platform`,
+        //     features: [
+        //         'Get feedback from 2500 customers per month',
+        //         '10 active survey',
+        //         'Folder',
+        //         'Unlimited free users',
+        //         'Custom survey design',
+        //         `All from ${ENTERPRISE_PLAN}, plus`,
+        //         'Export API feature',
+        //         'Team collaboration',
+        //         'User roles'
+        //     ]
 
-        }));
+        // }));
         logger.info('Plan description populated.');
     }
 
