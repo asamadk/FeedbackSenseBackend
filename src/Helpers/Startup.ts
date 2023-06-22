@@ -19,6 +19,7 @@ export class StartUp {
             logger.info('StartUp script executing...');
             this.init();
             this.populatePlanAmount();
+            this.populatePlanLimit();
             this.populatePlanDescription();
             this.createSurveyType();
             this.createPlans();
@@ -31,6 +32,7 @@ export class StartUp {
         this.surveyTypeRepo = getDataSource(false).getRepository(SurveyType);
         this.planRepo = getDataSource(false).getRepository(Plan);
         this.toCreatePlanList = [];
+        this.planLimits = new Map<string, string>();
         this.planNamePrice = new Map<string, number>();
         this.planNameDescription = new Map<string, string>();
         logger.info('Startup class Initialized.');
@@ -125,31 +127,35 @@ export class StartUp {
     }
 
     async createPlans() {
-        const planNames: string[] = [
-            FREE_PLAN,
-            STARTER_PLAN,
-            // ULTIMATE_PLAN,
-            // GROWTH_PLAN,
-            // ENTERPRISE_PLAN
-        ];
-
-        const planList = await getDataSource(false).createQueryBuilder(Plan, 'plan')
-            .where('plan.name IN (:names)', { names: [...planNames] })
-            .getMany();
-
-        const planNameSet: Set<string> = new Set<string>();
-        planList.forEach(plan => {
-            planNameSet.add(plan.name);
-        });
-
-        planNames.forEach(planName => {
-            if (planNameSet.has(planName) === false) {
-                this.createPlan(planName);
-            }
-        });
-
-        await this.insertPlan();
-        logger.info('Plans created.');
+        try {
+            const planNames: string[] = [
+                FREE_PLAN,
+                STARTER_PLAN,
+                // ULTIMATE_PLAN,
+                // GROWTH_PLAN,
+                // ENTERPRISE_PLAN
+            ];
+    
+            const planList = await getDataSource(false).createQueryBuilder(Plan, 'plan')
+                .where('plan.name IN (:names)', { names: [...planNames] })
+                .getMany();
+    
+            const planNameSet: Set<string> = new Set<string>();
+            planList.forEach(plan => {
+                planNameSet.add(plan.name);
+            });
+    
+            planNames.forEach(planName => {
+                if (planNameSet.has(planName) === false) {
+                    this.createPlan(planName);
+                }
+            });
+    
+            await this.insertPlan();
+            logger.info('Plans created.');
+        } catch (error) {
+            logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
+        }
     }
 
     async insertPlan() {
@@ -158,12 +164,16 @@ export class StartUp {
     }
 
     createPlan(name: string) {
-        const planObj = new Plan();
-        planObj.name = name;
-        planObj.price_cents = this.planNamePrice.get(name);
-        planObj.description = this.planNameDescription.get(name);
-        planObj.sub_limit = this.planLimits.get(name);
-        this.toCreatePlanList.push(planObj);
+        try {
+            const planObj = new Plan();
+            planObj.name = name;
+            planObj.price_cents = this.planNamePrice.get(name);
+            planObj.description = this.planNameDescription.get(name);
+            planObj.sub_limit = this.planLimits.get(name);
+            this.toCreatePlanList.push(planObj);
+        } catch (error) {
+            logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
+        }
     }
 
     async createSurveyType() {
