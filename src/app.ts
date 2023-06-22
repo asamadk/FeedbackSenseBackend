@@ -106,10 +106,6 @@ getDataSource(false)
     logger.info('Data source is initialized');
     new StartUp().startExecution();
     // await new SubscriptionHelper().init();
-    // schedule.scheduleJob('*/9 * * * * *', () => {
-    // schedule.scheduleJob('0 1 * * *', () => {
-    //   new SubscriptionHelper().init();
-    // });
   })
   .catch((error) => {
     logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
