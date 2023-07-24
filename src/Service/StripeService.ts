@@ -62,7 +62,7 @@ export const calculateOrderAmount = async (item: string) => {
     const planRepo = getDataSource(false).getRepository(Plan);
     const selectedPlan = await planRepo.findOne({ where: { id: item } });
     if (selectedPlan == null) {
-        throw 'Plan does not exist.';
+        throw new Error('Plan does not exist.');
     }
     return selectedPlan.price_cents * 100;
 };
@@ -80,7 +80,7 @@ export const getCurrentPlanIdFromStrip = async (stripe: Stripe, amount: number):
         }
     });
     if (finalPlanId == null) {
-        throw 'Strip Plan not found.';
+        throw new Error('Strip Plan not found.');
     }
     return finalPlanId;
 }

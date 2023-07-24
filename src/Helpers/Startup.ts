@@ -43,14 +43,17 @@ export class StartUp {
             { activeSurveyLimit: 1, responseStoreLimit: 50, responseCapacity: 50 }
         ));
         this.planLimits.set(STARTER_PLAN, JSON.stringify(
-            { activeSurveyLimit: 7, responseStoreLimit: 500, responseCapacity: 500 }
+            { activeSurveyLimit: 5, responseStoreLimit: 2000, responseCapacity: 2000 }
+        ));
+        this.planLimits.set(GROWTH_PLAN, JSON.stringify(
+            { activeSurveyLimit: 10, responseStoreLimit: 5000, responseCapacity: 5000 }
         ));
     }
 
     populatePlanAmount() {
         this.planNamePrice.set(FREE_PLAN, 0);
         this.planNamePrice.set(STARTER_PLAN, 25);
-        // this.planNamePrice.set(GROWTH_PLAN,97);
+        this.planNamePrice.set(GROWTH_PLAN,49);
         // this.planNamePrice.set(ENTERPRISE_PLAN,135);
         // this.planNamePrice.set(ULTIMATE_PLAN,175);
         logger.info('Plan prices populated');
@@ -74,23 +77,21 @@ export class StartUp {
                 '2000 Response / month',
                 'Unlimited users',
                 'Detailed analysis',
-                'Unlimited users'
+                `All from ${FREE_PLAN}, plus`,
             ]
         }));
 
-        // this.planNameDescription.set(GROWTH_PLAN, JSON.stringify({
-        //     description: `Ideal for businesses seeking advanced research capabilities with robust and sophisticated features.`,
-        //     features: [
-        //         'Get feedback from 500 customers per month',
-        //         '5 active survey',
-        //         'All Distribution channel',
-        //         'Unlimited free users',
-        //         `All from ${STARTER_PLAN}, plus`,
-        //         'Slack Notifications',
-        //         'Remove FeedbackSense Branding',
-        //         'Thank you screen actions',
-        //     ]
-        // }));
+        this.planNameDescription.set(GROWTH_PLAN, JSON.stringify({
+            description: `Ideal for businesses seeking advanced research capabilities with robust and sophisticated features.`,
+            features: [
+                '10 Active Surveys',
+                '5000 Response / month',
+                'User management panel',
+                'AI assisted analysis',
+                'Remove FeedbackSense Branding',
+                `All from ${STARTER_PLAN}, plus`,
+            ]
+        }));
 
         // this.planNameDescription.set(ENTERPRISE_PLAN, JSON.stringify({
         //     description: `An excellent choice for companies seeking increased flexibility and automation options for their customer feedback workflows.`,
@@ -131,26 +132,26 @@ export class StartUp {
             const planNames: string[] = [
                 FREE_PLAN,
                 STARTER_PLAN,
+                GROWTH_PLAN,
                 // ULTIMATE_PLAN,
-                // GROWTH_PLAN,
                 // ENTERPRISE_PLAN
             ];
-    
+
             const planList = await getDataSource(false).createQueryBuilder(Plan, 'plan')
                 .where('plan.name IN (:names)', { names: [...planNames] })
                 .getMany();
-    
+
             const planNameSet: Set<string> = new Set<string>();
             planList.forEach(plan => {
                 planNameSet.add(plan.name);
             });
-    
+
             planNames.forEach(planName => {
                 if (planNameSet.has(planName) === false) {
                     this.createPlan(planName);
                 }
             });
-    
+
             await this.insertPlan();
             logger.info('Plans created.');
         } catch (error) {
@@ -187,14 +188,12 @@ export class StartUp {
             surveyObj.label = 'Email or link Survey';
             surveyObj.name = 'email/link';
             this.surveyTypeRepo.save(surveyObj);
+            logger.info('Survey type created.');
         }
-
         // const surveyObj1 = new SurveyType();
         // surveyObj1.label = 'Website or App Survey';
         // surveyObj1.name = 'app/site';
         // this.surveyTypeRepo.save(surveyObj1);
-
-        logger.info('Survey type created.');
     }
 
 }

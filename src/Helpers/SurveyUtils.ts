@@ -84,11 +84,11 @@ export const hasSurveyReachedResponseLimit = async (resLimit: number, surveyId: 
     return false;
 }
 
-const getSubscriptionLimit = (userSubscription : Subscription) => {
+const getSubscriptionLimit = (userSubscription: Subscription) => {
     const subLimit = userSubscription.sub_limit;
-    if(subLimit == null || subLimit.length < 1){
+    if (subLimit == null || subLimit.length < 1) {
         logger.error('User subscription has no sub_limit.');
-        throw 'User subscription has no sub_limit.';
+        throw new Error('User subscription has no sub_limit.');
     }
     return JSON.parse(subLimit);
 }
@@ -98,28 +98,126 @@ export const getMaxResponseLimit = async () => {
     const userEmail = userDetails?._json?.email;
 
     const subscriptionRepo = getDataSource(false).getRepository(Subscription);
-    const userSubscription = await subscriptionRepo.findOne({where : {user : {email : userEmail}}});
+    const userSubscription = await subscriptionRepo.findOne({ where: { user: { email: userEmail } } });
     const subLimitObj = getSubscriptionLimit(userSubscription);
     const responseCapacity = subLimitObj?.responseCapacity;
     return parseInt(responseCapacity);
 }
 
-export const createSurveyConfig = async (userId : string,surveyId : string) => {
+export const createSurveyConfig = async (userId: string, surveyId: string) => {
     const subscriptionRepo = getDataSource(false).getRepository(Subscription);
     const surveyConfigRepo = getDataSource(false).getRepository(SurveyConfig);
 
-    const userSubscription = await subscriptionRepo.findOne({where : {user : {id : userId}}});
+    const userSubscription = await subscriptionRepo.findOne({ where: { user: { id: userId } } });
     const subLimitObj = getSubscriptionLimit(userSubscription);
 
     let responseCapacity = subLimitObj?.responseCapacity;
-    if(responseCapacity == null){
+    if (responseCapacity == null) {
         responseCapacity = 0;
     }
 
     await surveyConfigRepo.save({
-        response_limit : parseInt(responseCapacity),
-        time_limit : null,
-        survey_id : surveyId,
+        response_limit: parseInt(responseCapacity),
+        time_limit: null,
+        survey_id: surveyId,
     })
 
+}
+
+export const validateSurveyFlowOnSave = (flow: any): boolean => {
+    const nodes: any[] = flow?.nodes;
+    for (const node of nodes) {
+        if (node == null || node.data == null) {
+            continue;
+        }
+        if (node?.data?.compConfig == null) {
+            throw new Error('One or more components are have missing information.');
+        }
+        const validatedComp = validateFlowComponent(JSON.parse(node?.data?.compConfig), node.data.compId);
+        if (validatedComp != null) {
+            throw new Error(validatedComp);
+        }
+    }
+    return true;
+}
+
+export const validateIsNodeDisconnected = (flow: any): boolean => {
+    const uniqueNodeIds = new Set<string>();
+    const edges: any[] = flow.edges;
+    const nodes: any[] = flow.nodes;
+
+    if ((edges === null || edges.length < 1) && (nodes != null && nodes.length > 0)) {
+        return true;
+    }
+
+    if (edges === null || edges.length < 1) {
+        return true;
+    }
+
+    for (const edge of edges) {
+        uniqueNodeIds.add(edge.source);
+        uniqueNodeIds.add(edge.target);
+    }
+
+    for (const node of nodes) {
+        if (!uniqueNodeIds.has(node.id)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+const validateFlowComponent = (data: any, componentId: number | undefined): string | null => {
+    switch (componentId) {
+        case 1:
+            if (data.welcomeText == null || data.welcomeText?.length < 1) {
+                return 'Please fill in all required fields before saving.';
+            }
+
+            if (data.buttonText == null || data.buttonText?.length < 1) {
+                return 'Button text cannot be empty.';
+            }
+            break;
+        case 3:
+        case 4:
+        case 11:
+            if (data.question == null || data.question?.length < 1) {
+                return 'Question field cannot be empty.'
+            }
+            if (data.answerList == null) {
+                return 'Component should have at least one answer choice.'
+            } else {
+                const comChoiceList: string[] = data.answerList;
+                for (const choice of comChoiceList) {
+                    if (choice == null || choice.length < 1) {
+                        return 'Answer fields cannot be empty.'
+                    }
+                }
+            }
+            break;
+        case 5:
+        case 13:
+            if (data.question == null || data.question?.length < 1) {
+                return 'Question field cannot be empty.'
+            }
+            break;
+        case 6:
+        case 7:
+        case 8:
+            if (data.question == null || data.question?.length < 1) {
+                return 'Question field cannot be empty.'
+            }
+
+            if (data.leftText == null || data.leftText?.length < 1) {
+                return 'Left text field cannot be empty.'
+            }
+
+            if (data.rightText == null || data.rightText?.length < 1) {
+                return 'Right text field cannot be empty.'
+            }
+            break;
+        default:
+            break;
+    }
+    return null;
 }

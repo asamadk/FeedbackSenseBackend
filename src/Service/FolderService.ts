@@ -51,6 +51,16 @@ export const createFolders = async (folderName: string, userEmail: string): Prom
             return getCustomResponse([], 404, 'Folder name is not present', false);
         }
 
+        const duplicateFolder = await folderRepository.findOne({
+            where : {
+                name : folderName
+            }
+        });
+
+        if(duplicateFolder != null){
+            return getCustomResponse([], 409, 'Folder already exists', false);
+        }
+
         const folderObj = new Folder();
         folderObj.name = folderName;
         folderObj.organization_id = user.organization_id;

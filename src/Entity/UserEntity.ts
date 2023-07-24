@@ -3,8 +3,6 @@ import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, OneToMany, JoinColum
 @Entity()
 export class User {
 
-//TODO add same domain same org field
-
     @PrimaryGeneratedColumn('uuid')
     id!: string;
 

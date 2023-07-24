@@ -74,7 +74,7 @@ export const processSingleSelectionComp = (data: any[]): any => {
     for (const [key, value] of answerFreq) {
         rtnArr.push({
             name: key,
-            freq: getPercentage(value, data?.length)
+            Frequency: getPercentage(value, data?.length)
         })
     }
 
@@ -88,11 +88,12 @@ const processMultipleSelectionComp = (data: any[]): any => {
     if (data == null) {
         return {};
     }
-
     const answerFreq = new Map<string, number>();
     let question: string;
+    let totalAnswerLength = 0;
     data?.forEach(d => {
         const selectedVal: string[] = d?.data?.selectedVal;
+        totalAnswerLength += selectedVal.length;
         selectedVal.forEach(selVal => {
             let val = answerFreq.get(selVal);
             if (val == null || Number.isNaN(val)) {
@@ -101,14 +102,13 @@ const processMultipleSelectionComp = (data: any[]): any => {
             val++;
             question = d?.compData?.question
             answerFreq.set(selVal, val);
-        })
+        });
     });
-
     const rtnArr = [];
     for (const [key, value] of answerFreq) {
         rtnArr.push({
             name: key,
-            freq: getPercentage(value, data?.length)
+            Frequency: getPercentage(value, totalAnswerLength)
         })
     }
     return {
@@ -200,12 +200,14 @@ const processRatingComp = (data: any[]): any => {
     let question: string;
     const freqMap = new Map<number, number>();
     let maxRange = 0;
+    let range = 3;
     data?.forEach(d => {
         const selectedValue: number = d?.data?.value;
         const tempRange = d?.compData?.range;
         if (tempRange > maxRange) {
             maxRange = tempRange;
         }
+        range = tempRange;
         let freq = freqMap.get(selectedValue);
         if (freq == null || freq == 0) {
             freq = 0;
@@ -214,9 +216,15 @@ const processRatingComp = (data: any[]): any => {
         freqMap.set(selectedValue, freq);
         question = d?.compData?.question
     });
-
+    for (let i = 1; i < range; i++) {
+        if (freqMap.has(i) === false) {
+            freqMap.set(i, 0);
+        }
+    }
+    const sortedArray = Array.from(freqMap.entries()).sort((a, b) => a[0] - b[0]);
+    const sortedMap = new Map(sortedArray);
     const rtnObj = [];
-    for (const [key, value] of freqMap) {
+    for (const [key, value] of sortedMap) {
         rtnObj.push({
             name: 'Range' + key,
             range: key,

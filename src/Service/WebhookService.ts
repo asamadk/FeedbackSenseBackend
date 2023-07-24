@@ -7,6 +7,8 @@ import { Plan } from "../Entity/PlanEntity";
 import { WEBHOOK_SUBSCRIPTION_CREATE, WEBHOOK_SUBSCRIPTION_UPDATE } from "../Helpers/Constants";
 import { Organization } from "../Entity/OrgEntity";
 import { User } from "../Entity/UserEntity";
+import { MailHelper } from "../Utils/MailUtils/MailHelper";
+import { generateUpgradeSubEmailHtml } from "../Utils/MailUtils/MailMarkup/UpgradeSubMarkup";
 
 export const handleStripeWebHooks = async (event: any): Promise<boolean> => {
     try {
@@ -121,8 +123,19 @@ const createInvoiceForUser = async (sessionData: any, type: string) => {
     const userOrg = await orgRepo.findOneBy({
         id: currentUser.organization_id
     });
-
+    sendUpgradeSubscriptionMail(currentUserEmail, currentUser.name);
     await cancelIncompleteSubscriptions(userOrg.payment_customerId);
+}
+
+const sendUpgradeSubscriptionMail = async (userMail: string, name: string) => {
+    await MailHelper.sendMail(
+        {
+            html: generateUpgradeSubEmailHtml(name),
+            subject: 'Congratulations on Upgrading Your Plan!',
+            to: userMail,
+            from: process.env.MAIL_SENDER
+        }, 'customers'
+    );
 }
 
 async function cancelIncompleteSubscriptions(customerId: string) {
