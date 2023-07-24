@@ -1,6 +1,5 @@
 import express from 'express';
-import { isLoggedIn } from '../MiddleWares/AuthMiddleware';
-import { createSurvey, enableDisableSurvey, getAllSurveys, getDetailedSurvey, moveSurveyToFolder, saveSurveyFlow, softDeleteSurvey,saveSurveyDesign, updateSurveyConfig, getSurveyConfigData, updateSurveyName, checkIfSurveyHasResponse } from '../Service/SurveyService';
+import { createSurvey, enableDisableSurvey, getAllSurveys, getDetailedSurvey, moveSurveyToFolder, saveSurveyFlow, softDeleteSurvey,saveSurveyDesign, updateSurveyConfig, getSurveyConfigData, updateSurveyName, checkIfSurveyHasResponse, duplicateSurvey } from '../Service/SurveyService';
 import { responseRest } from '../Types/ApiTypes';
 import { getCustomResponse } from '../Helpers/ServiceUtils';
 import { getUserEmailFromRequest } from '../Helpers/RestUtils';
@@ -33,10 +32,13 @@ router.get('/list' , async (req , res ) => {
     }
 });
 
-router.post('/create/:surveyTypeId', async (req : any , res) => {
+router.post('/create/:surveyName', async (req :any , res) => {
     try {
-        const surveyTypeId : string = req.params.surveyTypeId;
-        const response : responseRest = await createSurvey(surveyTypeId,req.user);
+        const surveyName : string = req.params.surveyName;
+        if(surveyName == null || surveyName.length < 1){
+            throw new Error('Survey name is empty');
+        }
+        const response : responseRest = await createSurvey(surveyName,req.user);
         res.statusCode = response.statusCode;
         res.json(response);    
     } catch (error) {
@@ -169,5 +171,20 @@ router.post('/update/name/:surveyId',async(req,res) => {
         res.status(500).json(getCustomResponse(null,500,error.message,false));
     }
 });
+
+router.post('/duplicate/:surveyId',async (req,res) => {
+    try {
+        const surveyId = req.params.surveyId as string;
+        if(surveyId == null || surveyId.length < 1){
+            throw new Error('Survey Id not provided.');
+        }
+        const response = await duplicateSurvey(surveyId);
+        res.statusCode = response.statusCode;
+        res.json(response);    
+    } catch (error) {
+        logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
+        res.status(500).json(getCustomResponse(null,500,error.message,false));
+    }
+})
 
 export default router

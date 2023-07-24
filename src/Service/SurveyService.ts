@@ -7,9 +7,10 @@ import { SurveyConfig } from "../Entity/SurveyConfigEntity";
 import { getCustomResponse, getDefaultResponse } from "../Helpers/ServiceUtils";
 import { Workflow } from "../Entity/WorkflowEntity";
 import { Subscription } from "../Entity/SubscriptionEntity";
-import { cleanSurveyFlowJSON, createSurveyConfig, getMaxResponseLimit } from "../Helpers/SurveyUtils";
+import { cleanSurveyFlowJSON, createSurveyConfig, getMaxResponseLimit, validateIsNodeDisconnected, validateSurveyFlowOnSave } from "../Helpers/SurveyUtils";
 import { logger } from "../Config/LoggerConfig";
 import { SurveyResponse } from "../Entity/SurveyResponse";
+import { In, Not } from "typeorm";
 
 
 export const getDetailedSurvey = async (surveyId: string): Promise<responseRest> => {
@@ -57,14 +58,14 @@ export const getAllSurveys = async (userEmail: string): Promise<responseRest> =>
 
 
 
-export const createSurvey = async (surveyTypeId: string, user: any): Promise<responseRest> => {
+export const createSurvey = async (surveyName: string, user: any): Promise<responseRest> => {
     try {
         const response = getDefaultResponse('Survey created successfully');
         const surveyRepository = getDataSource(false).getRepository(Survey);
         const surveyTypeRepo = getDataSource(false).getRepository(SurveyType);
         const userRepository = getDataSource(false).getRepository(User);
         const surveyType = await surveyTypeRepo.findOneBy({
-            id: surveyTypeId
+            name: 'email/link'
         });
         if (surveyType == null) {
             response.message = ' The survey type does not exists ';
@@ -82,9 +83,13 @@ export const createSurvey = async (surveyTypeId: string, user: any): Promise<res
         if (savedUser == null) {
             return getCustomResponse([], 404, ' The user does not exists ', false);
         }
+        const surveyCount = await surveyRepository.count({where : {name : surveyName}});
+        if(surveyCount > 0){
+            throw new Error('Survey already exist with this name');
+        }
         const surveyObj = new Survey();
         surveyObj.user_id = savedUser.id;
-        surveyObj.name = 'New survey - ' + new Date().toDateString();
+        surveyObj.name = surveyName;
         surveyObj.survey_type_id = surveyType.id;
         surveyObj.survey_design_json = '{"theme":{"id":0,"header":"Lavender","text":"Trending","color":["#8943FF","#C9EEFF"],"textColor":"#ffffff","shade":"#E4D3FF"},"background":{"id":0,"name":"Plain","value":"plain"}}';
         await surveyRepository.save(surveyObj);
@@ -125,15 +130,39 @@ export const enableDisableSurvey = async (surveyId: string, enable: boolean): Pr
     try {
         const response = getDefaultResponse(`Survey ${enable == true ? ' enabled ' : ' disabled '} successfully`);
         const surveyRepository = getDataSource(false).getRepository(Survey);
-        const surveyObj = await surveyRepository.findOneBy({
-            id: surveyId
+        const surveyObj = await surveyRepository.findOne({
+            where: {
+                id: surveyId
+            },
+            relations: ['workflows']
         });
+
         if (surveyObj == null) {
             response.message = ' The survey does not exists ';
             response.success = false;
             response.statusCode = 404;
             return response;
         }
+
+        if (enable === true) {
+            if (surveyObj.workflows.length < 1 || surveyObj.workflows[0]?.json == null) {
+                throw new Error('Cannot publish. Survey is empty.');
+            }
+
+            const workflowJSON = JSON.parse(surveyObj.workflows[0]?.json);
+            const isSurveyFlowValid = validateSurveyFlowOnSave(workflowJSON);
+            const isNodeDisconnected = validateIsNodeDisconnected(workflowJSON);
+
+            if (isNodeDisconnected === true) {
+                throw new Error('Please make sure all components are connected.');
+            }
+
+            if (isSurveyFlowValid === false) {
+                throw new Error('Survey is invalid.');
+            }
+        }
+
+
         surveyObj.is_published = enable;
         const result: boolean = await updateActiveSurveyLimit(enable, surveyObj.user_id);
         if (result == false) {
@@ -272,7 +301,6 @@ export const createSurveyFlow = (surveyJson: string, surveyId: string): Promise<
 }
 
 export const saveSurveyDesign = async (surveyId: string, surveyJSON: string): Promise<responseRest> => {
-    // console.log("🚀 ~ file: SurveyService.ts:272 ~ saveSurveyDesign ~ surveyJSON:", surveyJSON)
     try {
         const response = getDefaultResponse('Survey design saved successfully');
         if (surveyId == null || surveyId === '') {
@@ -336,8 +364,6 @@ export const updateSurveyConfig = async (surveyId: string, configObj: any): Prom
         } else {
             surveyConfigObj.emails = null;
         }
-
-        // console.log("🚀 ~ file: SurveyService.ts:229 ~ updateSurveyConfig ~ surveyConfigObj:", surveyConfigObj)
         await surveyConfigRepo.save(surveyConfigObj);
         response.data = surveyConfigObj;
         return response;
@@ -378,7 +404,18 @@ export const updateSurveyName = async (surveyId: string, payload: any): Promise<
             id: surveyId
         });
         if (surveyObj == null) {
-            return getCustomResponse([], 404, ' Survey config not found ', false);
+            throw new Error('Survey config not found');
+        }
+        const surveyCount = await surveyRepo.count(
+            {
+                where : {
+                    name : payload.surveyName,
+                    id : Not(surveyId)
+                }
+            }
+        );
+        if(surveyCount > 0){
+            throw new Error('Survey already exist with this name');
         }
         surveyObj.name = payload.surveyName;
         await surveyRepo.save(surveyObj);
@@ -390,4 +427,60 @@ export const updateSurveyName = async (surveyId: string, payload: any): Promise<
     }
 }
 
-// export const duplicate
+export const duplicateSurvey = async (surveyId : string) : Promise<responseRest> => {
+    try {
+        const response = getDefaultResponse('Survey duplicated.');
+        const surveyRepo = getDataSource(false).getRepository(Survey);
+        const surveyObj = await surveyRepo.findOneBy({
+            id: surveyId
+        });
+        const cloneSurvey = new Survey();
+        const newWorkflowName = `${surveyObj.name} - Clone(${new Date().toLocaleString()})`;
+
+        cloneSurvey.is_published = false;
+        cloneSurvey.is_archived = false;
+        cloneSurvey.is_deleted = false;
+        cloneSurvey.name = newWorkflowName;
+        cloneSurvey.user_id = surveyObj.user_id;
+        cloneSurvey.survey_design_json = surveyObj.survey_design_json;
+        cloneSurvey.survey_type_id = surveyObj.survey_type_id;
+        await surveyRepo.save(cloneSurvey);
+
+        const surveyConfigRepo = getDataSource(false).getRepository(SurveyConfig);
+        const surveyConfigs = await surveyConfigRepo.find({
+            where : {
+                survey_id : surveyId
+            }
+        });
+
+        const cloneSurveyConfigs = [];
+        surveyConfigs.forEach(surveyConfig => {
+            const tempSurveyConfig = new SurveyConfig();
+            tempSurveyConfig.emails = surveyConfig.emails;
+            tempSurveyConfig.response_limit = surveyConfig.response_limit;
+            tempSurveyConfig.time_limit = surveyConfig.time_limit;
+            tempSurveyConfig.survey_id = cloneSurvey.id;
+            cloneSurveyConfigs.push(tempSurveyConfig);
+        });
+        await surveyConfigRepo.save(cloneSurveyConfigs);
+
+        const workflowRepo = getDataSource(false).getRepository(Workflow);
+        const surveyWorkflow = await workflowRepo.findOne({
+            where : {
+                surveyId : surveyId
+            }
+        });
+
+        const cloneWorkflow = new Workflow();
+        cloneWorkflow.json = surveyWorkflow.json;
+        cloneWorkflow.surveyId = cloneSurvey.id;
+        await workflowRepo.save(cloneWorkflow);
+
+        cloneSurvey.workflow_id = cloneWorkflow.id;
+        await surveyRepo.save(cloneSurvey);
+        return response;
+    } catch (error) {
+        logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
+        return getCustomResponse(null, 500, error.message, false)
+    }
+}

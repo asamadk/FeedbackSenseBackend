@@ -10,36 +10,36 @@ import { MailHelper } from "../Utils/MailUtils/MailHelper";
 import { generateLoginEmailHtml } from "../Utils/MailUtils/MailMarkup/LoginMarkup";
 
 
-export const handleSuccessfulLogin = async (user : any) : Promise<void> => {
-    try{
+export const handleSuccessfulLogin = async (user: any): Promise<void> => {
+    try {
         const userRepository = getDataSource(false).getRepository(User);
         const planRepo = getDataSource(false).getRepository(Plan);
         const subscriptionRepo = getDataSource(false).getRepository(Subscription);
-    
+
         let userEntity = new User();
-    
-        const userEmail : string = user?._json?.email;
-        if(userEmail == null || userEmail === ''){
+
+        const userEmail: string = user?._json?.email;
+        if (userEmail == null || userEmail === '') {
             return;
         }
-    
+
         const savedUser = await userRepository.findOneBy({
-            email : userEmail
+            email: userEmail
         });
 
         const planObj = await planRepo.findOneBy({
-            name : FREE_PLAN
+            name: FREE_PLAN
         });
-    
-        if(savedUser != null){return;}
+
+        if (savedUser != null) { return; }
 
         userEntity.name = user._json?.name;
         userEntity.email = user._json?.email;
         userEntity.emailVerified = user?._json?.email_verified;
         userEntity.oauth_provider = user?.provider;
-             
+
         userEntity = await userRepository.save(userEntity);
-        if(planObj != null){
+        if (planObj != null) {
             const subscObj = new Subscription();
             subscObj.user = userEntity;
             subscObj.plan = planObj;
@@ -53,48 +53,54 @@ export const handleSuccessfulLogin = async (user : any) : Promise<void> => {
         }
         await MailHelper.sendMail(
             {
-                html : generateLoginEmailHtml(userEntity.name),
-                subject : 'Welcome to FeedbackSense - Let\'s Get Started!',
-                to : userEntity.email,
-                from : process.env.MAIL_SENDER
-            },'customers'
+                html: generateLoginEmailHtml(userEntity.name),
+                subject: 'Welcome to FeedbackSense - Let\'s Get Started!',
+                to: userEntity.email,
+                from: process.env.MAIL_SENDER
+            }, 'customers'
         );
-    }catch(error){
+    } catch (error) {
         logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
     }
 }
 
-export const getFreeSubscriptionLimit = () : string => {
+export const getFreeSubscriptionLimit = (): string => {
     const freeSubLimit = {
-        usedSurveyLimit : 0,
-        activeSurveyLimit : 1,
-        responseStoreLimit : 500,
-        responseCapacity : 500
+        usedSurveyLimit: 0,
+        activeSurveyLimit: 1,
+        responseStoreLimit: 500,
+        responseCapacity: 500
     }
     return JSON.stringify(freeSubLimit);
 }
 
-export const getUserAfterLogin = async (user : any) : Promise<responseRest> => {
+export const getUserAfterLogin = async (user: any): Promise<responseRest> => {
     try {
         const response = getDefaultResponse('Login success');
         const userRepository = getDataSource(false).getRepository(User);
-        
-        if(user == null){
-            return getCustomResponse(null,403,'Not Authorized',false);
+        const subscriptionRepo = getDataSource(false).getRepository(Subscription);
+
+        if (user == null) {
+            return getCustomResponse(null, 403, 'Not Authorized', false);
         }
-    
         const userObj = await userRepository.findOneBy({
-            email : user?._json?.email
+            email: user?._json?.email
         });
-    
-        if(userObj == null){
-            return getCustomResponse(null,404,'User not found',false);
+        if (userObj == null) {
+            return getCustomResponse(null, 404, 'User not found', false);
         }
-        
+        const userSubscription = subscriptionRepo.findOneByOrFail({
+            user: {
+                email: user?._json?.email
+            }
+        });
+        if (userSubscription == null) {
+            return getCustomResponse(null, 404, 'Subscription not found', false);
+        }
         response.data = userObj;
         return response;
     } catch (error) {
         logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
-        return getCustomResponse(null,500,error.message,false)
+        return getCustomResponse(null, 500, error.message, false)
     }
 }
