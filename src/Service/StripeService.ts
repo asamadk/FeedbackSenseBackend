@@ -1,6 +1,6 @@
 import Stripe from 'stripe';
 import { AuthUserDetails } from '../Helpers/AuthHelper/AuthUserDetails';
-import { getDataSource } from '../Config/AppDataSource';
+import { AppDataSource } from '../Config/AppDataSource';
 import { Organization } from '../Entity/OrgEntity';
 import { User } from '../Entity/UserEntity';
 import { Plan } from '../Entity/PlanEntity';
@@ -14,8 +14,8 @@ import { Not } from 'typeorm';
 
 export const getCustomerId = async (): Promise<string> => {
     const userDetails = AuthUserDetails.getInstance().getUserDetails();
-    const orgRepo = getDataSource(false).getRepository(Organization);
-    const userRepository = getDataSource(false).getRepository(User);
+    const orgRepo = AppDataSource.getDataSource().getRepository(Organization);
+    const userRepository = AppDataSource.getDataSource().getRepository(User);
     const currentUser = await userRepository.findOne({
         where: {
             email: userDetails._json.email
@@ -46,7 +46,7 @@ export const createCustomer = async (currentUser: User) => {
 export const checkUserCurrentPlan = async (planId: string): Promise<boolean> => {
     const userDetails = AuthUserDetails.getInstance().getUserDetails();
     const userEmail = userDetails._json.email;
-    const subscriptionRepo = getDataSource(false).getRepository(Subscription);
+    const subscriptionRepo = AppDataSource.getDataSource().getRepository(Subscription);
     const currentSubscription = await subscriptionRepo
         .createQueryBuilder('subscription')
         .innerJoin('subscription.user', 'user')
@@ -59,7 +59,7 @@ export const checkUserCurrentPlan = async (planId: string): Promise<boolean> => 
 }
 
 export const calculateOrderAmount = async (item: string) => {
-    const planRepo = getDataSource(false).getRepository(Plan);
+    const planRepo = AppDataSource.getDataSource().getRepository(Plan);
     const selectedPlan = await planRepo.findOne({ where: { id: item } });
     if (selectedPlan == null) {
         throw new Error('Plan does not exist.');
@@ -89,7 +89,7 @@ export const cancelCurrentSubscription = async (): Promise<responseRest> => {
     try {
         // console.log('cancelCurrentSubscription');
         const response = getCustomResponse({}, 200, 'Subscription updated.', true);
-        const invoiceRepo = getDataSource(false).getRepository(Invoice);
+        const invoiceRepo = AppDataSource.getDataSource().getRepository(Invoice);
 
         const invoice = await invoiceRepo.findOne({
             where: {

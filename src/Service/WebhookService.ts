@@ -1,7 +1,7 @@
 import { logger } from "../Config/LoggerConfig";
 import { getStripe } from "../Config/StripeConfig";
 import { Invoice } from "../Entity/InvoiceEntity";
-import { getDataSource } from "../Config/AppDataSource";
+import { AppDataSource } from "../Config/AppDataSource";
 import { Subscription } from "../Entity/SubscriptionEntity";
 import { Plan } from "../Entity/PlanEntity";
 import { WEBHOOK_SUBSCRIPTION_CREATE, WEBHOOK_SUBSCRIPTION_UPDATE } from "../Helpers/Constants";
@@ -74,7 +74,7 @@ const createInvoiceForUser = async (sessionData: any, type: string) => {
     const billingInterval = await getSubscriptionDetails(subscriptionId);
 
     const created = sessionData.created;
-    const invoiceRepo = getDataSource(false).getRepository(Invoice);
+    const invoiceRepo = AppDataSource.getDataSource().getRepository(Invoice);
     const localInvoice = new Invoice();
     localInvoice.amountCents = (finalAmount / 100);
     localInvoice.stripeInvoiceId = invoiceId;
@@ -90,12 +90,12 @@ const createInvoiceForUser = async (sessionData: any, type: string) => {
         localInvoice.billingInterval = billingInterval;
     }
 
-    const planRepo = getDataSource(false).getRepository(Plan);
+    const planRepo = AppDataSource.getDataSource().getRepository(Plan);
     const plan = await planRepo.findOneByOrFail({
         price_cents: (finalAmount / 100)
     });
 
-    const subscriptionRepo = getDataSource(false).getRepository(Subscription);
+    const subscriptionRepo = AppDataSource.getDataSource().getRepository(Subscription);
     const subscription = await subscriptionRepo.findOneByOrFail({
         user: { email: currentUserEmail },
     });
@@ -115,8 +115,8 @@ const createInvoiceForUser = async (sessionData: any, type: string) => {
     localInvoice.subscription = subscription;
     await invoiceRepo.save(localInvoice);
 
-    const userRepo = getDataSource(false).getRepository(User);
-    const orgRepo = getDataSource(false).getRepository(Organization);
+    const userRepo = AppDataSource.getDataSource().getRepository(User);
+    const orgRepo = AppDataSource.getDataSource().getRepository(Organization);
     const currentUser = await userRepo.findOneBy({
         email: currentUserEmail
     });

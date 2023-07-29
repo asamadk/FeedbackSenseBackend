@@ -1,5 +1,7 @@
 import express from 'express';
 import cors from 'cors';
+import cluster from 'cluster';
+import os from 'os';
 import passport from "passport";
 import cookieSession from 'cookie-session';
 import dotenv from "dotenv";
@@ -19,24 +21,22 @@ import LiveSurveyController from './Controllers/LiveSurveyController';
 import AnalysisController from './Controllers/AnalysisController';
 import StripeController from './Controllers/StripeController';
 import WebhookController from './Controllers/WebhooksController'
-import schedule from 'node-schedule';
-
-import { getDataSource } from './Config/AppDataSource';
+import { AppDataSource, mainDataSource } from './Config/AppDataSource';
 import { handleSuccessfulLogin } from './Service/AuthService';
 import { isLoggedIn } from './MiddleWares/AuthMiddleware';
 import { StartUp } from './Helpers/Startup';
 import { logger } from './Config/LoggerConfig';
 import { logRequest } from './MiddleWares/LogMiddleware';
 import { globalAPILimiter } from './Config/RateLimitConfig';
-import { SubscriptionHelper } from './Helpers/SubscriptionHelper';
 
 dotenv.config();
 
 const app = express();
+const numCPUs = os.cpus().length;
 const port = process.env.PORT;
 
 app.use(cors({
-  origin: ["http://localhost:3000", "https://www.feedbacksense.io","https://app.feedbacksense.io"],
+  origin: ["http://localhost:3000", "https://www.feedbacksense.io", "https://app.feedbacksense.io"],
   methods: "GET,POST,PUT,DELETE",
   credentials: true,
 }));
@@ -55,6 +55,7 @@ app.use(passport.session());
 app.use(globalAPILimiter);
 app.use(express.urlencoded({ extended: false }))
 
+//authentication handler
 passport.use(
   new Strategy(
     {
@@ -70,6 +71,7 @@ passport.use(
   )
 );
 
+//auth user serialization & deserialization
 passport.serializeUser((user, done) => {
   done(null, user);
 });
@@ -81,9 +83,9 @@ passport.deserializeUser((user, done) => {
 //This endpoint do not use JSON
 app.use('/webhook', express.raw({ type: 'application/json' }), logRequest, WebhookController);
 
-
 //these endpoint use JSON
 app.use(express.json());
+
 //Open endpoints
 app.use('/auth', logRequest, AuthController)
 app.use('/live', logRequest, LiveSurveyController);
@@ -100,22 +102,44 @@ app.use('/plan', isLoggedIn, logRequest, PlanController);
 app.use('/analysis', isLoggedIn, logRequest, AnalysisController);
 app.use('/stripe', isLoggedIn, logRequest, StripeController);
 
-getDataSource(false)
-  .initialize()
-  .then(async() => {
-    logger.info('Data source is initialized');
-    new StartUp().startExecution();
-    // await new SubscriptionHelper().init();
-  })
-  .catch((error) => {
-    logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
-  })
 
-app.listen(port, () => {
-  logger.info(`Server started.`)
-  logger.info(`Express is listening at http://localhost:${port}`);
-});
+//Nodejs cluster in production & no cluster in development environment
 
+if (cluster.isPrimary && process.env.NODE_ENV === 'prod') {
+  logger.info(`Primary process (master) with PID ${process.pid} is running`);
+  for (let i = 0; i < numCPUs; i++) {
+    cluster.fork();
+  }
+  cluster.on('exit', (worker) => {
+    logger.info(`Worker ${worker.process.pid} died`);
+    cluster.fork();
+  });
+  mainDataSource
+    .initialize()
+    .then(() => {
+      AppDataSource.setDataSource(mainDataSource);
+      new StartUp().startExecution();
+    })
+    .catch((error) => {
+      logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
+    });
+} else {
+  app.listen(port, async () => {
+    logger.info(`Server started.`)
+    logger.info(`Express is listening at http://localhost:${port}`);
+    if (process.env.NODE_ENV === 'dev') {
+      try {
+        await mainDataSource.initialize()
+        AppDataSource.setDataSource(mainDataSource);
+        new StartUp().startExecution();
+      } catch (error) {
+        logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
+      }
+    }
+  });
+}
+
+//Handling unhandled exceptions
 process
   .on('unhandledRejection', (reason, p) => {
     logger.error(`Unhandled Rejection at Promise : Reason - ${reason}, Promise - ${p}`);
@@ -123,5 +147,4 @@ process
   .on('uncaughtException', error => {
     logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
   });
-
 export default app;

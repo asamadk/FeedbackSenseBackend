@@ -1,6 +1,6 @@
 import { Survey } from "../Entity/SurveyEntity";
 import { SurveyType } from "../Entity/SurveyTypeEntity";
-import { getDataSource } from '../Config/AppDataSource';
+import { AppDataSource } from '../Config/AppDataSource';
 import { responseRest } from "../Types/ApiTypes";
 import { User } from "../Entity/UserEntity";
 import { SurveyConfig } from "../Entity/SurveyConfigEntity";
@@ -16,7 +16,7 @@ import { In, Not } from "typeorm";
 export const getDetailedSurvey = async (surveyId: string): Promise<responseRest> => {
     try {
         const response = getDefaultResponse('Survey retrieved successfully');
-        const surveyRepository = getDataSource(false).getRepository(Survey);
+        const surveyRepository = AppDataSource.getDataSource().getRepository(Survey);
         const surveyDetail = await surveyRepository.find({
             relations: {
                 user: true,
@@ -41,7 +41,7 @@ export const getDetailedSurvey = async (surveyId: string): Promise<responseRest>
 export const getAllSurveys = async (userEmail: string): Promise<responseRest> => {
     try {
         const response = getDefaultResponse('Survey retrieved successfully');
-        const surveyList = await getDataSource(false).query(
+        const surveyList = await AppDataSource.getDataSource().query(
             `SELECT s.*, u.image,u.name as username
             FROM survey AS s
             JOIN user AS u ON u.id = s.user_id
@@ -61,9 +61,9 @@ export const getAllSurveys = async (userEmail: string): Promise<responseRest> =>
 export const createSurvey = async (surveyName: string, user: any): Promise<responseRest> => {
     try {
         const response = getDefaultResponse('Survey created successfully');
-        const surveyRepository = getDataSource(false).getRepository(Survey);
-        const surveyTypeRepo = getDataSource(false).getRepository(SurveyType);
-        const userRepository = getDataSource(false).getRepository(User);
+        const surveyRepository = AppDataSource.getDataSource().getRepository(Survey);
+        const surveyTypeRepo = AppDataSource.getDataSource().getRepository(SurveyType);
+        const userRepository = AppDataSource.getDataSource().getRepository(User);
         const surveyType = await surveyTypeRepo.findOneBy({
             name: 'email/link'
         });
@@ -109,7 +109,7 @@ export const moveSurveyToFolder = async (folderId: string, surveyId: string): Pr
         if (folderId == null || folderId.length == 0) {
             return getCustomResponse([], 404, ' Folder id is not present ', false);
         }
-        const surveyRepository = getDataSource(false).getRepository(Survey);
+        const surveyRepository = AppDataSource.getDataSource().getRepository(Survey);
         const surveyObj = await surveyRepository.findOneBy({
             id: surveyId
         });
@@ -129,7 +129,7 @@ export const moveSurveyToFolder = async (folderId: string, surveyId: string): Pr
 export const enableDisableSurvey = async (surveyId: string, enable: boolean): Promise<responseRest> => {
     try {
         const response = getDefaultResponse(`Survey ${enable == true ? ' enabled ' : ' disabled '} successfully`);
-        const surveyRepository = getDataSource(false).getRepository(Survey);
+        const surveyRepository = AppDataSource.getDataSource().getRepository(Survey);
         const surveyObj = await surveyRepository.findOne({
             where: {
                 id: surveyId
@@ -179,7 +179,7 @@ export const enableDisableSurvey = async (surveyId: string, enable: boolean): Pr
 }
 
 const updateActiveSurveyLimit = async (enable: boolean, userId: string): Promise<boolean> => {
-    const subscriptionRepo = getDataSource(false).getRepository(Subscription);
+    const subscriptionRepo = AppDataSource.getDataSource().getRepository(Subscription);
     const subscriptionObj: Subscription = await subscriptionRepo.findOneBy({
         user: { id: userId }
     });
@@ -211,7 +211,7 @@ const updateActiveSurveyLimit = async (enable: boolean, userId: string): Promise
 export const softDeleteSurvey = async (surveyId: string): Promise<responseRest> => {
     try {
         const response = getDefaultResponse('Survey deleted successfully');
-        const surveyRepository = getDataSource(false).getRepository(Survey);
+        const surveyRepository = AppDataSource.getDataSource().getRepository(Survey);
         const surveyObj = await surveyRepository.findOneBy({
             id: surveyId
         });
@@ -242,8 +242,8 @@ export const saveSurveyFlow = async (surveyId: string, surveyJSON: string, delet
         if (surveyId == null || surveyId === '') {
             return getCustomResponse([], 404, ' Survey id not found ', false);
         }
-        const surveyRepository = getDataSource(false).getRepository(Survey);
-        const surveyResponseRepo = getDataSource(false).getRepository(SurveyResponse);
+        const surveyRepository = AppDataSource.getDataSource().getRepository(Survey);
+        const surveyResponseRepo = AppDataSource.getDataSource().getRepository(SurveyResponse);
         const surveyData = await surveyRepository.findOneBy({ id: surveyId });
         const surveyFlowId: string = surveyData.workflow_id;
         surveyJSON = cleanSurveyFlowJSON(surveyJSON);
@@ -270,7 +270,7 @@ export const saveSurveyFlow = async (surveyId: string, surveyJSON: string, delet
 export const checkIfSurveyHasResponse = async (surveyId: string): Promise<responseRest> => {
     try {
         const response = getDefaultResponse('Survey checked.');
-        const surveyResponseRepo = getDataSource(false).getRepository(SurveyResponse);
+        const surveyResponseRepo = AppDataSource.getDataSource().getRepository(SurveyResponse);
         const responseCount = await surveyResponseRepo.count({
             where: {
                 survey_id: surveyId
@@ -286,14 +286,14 @@ export const checkIfSurveyHasResponse = async (surveyId: string): Promise<respon
 }
 
 const updateSurveyFlow = async (surveyJson: string, surveyFlowId: string): Promise<Workflow> => {
-    const flowRepository = getDataSource(false).getRepository(Workflow);
+    const flowRepository = AppDataSource.getDataSource().getRepository(Workflow);
     const flowObj = await flowRepository.findOneBy({ id: surveyFlowId });
     flowObj.json = surveyJson;
     return flowRepository.save(flowObj);
 }
 
 export const createSurveyFlow = (surveyJson: string, surveyId: string): Promise<Workflow> => {
-    const flowRepository = getDataSource(false).getRepository(Workflow);
+    const flowRepository = AppDataSource.getDataSource().getRepository(Workflow);
     const flowObj = new Workflow();
     flowObj.json = surveyJson
     flowObj.surveyId = surveyId;
@@ -306,7 +306,7 @@ export const saveSurveyDesign = async (surveyId: string, surveyJSON: string): Pr
         if (surveyId == null || surveyId === '') {
             return getCustomResponse([], 404, ' Survey id not found ', false);
         }
-        const surveyRepository = getDataSource(false).getRepository(Survey);
+        const surveyRepository = AppDataSource.getDataSource().getRepository(Survey);
         const surveyData = await surveyRepository.findOneBy({ id: surveyId });
         if (surveyData == null) {
             return getCustomResponse([], 404, ' Survey not found ', false);
@@ -327,7 +327,7 @@ export const updateSurveyConfig = async (surveyId: string, configObj: any): Prom
         if (surveyId == null || surveyId === '') {
             return getCustomResponse([], 404, ' Survey id not found ', false);
         }
-        const surveyConfigRepo = getDataSource(false).getRepository(SurveyConfig);
+        const surveyConfigRepo = AppDataSource.getDataSource().getRepository(SurveyConfig);
         let surveyConfigObj = await surveyConfigRepo.findOneBy({
             survey_id: surveyId
         });
@@ -376,7 +376,7 @@ export const updateSurveyConfig = async (surveyId: string, configObj: any): Prom
 export const getSurveyConfigData = async (surveyId: string): Promise<responseRest> => {
     try {
         const response = getDefaultResponse('Survey fetched successfully');
-        const surveyConfigRepo = getDataSource(false).getRepository(SurveyConfig);
+        const surveyConfigRepo = AppDataSource.getDataSource().getRepository(SurveyConfig);
         if (surveyId == null || surveyId === '') {
             return getCustomResponse([], 404, ' Survey id not found ', false);
         }
@@ -399,7 +399,7 @@ export const getSurveyConfigData = async (surveyId: string): Promise<responseRes
 export const updateSurveyName = async (surveyId: string, payload: any): Promise<responseRest> => {
     try {
         const response = getDefaultResponse('Survey name updated successfully');
-        const surveyRepo = getDataSource(false).getRepository(Survey);
+        const surveyRepo = AppDataSource.getDataSource().getRepository(Survey);
         const surveyObj = await surveyRepo.findOneBy({
             id: surveyId
         });
@@ -430,7 +430,7 @@ export const updateSurveyName = async (surveyId: string, payload: any): Promise<
 export const duplicateSurvey = async (surveyId : string) : Promise<responseRest> => {
     try {
         const response = getDefaultResponse('Survey duplicated.');
-        const surveyRepo = getDataSource(false).getRepository(Survey);
+        const surveyRepo = AppDataSource.getDataSource().getRepository(Survey);
         const surveyObj = await surveyRepo.findOneBy({
             id: surveyId
         });
@@ -446,7 +446,7 @@ export const duplicateSurvey = async (surveyId : string) : Promise<responseRest>
         cloneSurvey.survey_type_id = surveyObj.survey_type_id;
         await surveyRepo.save(cloneSurvey);
 
-        const surveyConfigRepo = getDataSource(false).getRepository(SurveyConfig);
+        const surveyConfigRepo = AppDataSource.getDataSource().getRepository(SurveyConfig);
         const surveyConfigs = await surveyConfigRepo.find({
             where : {
                 survey_id : surveyId
@@ -464,7 +464,7 @@ export const duplicateSurvey = async (surveyId : string) : Promise<responseRest>
         });
         await surveyConfigRepo.save(cloneSurveyConfigs);
 
-        const workflowRepo = getDataSource(false).getRepository(Workflow);
+        const workflowRepo = AppDataSource.getDataSource().getRepository(Workflow);
         const surveyWorkflow = await workflowRepo.findOne({
             where : {
                 surveyId : surveyId

@@ -1,11 +1,12 @@
 import { getPercentage } from "./SurveyUtils";
 
-export const processCombinedComponents = (combinedComponentMap: Map<number, any[]>): Map<number, any> => {
-    const returnMap = new Map<number, any>();
+export const processCombinedComponents = (combinedComponentMap: Map<string, any[]>,uiIdVsIdMap : Map<string,number>): Map<string, any> => {
+    const returnMap = new Map<string, any>();
     for (const [key, value] of combinedComponentMap) {
+        const compId :number = uiIdVsIdMap.get(key);
         returnMap.set(
             key,
-            processBulkResult(key, value)
+            processBulkResult(compId, value)
         );
     }
     return returnMap;

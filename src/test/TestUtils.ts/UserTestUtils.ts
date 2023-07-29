@@ -8,5 +8,6 @@ export const createTestUser = async(conection : DataSource) : Promise<User> => {
     user.email = 'janesmith@example.com';
     user.emailVerified = true;
     user.oauth_provider = 'GOOGLE';
+    user.organization_id = '1234';
     return await userRepository.save(user);
 }

@@ -1,5 +1,5 @@
 import { User } from "../Entity/UserEntity";
-import { getDataSource } from '../Config/AppDataSource';
+import { AppDataSource } from '../Config/AppDataSource';
 import { responseRest } from "../Types/ApiTypes";
 import { getCustomResponse, getDefaultResponse } from "../Helpers/ServiceUtils";
 import { Plan } from "../Entity/PlanEntity";
@@ -12,9 +12,9 @@ import { generateLoginEmailHtml } from "../Utils/MailUtils/MailMarkup/LoginMarku
 
 export const handleSuccessfulLogin = async (user: any): Promise<void> => {
     try {
-        const userRepository = getDataSource(false).getRepository(User);
-        const planRepo = getDataSource(false).getRepository(Plan);
-        const subscriptionRepo = getDataSource(false).getRepository(Subscription);
+        const userRepository = AppDataSource.getDataSource().getRepository(User);
+        const planRepo = AppDataSource.getDataSource().getRepository(Plan);
+        const subscriptionRepo = AppDataSource.getDataSource().getRepository(Subscription);
 
         let userEntity = new User();
 
@@ -77,8 +77,8 @@ export const getFreeSubscriptionLimit = (): string => {
 export const getUserAfterLogin = async (user: any): Promise<responseRest> => {
     try {
         const response = getDefaultResponse('Login success');
-        const userRepository = getDataSource(false).getRepository(User);
-        const subscriptionRepo = getDataSource(false).getRepository(Subscription);
+        const userRepository = AppDataSource.getDataSource().getRepository(User);
+        const subscriptionRepo = AppDataSource.getDataSource().getRepository(Subscription);
 
         if (user == null) {
             return getCustomResponse(null, 403, 'Not Authorized', false);

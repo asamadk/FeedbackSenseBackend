@@ -1,7 +1,7 @@
 import Stripe from "stripe";
 import { logger } from "../Config/LoggerConfig";
 import { getStripe } from "../Config/StripeConfig";
-import { getDataSource } from "../Config/AppDataSource";
+import { AppDataSource } from "../Config/AppDataSource";
 import { Invoice } from "../Entity/InvoiceEntity";
 import { Subscription } from "../Entity/SubscriptionEntity";
 import { Plan } from "../Entity/PlanEntity";
@@ -65,8 +65,8 @@ export class SubscriptionHelper {
     convertPlanToFreePlan = async (subscription: Stripe.Subscription) => {
         try {
             logger.info('Converting cancelled plan to free plan....');
-            const invoiceRepo = getDataSource(false).getRepository(Invoice);
-            const subscriptionRepo = getDataSource(false).getRepository(Subscription);
+            const invoiceRepo = AppDataSource.getDataSource().getRepository(Invoice);
+            const subscriptionRepo = AppDataSource.getDataSource().getRepository(Subscription);
 
             const stripeInvoice = await invoiceRepo
                 .createQueryBuilder("invoice")
@@ -99,7 +99,7 @@ export class SubscriptionHelper {
     }
 
     unPublishAllSurveys = async (userId: string) => {
-        const surveyRepo = getDataSource(false).getRepository(Survey);
+        const surveyRepo = AppDataSource.getDataSource().getRepository(Survey);
         const surveyList = await surveyRepo.findBy({ user_id: userId });
         surveyList.forEach(survey => {
             survey.is_published = false;
@@ -120,7 +120,7 @@ export class SubscriptionHelper {
     }
 
     populateFreePlan = async () => {
-        const planRepo = getDataSource(false).getRepository(Plan);
+        const planRepo = AppDataSource.getDataSource().getRepository(Plan);
         return await planRepo.findOneBy({
             price_cents: 0
         });
