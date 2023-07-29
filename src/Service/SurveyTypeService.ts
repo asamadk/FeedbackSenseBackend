@@ -1,4 +1,4 @@
-import { getDataSource } from "../Config/AppDataSource";
+import { AppDataSource } from "../Config/AppDataSource";
 import { logger } from "../Config/LoggerConfig";
 import { SurveyType } from "../Entity/SurveyTypeEntity";
 import { getCustomResponse, getDefaultResponse } from "../Helpers/ServiceUtils";
@@ -7,7 +7,7 @@ import { responseRest } from "../Types/ApiTypes";
 export const getAllSurveyType = async (): Promise<responseRest> => {
     try {
         const response = getDefaultResponse('Retrieved survey types successfully');
-        const surveyTypeRepository = getDataSource(false).getRepository(SurveyType);
+        const surveyTypeRepository = AppDataSource.getDataSource().getRepository(SurveyType);
         const surveyList = await surveyTypeRepository.find();
         response.data = surveyList;
         return response;

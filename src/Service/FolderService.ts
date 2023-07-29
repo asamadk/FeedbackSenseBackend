@@ -1,5 +1,5 @@
 import { responseRest } from "../Types/ApiTypes";
-import { getDataSource } from '../Config/AppDataSource';
+import { AppDataSource } from '../Config/AppDataSource';
 import { Folder } from "../Entity/FolderEntity";
 import { getCustomResponse, getDefaultResponse } from "../Helpers/ServiceUtils";
 import { Survey } from "../Entity/SurveyEntity";
@@ -10,8 +10,13 @@ import { logger } from "../Config/LoggerConfig";
 export const getFolders = async (userEmail: string): Promise<responseRest> => {
     try {
         const response = getDefaultResponse('Retrieved folders successfully');
-        const folderRepository = getDataSource(false).getRepository(Folder);
-        const userRepo = getDataSource(false).getRepository(User);
+
+        if(userEmail == null || userEmail.length < 1){
+            throw new Error('User email is not provided.');
+        }
+
+        const folderRepository = AppDataSource.getDataSource().getRepository(Folder);
+        const userRepo = AppDataSource.getDataSource().getRepository(User);
 
         const user = await userRepo.findOneBy({
             email: userEmail
@@ -36,9 +41,11 @@ export const getFolders = async (userEmail: string): Promise<responseRest> => {
 export const createFolders = async (folderName: string, userEmail: string): Promise<responseRest> => {
     try {
         const response = getDefaultResponse(`Folder ${folderName} created successfully`);
-        const folderRepository = getDataSource(false).getRepository(Folder);
-        const userRepo = getDataSource(false).getRepository(User);
-
+        const folderRepository = AppDataSource.getDataSource().getRepository(Folder);
+        const userRepo = AppDataSource.getDataSource().getRepository(User);
+        if(userEmail == null || userEmail.length < 1){
+            throw new Error('User email not provided');
+        }
         const user = await userRepo.findOneBy({
             email: userEmail
         });
@@ -80,8 +87,8 @@ export const deleteFolder = async (folderId: string): Promise<responseRest> => {
         if (folderId == null || folderId == '') {
             return getCustomResponse([], 404, 'Folder is not present', false);
         }
-        const folderRepository = getDataSource(false).getRepository(Folder);
-        const surveyRepo = getDataSource(false).getRepository(Survey);
+        const folderRepository = AppDataSource.getDataSource().getRepository(Folder);
+        const surveyRepo = AppDataSource.getDataSource().getRepository(Survey);
         const surveyList = await surveyRepo.findBy({
             folder_id: folderId
         });

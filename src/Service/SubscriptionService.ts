@@ -1,5 +1,5 @@
 import Stripe from "stripe";
-import { getDataSource } from "../Config/AppDataSource";
+import { AppDataSource } from "../Config/AppDataSource";
 import { logger } from "../Config/LoggerConfig";
 import { getStripe } from "../Config/StripeConfig";
 import { Organization } from "../Entity/OrgEntity";
@@ -13,7 +13,7 @@ export const getSubScriptionDetailsHome = async (userEmail: string): Promise<res
         const response = getDefaultResponse('Subscription fetched.');
         let subscriptionObj: Subscription;
 
-        const subscriptionRepo = getDataSource(false).getRepository(Subscription);
+        const subscriptionRepo = AppDataSource.getDataSource().getRepository(Subscription);
         const subscription = await subscriptionRepo
             .createQueryBuilder('subscription')
             .innerJoin('subscription.user', 'user')
@@ -73,8 +73,8 @@ export const getSubScriptionDetailsHome = async (userEmail: string): Promise<res
 }
 
 const getUserStripeSubscriptionDetails = async (email: string) => {
-    const orgRepo = getDataSource(false).getRepository(Organization);
-    const userRepo = getDataSource(false).getRepository(User);
+    const orgRepo = AppDataSource.getDataSource().getRepository(Organization);
+    const userRepo = AppDataSource.getDataSource().getRepository(User);
 
     const user = await userRepo.findOneBy({
         email: email

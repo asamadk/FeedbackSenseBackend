@@ -1,5 +1,4 @@
-import { MoreThan } from "typeorm";
-import { getDataSource } from "../Config/AppDataSource";
+import { AppDataSource } from "../Config/AppDataSource";
 import { logger } from "../Config/LoggerConfig";
 import { Plan } from "../Entity/PlanEntity";
 import { getCustomResponse, getDefaultResponse } from "../Helpers/ServiceUtils";
@@ -8,7 +7,7 @@ import { responseRest } from "../Types/ApiTypes";
 export const getAllPlans = async() : Promise<responseRest> => {
     try {
         const response = getDefaultResponse('Plans fetched successfully');
-        const planRepo = getDataSource(false).getRepository(Plan);
+        const planRepo = AppDataSource.getDataSource().getRepository(Plan);
          const planList = await planRepo.find({
             order : {
                 price_cents : "DESC"

@@ -12,7 +12,8 @@
     "dev": "nodemon -L -e ts --exec \"npm run build && npm start\"",
     "build": "tsc",
     "lint": "eslint . --ext .ts",
-    "test": "jest"
+    "test": "jest --runInBand",
+    "test:coverage": "jest --runInBand --coverage"
   },
   "keywords": [],
   "author": "Abdul Samad Kirmani",
@@ -36,6 +37,7 @@
     "typescript": "^5.0.4"
   },
   "dependencies": {
+    "better-sqlite3": "^8.5.0",
     "cookie-parser": "^1.4.6",
     "cookie-session": "^2.0.0",
     "cors": "^2.8.5",

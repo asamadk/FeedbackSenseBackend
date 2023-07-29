@@ -3,16 +3,29 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
-export const getDataSource = (isTest: boolean): DataSource => {
-    if (isTest === true) {
-        return testDataSource;
-    } else {
-        return mainDataSource
+export class AppDataSource {
+
+    static dataSource :DataSource;
+    static instance :AppDataSource;
+
+    static getInstance(){
+        if(this.instance == null){
+            this.instance = new AppDataSource();
+        }
+        return this.instance;
     }
-    // return testDataSource;
+
+    static setDataSource(dataSource :DataSource){
+        this.dataSource = dataSource;
+    }
+
+    static getDataSource(){
+        return this.dataSource;
+    }
+
 }
 
-const databaseConfig : any = {
+export const mainDataSource = new DataSource({
     type: 'mysql',
     host: process.env.DB_HOST,
     port: parseInt(process.env.DB_PORT),
@@ -20,20 +33,12 @@ const databaseConfig : any = {
     password: process.env.DB_PASSWORD,
     database: process.env.DB_NAME,
     entities: ["dist/Entity/*.js"],
-    // migrations: ["dist/migration/*.js"],
     migrations: [
         "src/migration/**/*.ts"
-      ],
+    ],
     logging: false,
     synchronize: false,
-    cli : {
-        migrationsDir: "src/migration",
-    }
-    // migrationsTableName: "feedbackSense_migration_table",
-}
-
-
-export const mainDataSource = new DataSource(databaseConfig);
+});
 
 export const testDataSource = new DataSource({
     "name": "test",

@@ -1,4 +1,4 @@
-import { getDataSource } from "../Config/AppDataSource";
+import { AppDataSource } from "../Config/AppDataSource";
 import { logger } from "../Config/LoggerConfig";
 import { SurveyConfig } from "../Entity/SurveyConfigEntity";
 import { Survey } from "../Entity/SurveyEntity";
@@ -14,16 +14,16 @@ import { generateSurveyFilledEmailHtml } from "../Utils/MailUtils/MailMarkup/Sur
 export const getLiveSurveyNodes = async (surveyId: string): Promise<responseRest> => {
     const response = getDefaultResponse('Survey retrieved');
     try {
-        const surveyRepo = getDataSource(false).getRepository(Survey);
-        const surveyFlow = getDataSource(false).getRepository(Workflow);
-        const surveyConfigRepo = getDataSource(false).getRepository(SurveyConfig);
+        const surveyRepo = AppDataSource.getDataSource().getRepository(Survey);
+        const surveyFlow = AppDataSource.getDataSource().getRepository(Workflow);
+        const surveyConfigRepo = AppDataSource.getDataSource().getRepository(SurveyConfig);
 
 
         const surveyConfig = await surveyConfigRepo.findOne({ where: { survey_id: surveyId } });
         if (surveyConfig != null) {
             const isEnded = isSurveyEnded(surveyConfig.time_limit);
             const isResLimitReached = await hasSurveyReachedResponseLimit(surveyConfig.response_limit, surveyId);
-
+    
             if (isEnded === true || isResLimitReached === true) {
                 return getCustomResponse({}, 410, 'Survey Closed, The survey is no longer accepting responses.', false);
             }
@@ -33,17 +33,22 @@ export const getLiveSurveyNodes = async (surveyId: string): Promise<responseRest
             id: surveyId
         });
 
-        if (surveyObj == null || surveyObj.is_published === false) {
-            return getCustomResponse({}, 410, 'This survey is not published', false);
+        if(surveyObj == null){
+            return getCustomResponse({}, 410, 'Survey not found', false);
         }
 
+        if (surveyObj.is_published === false) {
+            return getCustomResponse({}, 410, 'This survey is not published', false);
+        }
+        
+        if (surveyObj.is_deleted === true || surveyObj.is_archived === true) {
+            return getCustomResponse({}, 410, 'This survey is no longer available', false);
+        }
+        
         if (surveyObj.workflow_id == null) {
             return getCustomResponse({}, 410, 'This survey is empty', false);
         }
 
-        if (surveyObj == null || surveyObj.is_deleted === true || surveyObj.is_archived === true) {
-            return getCustomResponse({}, 410, 'This survey is no longer available', false);
-        }
         let surveyDesignStr = surveyObj.survey_design_json;
         if (surveyDesignStr === null || surveyDesignStr.length < 1) {
             surveyDesignStr = '{"id":1,"header":"Default","text":"default","color":["#f1f1f1","#D81159"],"textColor":"#000000"}';
@@ -87,7 +92,7 @@ export const saveSurveyResponse = async (surveyId: string, responseData: any) =>
         const info = responseData?.info;
         const annUserId = responseData?.anUserId;
 
-        const surveyResponseRepo = getDataSource(false).getRepository(SurveyResponse);
+        const surveyResponseRepo = AppDataSource.getDataSource().getRepository(SurveyResponse);
         let surveyResponse = await surveyResponseRepo.findOne({
             where: {
                 anonymousUserId: annUserId,
@@ -118,8 +123,8 @@ export const saveSurveyResponse = async (surveyId: string, responseData: any) =>
 }
 
 const sendSurveyEmailToAdmin = async (surveyId: string, responseId: string) => {
-    const surveyRepo = getDataSource(false).getRepository(Survey);
-    const surveyConfig = getDataSource(false).getRepository(SurveyConfig);
+    const surveyRepo = AppDataSource.getDataSource().getRepository(Survey);
+    const surveyConfig = AppDataSource.getDataSource().getRepository(SurveyConfig);
 
     const surveyConf = await surveyConfig.findOne({ where: { survey_id: surveyId } });
     if (surveyConf.emails == null) {

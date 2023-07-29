@@ -1,4 +1,4 @@
-import { getDataSource } from "../Config/AppDataSource";
+import { AppDataSource } from "../Config/AppDataSource";
 import { logger } from "../Config/LoggerConfig";
 import { Subscription } from "../Entity/SubscriptionEntity";
 import { SurveyConfig } from "../Entity/SurveyConfigEntity";
@@ -76,7 +76,7 @@ export const hasSurveyReachedResponseLimit = async (resLimit: number, surveyId: 
     if (resLimit == null || resLimit === 0) {
         return false;
     }
-    const surveyResponseRepo = getDataSource(false).getRepository(SurveyResponse);
+    const surveyResponseRepo = AppDataSource.getDataSource().getRepository(SurveyResponse);
     const surveyResponseCount = await surveyResponseRepo.count({ where: { survey_id: surveyId } })
     if (surveyResponseCount >= resLimit) {
         return true;
@@ -97,7 +97,7 @@ export const getMaxResponseLimit = async () => {
     const userDetails = AuthUserDetails.getInstance().getUserDetails();
     const userEmail = userDetails?._json?.email;
 
-    const subscriptionRepo = getDataSource(false).getRepository(Subscription);
+    const subscriptionRepo = AppDataSource.getDataSource().getRepository(Subscription);
     const userSubscription = await subscriptionRepo.findOne({ where: { user: { email: userEmail } } });
     const subLimitObj = getSubscriptionLimit(userSubscription);
     const responseCapacity = subLimitObj?.responseCapacity;
@@ -105,8 +105,8 @@ export const getMaxResponseLimit = async () => {
 }
 
 export const createSurveyConfig = async (userId: string, surveyId: string) => {
-    const subscriptionRepo = getDataSource(false).getRepository(Subscription);
-    const surveyConfigRepo = getDataSource(false).getRepository(SurveyConfig);
+    const subscriptionRepo = AppDataSource.getDataSource().getRepository(Subscription);
+    const surveyConfigRepo = AppDataSource.getDataSource().getRepository(SurveyConfig);
 
     const userSubscription = await subscriptionRepo.findOne({ where: { user: { id: userId } } });
     const subLimitObj = getSubscriptionLimit(userSubscription);

@@ -1,5 +1,5 @@
 import { Repository } from "typeorm";
-import { getDataSource } from "../Config/AppDataSource"
+import { AppDataSource } from "../Config/AppDataSource"
 import { Plan } from "../Entity/PlanEntity";
 import { SurveyType } from "../Entity/SurveyTypeEntity";
 import { ENTERPRISE_PLAN, FREE_PLAN, GROWTH_PLAN, STARTER_PLAN, ULTIMATE_PLAN } from "./Constants";
@@ -14,28 +14,32 @@ export class StartUp {
     planLimits: Map<string, string>
     planNameDescription: Map<string, string>
 
-    startExecution() {
+    async startExecution() {
         try {
             logger.info('StartUp script executing...');
             this.init();
             this.populatePlanAmount();
             this.populatePlanLimit();
             this.populatePlanDescription();
-            this.createSurveyType();
-            this.createPlans();
+            await this.createSurveyType();
+            await this.createPlans();
         } catch (error) {
             logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
         }
     }
 
     init() {
-        this.surveyTypeRepo = getDataSource(false).getRepository(SurveyType);
-        this.planRepo = getDataSource(false).getRepository(Plan);
-        this.toCreatePlanList = [];
-        this.planLimits = new Map<string, string>();
-        this.planNamePrice = new Map<string, number>();
-        this.planNameDescription = new Map<string, string>();
-        logger.info('Startup class Initialized.');
+        try {
+            this.surveyTypeRepo = AppDataSource.getDataSource().getRepository(SurveyType);
+            this.planRepo = AppDataSource.getDataSource().getRepository(Plan);
+            this.toCreatePlanList = [];
+            this.planLimits = new Map<string, string>();
+            this.planNamePrice = new Map<string, number>();
+            this.planNameDescription = new Map<string, string>();
+            logger.info('Startup class Initialized.');
+        } catch (error) {
+            logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
+        }
     }
 
     populatePlanLimit() {
@@ -137,7 +141,7 @@ export class StartUp {
                 // ENTERPRISE_PLAN
             ];
 
-            const planList = await getDataSource(false).createQueryBuilder(Plan, 'plan')
+            const planList = await AppDataSource.getDataSource().createQueryBuilder(Plan, 'plan')
                 .where('plan.name IN (:names)', { names: [...planNames] })
                 .getMany();
 

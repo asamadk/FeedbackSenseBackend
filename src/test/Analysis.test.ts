@@ -1,47 +1,40 @@
-import { DataSource } from "typeorm";
 import { StartUp } from "../Helpers/Startup";
-import mockConnection from "./mockConnection";
 import { getFeedbackResponseList, getOverAllComponentsData, getOverallResponse, getSubDataResponse } from "../Service/AnalysisService";
 import { SurveyResponse } from "../Entity/SurveyResponse";
 import { createSurveyFlow, createTestSurvey } from "./TestUtils.ts/SurveyTestUtils";
 import { populateSurveyResponse } from "./TestUtils.ts/AnalysisUtils";
 import { processSingleSelectionComp, processWelcomeMessageComp } from "../Helpers/OverAllComponentHelper";
-
-let connection : DataSource ;
+import { TestHelper } from "./TestUtils.ts/TestHelper";
+import { AppDataSource } from "../Config/AppDataSource";
 
 beforeAll(async () => {
-    connection = await mockConnection.create();
-    new StartUp().startExecution();
+    await TestHelper.instance.setupTestDB();
+    await new StartUp().startExecution();
+    AppDataSource.setDataSource(TestHelper.instance.dbConnect);
 });
 
 afterAll(async () => {
-    await mockConnection.close();
+    await TestHelper.instance.teardownTestDB();
 });
-
-afterEach(async () => {
-    jest.useFakeTimers();
-    await mockConnection.clear();
-});
-
 
 describe('OverAllAnalysis Test', () => {
 
-    test('Test getFeedbackResponseList()',async () => {
-        const surveyEntity = await createTestSurvey(connection);
+    test('Test getFeedbackResponseList()', async () => {
+        const surveyEntity = await createTestSurvey(AppDataSource.getDataSource());
         const surveyResponse = await getFeedbackResponseList(surveyEntity.id);
         expect(surveyResponse.success === true);
     });
 
-    test('Get feedback without surveyId',async () => {
+    test('Get feedback without surveyId', async () => {
         const surveyResponse = await getFeedbackResponseList(null);
         expect(surveyResponse.statusCode === 404);
         expect(surveyResponse.success === false);
     });
 
-    test('Test Empty Overall Response',async () => {
-        const surveyEntity = await createTestSurvey(connection);
-        const surveyResponseRepo = connection.getRepository(SurveyResponse);
-        
+    test('Test Empty Overall Response', async () => {
+        const surveyEntity = await createTestSurvey(AppDataSource.getDataSource());
+        const surveyResponseRepo = AppDataSource.getDataSource().getRepository(SurveyResponse);
+
         const overAllResponse = await getOverallResponse(surveyEntity.id);
         expect(overAllResponse.success === true);
         expect(overAllResponse.statusCode === 200);
@@ -50,7 +43,7 @@ describe('OverAllAnalysis Test', () => {
         const surveyResponses = [];
         const surveyResponse1 = new SurveyResponse();
         surveyResponse1.survey_id = surveyEntity.id;
-        surveyResponse1.anonymousUserId = 'ananymourSurveyId'+new Date().getMilliseconds();
+        surveyResponse1.anonymousUserId = 'ananymourSurveyId' + new Date().getMilliseconds();
         surveyResponse1.response = '[]';
         surveyResponse1.userDetails = '';
 
@@ -70,17 +63,17 @@ describe('OverAllAnalysis Test', () => {
 
     });
 
-    test('Test OverAll Response',async () => {
-        const surveyId = await populateSurveyResponse(connection);
+    test('Test OverAll Response', async () => {
+        const surveyId = await populateSurveyResponse(AppDataSource.getDataSource());
         const overAllResponse = await getOverallResponse(surveyId);
         expect(overAllResponse.success === true);
         expect(overAllResponse.data?.Response === 3);
         expect(overAllResponse.data?.date === '5/4/2023');
     });
 
-    test('Test sub-data overall response',async () => {
-        const surveyId = await populateSurveyResponse(connection);
-        await createSurveyFlow(connection,surveyId);
+    test('Test sub-data overall response', async () => {
+        const surveyId = await populateSurveyResponse(AppDataSource.getDataSource());
+        await createSurveyFlow(AppDataSource.getDataSource(), surveyId);
         const overAllResponse = await getSubDataResponse(surveyId);
         expect(overAllResponse.success === true);
         expect(overAllResponse.data?.totalViews === 3);
@@ -88,8 +81,8 @@ describe('OverAllAnalysis Test', () => {
         expect(overAllResponse.data?.lastResponse === 'Thu May 04 2023');
     });
 
-    test('Test sub-data without survey flow',async () => {
-        const surveyId = await populateSurveyResponse(connection);
+    test('Test sub-data without survey flow', async () => {
+        const surveyId = await populateSurveyResponse(AppDataSource.getDataSource());
         const overAllResponse = await getSubDataResponse(surveyId);
         expect(overAllResponse.success === false);
         expect(overAllResponse.data == null);
@@ -97,13 +90,14 @@ describe('OverAllAnalysis Test', () => {
         expect(overAllResponse.message === 'Survey flow is empty.');
     });
 
-    test('Test overall components',async () => {
-        const surveyId = await populateSurveyResponse(connection);
-        await createSurveyFlow(connection,surveyId);
+    test('Test overall components', async () => {
+        const surveyId = await populateSurveyResponse(AppDataSource.getDataSource());
+        await createSurveyFlow(AppDataSource.getDataSource(), surveyId);
         const overAllResponse = await getOverAllComponentsData(surveyId);
 
-        const chartData = overAllResponse.data;
-        
+        const chartData: { [k: string]: any } = overAllResponse?.data?.info;
+        const idMap: { [k: string]: number } = overAllResponse?.data?.idMap;
+
         expect(overAllResponse.statusCode === 200);
         expect(overAllResponse.success === true);
         expect(overAllResponse.message === 'OverAll component data fetched.');
@@ -125,8 +119,8 @@ describe('OverAllAnalysis Test', () => {
         expect(chartData['6'][4].percentage === '67');
     });
 
-    test('Test overall component with no response',async () => {
-        const surveyEntity = await createTestSurvey(connection);
+    test('Test overall component with no response', async () => {
+        const surveyEntity = await createTestSurvey(AppDataSource.getDataSource());
         const overAllResponse = await getOverAllComponentsData(surveyEntity.id);
         expect(overAllResponse.statusCode === 200);
         expect(overAllResponse.success === true);
@@ -136,21 +130,21 @@ describe('OverAllAnalysis Test', () => {
 
 //TODO test all components one by one
 describe('OverAllComponentHelper tests', () => {
-    test('Test OverAll Welcome component helper',async () => {
-        const result : any[] = processWelcomeMessageComp(null);
+    test('Test OverAll Welcome component helper', async () => {
+        const result: any[] = processWelcomeMessageComp(null);
         expect(result.length === 0);
-        
+
         const dataStr = '[{"id":1,"data":{"click":"next"},"compData":{"welcomeText":"Welcome to FeedbackSense","buttonText":"Next"}},{"id":1,"data":{"click":"next"},"compData":{"welcomeText":"Welcome to FeedbackSense","buttonText":"Next"}},{"id":1,"data":{"click":"next"},"compData":{"welcomeText":"Welcome to FeedbackSense","buttonText":"Next"}}]';
         const res = processWelcomeMessageComp(JSON.parse(dataStr));
         expect(res != null);
         expect(res.clickFrequency === 3);
     });
 
-    test('Test overall Single selection component',async () => {
+    test('Test overall Single selection component', async () => {
         const result = processSingleSelectionComp(null);
         expect(result.length === 0);
-        
-        const dataStr = '[{"id":3,"data":{"type":"single","selectedVal":"No"},"compData":{"question":"You f****d you","answerList":[null],"type":"single"}},{"id":3,"data":{"type":"single","selectedVal":"Yes"},"compData":{"question":"You f****d you","answerList":[null],"type":"single"}},{"id":3,"data":{"type":"single","selectedVal":"Yes"},"compData":{"question":"You f****d you","answerList":[null],"type":"single"}}]';      
+
+        const dataStr = '[{"id":3,"data":{"type":"single","selectedVal":"No"},"compData":{"question":"You f****d you","answerList":[null],"type":"single"}},{"id":3,"data":{"type":"single","selectedVal":"Yes"},"compData":{"question":"You f****d you","answerList":[null],"type":"single"}},{"id":3,"data":{"type":"single","selectedVal":"Yes"},"compData":{"question":"You f****d you","answerList":[null],"type":"single"}}]';
         const res = processSingleSelectionComp(JSON.parse(dataStr));
         expect(res != null);
         expect(res?.length === 2);

@@ -1,4 +1,4 @@
-import { getDataSource } from "../Config/AppDataSource";
+import { AppDataSource } from "../Config/AppDataSource";
 import { logger } from "../Config/LoggerConfig";
 import { Organization } from "../Entity/OrgEntity";
 import { User } from "../Entity/UserEntity";
@@ -18,8 +18,8 @@ export const createOrganizationForUser = async (user : UserProfile, reqBody : an
             pinCode : reqBody?.pinCode
         }
 
-        const userRepository = getDataSource(false).getRepository(User);
-        const orgRepo = getDataSource(false).getRepository(Organization);
+        const userRepository = AppDataSource.getDataSource().getRepository(User);
+        const orgRepo = AppDataSource.getDataSource().getRepository(Organization);
     
         if(orgName == null || orgName.length == 0){
             return getCustomResponse([],404,'Organization name is not provided',false);
@@ -65,7 +65,7 @@ export const createOrganizationForUser = async (user : UserProfile, reqBody : an
 export const getAllOrgList = async() : Promise<responseRest> => {
     try {
         const response = getDefaultResponse('Organization fetched successfully');
-        const orgRepo = getDataSource(false).getRepository(Organization);
+        const orgRepo = AppDataSource.getDataSource().getRepository(Organization);
         let orgList = await orgRepo.find();
         if(orgList == null){
             orgList = [];
@@ -83,7 +83,7 @@ export const getAllOrgList = async() : Promise<responseRest> => {
 export const pointOrgToUser = async(user : any, orgData : any) : Promise<responseRest> => {
     try {
         const response = getDefaultResponse('Organization saved successfully');
-        const userRepository = getDataSource(false).getRepository(User);
+        const userRepository = AppDataSource.getDataSource().getRepository(User);
         if(user == null || user._json == null){return getUnAuthorizedResponse();}
         const userEmail = user._json.email;
         if(userEmail == null){return getUnAuthorizedResponse();}

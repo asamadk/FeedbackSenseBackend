@@ -1,27 +1,22 @@
-import { DataSource } from "typeorm";
 import { StartUp } from "../Helpers/Startup";
-import mockConnection from "./mockConnection";
 import { createFolders, deleteFolder, getFolders } from "../Service/FolderService";
 import { Folder } from "../Entity/FolderEntity";
 import { getCustomResponse, getDefaultResponse } from "../Helpers/ServiceUtils";
 import { Survey } from "../Entity/SurveyEntity";
 import { createTestUser } from "./TestUtils.ts/UserTestUtils";
 import { SurveyType } from "../Entity/SurveyTypeEntity";
-
-let connection: DataSource;
+import { TestHelper } from "./TestUtils.ts/TestHelper";
+import { AppDataSource } from "../Config/AppDataSource";
+import { User } from "../Entity/UserEntity";
 
 beforeAll(async () => {
-    connection = await mockConnection.create();
-    new StartUp().startExecution();
-});
-
-afterEach(async () => {
-    jest.useFakeTimers();
-    await mockConnection.clear();
+    await TestHelper.instance.setupTestDB();
+    await new StartUp().startExecution();
+    AppDataSource.setDataSource(TestHelper.instance.dbConnect);
 });
 
 afterAll(async () => {
-    await mockConnection.close();
+    await TestHelper.instance.teardownTestDB();
 });
 
 describe('Fetching Folder test', () => {
@@ -45,10 +40,11 @@ describe('Fetching Folder test', () => {
             }
         ];
 
-        const folderRepo = connection.getRepository(Folder);
+        const createdUser = await createTestUser(AppDataSource.getDataSource());
+        const folderRepo = AppDataSource.getDataSource().getRepository(Folder);
         await folderRepo.save(mockFolders);
 
-        const response = await getFolders(mockOrgId);
+        const response = await getFolders(createdUser.email);
         expect(response.data).toHaveLength(2);
         expect(response.message).toBe('Retrieved folders successfully');
         expect(response.statusCode).toBe(200);
@@ -56,16 +52,23 @@ describe('Fetching Folder test', () => {
     });
 
     test("Get folders test with invalid orgId.", async () => {
-        const mockOrgId = '';
-        const response = await getFolders(mockOrgId);
-        expect(response.message).toBe('Organization id is not present');
-        expect(response.statusCode).toBe(404);
+        const userMail = '';
+        const response = await getFolders(userMail);
+        expect(response.message).toBe('User email is not provided.');
+        expect(response.statusCode).toBe(500);
         expect(response.success).toBe(false);
     });
 
     test("Get specific org folders", async () => {
-        const mockOrgId = '5678';
-        const response = await getFolders(mockOrgId);
+        const userMail = 'janesmith@example.com';
+        const useRepo = AppDataSource.getDataSource().getRepository(User);
+        const currentUser = await useRepo.findOne({
+            where : {email : userMail}
+        });
+        currentUser.organization_id = '5678'
+        await useRepo.save(currentUser);
+
+        const response = await getFolders(currentUser.email);
         expect(response.data).toHaveLength(1);
         expect(response.message).toBe('Retrieved folders successfully');
         expect(response.statusCode).toBe(200);
@@ -76,38 +79,34 @@ describe('Fetching Folder test', () => {
 describe('Create Folder test', () => {
     test('Create folder test', async () => {
         const folderName = 'Test Folder';
-        const orgId = '12345';
-
-        const response = await createFolders(folderName, orgId);
-
+        const userMail = 'janesmith@example.com';
+        const response = await createFolders(folderName, userMail);
         expect(response.success).toBe(true);
         expect(response.message).toBe(`Folder ${folderName} created successfully`);
         expect(response.data.name).toBe(folderName);
-        expect(response.data.organization_id).toBe(orgId);
+        expect(response.data.organization_id).toBe('5678');
     });
 
     test('Missing folder name', async () => {
         const folderName = '';
-        const orgId = '12345';
-
-        const response = await createFolders(folderName, orgId);
-
+        const userMail = 'janesmith@example.com';
+        const response = await createFolders(folderName, userMail);
         expect(response.success).toBe(false);
         expect(response.statusCode).toBe(404);
         expect(response.message).toBe('Folder name is not present');
         expect(response.data).toEqual([]);
     });
 
-    test('Missing organization id', async () => {
+    test('Missing user email', async () => {
         const folderName = 'Test Folder';
-        const orgId = '';
+        const userMail = '';
 
-        const response = await createFolders(folderName, orgId);
+        const response = await createFolders(folderName, userMail);
 
         expect(response.success).toBe(false);
-        expect(response.statusCode).toBe(404);
-        expect(response.message).toBe('Organization id is not present');
-        expect(response.data).toEqual([]);
+        expect(response.statusCode).toBe(500);
+        expect(response.message).toBe('User email not provided');
+        expect(response.data).toEqual(null);
     });
 });
 
@@ -128,11 +127,11 @@ describe('deleteFolder', () => {
 
     it('should delete folder and remove folder_id from surveys in folder', async () => {
 
-        const surveyRepo = connection.getRepository(Survey);
-        const folderRepo = connection.getRepository(Folder);
-        const surveyTypeRepo = connection.getRepository(SurveyType);
+        const surveyRepo = AppDataSource.getDataSource().getRepository(Survey);
+        const folderRepo = AppDataSource.getDataSource().getRepository(Folder);
+        const surveyTypeRepo = AppDataSource.getDataSource().getRepository(SurveyType);
 
-        const tempUser = await createTestUser(connection);
+        const tempUser = await createTestUser(AppDataSource.getDataSource());
         const mockFolder = await folderRepo.findOne({
             where : {
                 name : 'Test Folder'
