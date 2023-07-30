@@ -1,6 +1,7 @@
 import nodemailer from 'nodemailer';
 import dotenv from 'dotenv';
 import { logger } from '../../Config/LoggerConfig';
+import { AppDataSource } from '../../Config/AppDataSource';
 
 dotenv.config();
 
@@ -22,6 +23,11 @@ export class MailHelper {
     });
 
     static async sendMail(data: MailDataType, receivers: 'customers' | 'support' | 'both') {
+        //Don't send mails if in test mode
+        const runningMode :string = process.env.NODE_ENV;
+        if(runningMode.toLowerCase() === 'test'){
+            return;
+        }
         data.from = process.env.MAIL_SENDER
         if (receivers === 'support') {
             await this.sendMailToSupport(data);

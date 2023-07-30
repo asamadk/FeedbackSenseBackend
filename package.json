@@ -12,8 +12,8 @@
     "dev": "nodemon -L -e ts --exec \"npm run build && npm start\"",
     "build": "tsc",
     "lint": "eslint . --ext .ts",
-    "test": "jest --runInBand",
-    "test:coverage": "jest --runInBand --coverage"
+    "test": "tsc && jest --runInBand",
+    "test:coverage": "tsc && jest --runInBand --coverage"
   },
   "keywords": [],
   "author": "Abdul Samad Kirmani",

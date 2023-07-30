@@ -12,7 +12,7 @@ export const getFolders = async (userEmail: string): Promise<responseRest> => {
         const response = getDefaultResponse('Retrieved folders successfully');
 
         if(userEmail == null || userEmail.length < 1){
-            throw new Error('User email is not provided.');
+            return getCustomResponse(null, 404, 'User email is not provided.', false);
         }
 
         const folderRepository = AppDataSource.getDataSource().getRepository(Folder);
@@ -44,7 +44,7 @@ export const createFolders = async (folderName: string, userEmail: string): Prom
         const folderRepository = AppDataSource.getDataSource().getRepository(Folder);
         const userRepo = AppDataSource.getDataSource().getRepository(User);
         if(userEmail == null || userEmail.length < 1){
-            throw new Error('User email not provided');
+            return getCustomResponse(null, 500, 'User email not provided', false);
         }
         const user = await userRepo.findOneBy({
             email: userEmail

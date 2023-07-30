@@ -62,6 +62,9 @@ export const processSingleSelectionComp = (data: any[]): any => {
     let question: string;
     data?.forEach(d => {
         const selectedVal = d?.data?.selectedVal;
+        if(selectedVal == null){
+            return;
+        }
         let val = answerFreq.get(selectedVal);
         if (val == null || Number.isNaN(val)) {
             val = 0;
@@ -85,7 +88,7 @@ export const processSingleSelectionComp = (data: any[]): any => {
     }
 }
 
-const processMultipleSelectionComp = (data: any[]): any => {
+export const processMultipleSelectionComp = (data: any[]): any => {
     if (data == null) {
         return {};
     }
@@ -118,7 +121,7 @@ const processMultipleSelectionComp = (data: any[]): any => {
     }
 }
 
-const processTextAnswerComp = (data: any[]): any => {
+export const processTextAnswerComp = (data: any[]): any => {
     if (data == null) {
         return {};
     }
@@ -136,7 +139,7 @@ const processTextAnswerComp = (data: any[]): any => {
     }
 }
 
-const processSmileyComp = (data: any[]): any => {
+export const processSmileyComp = (data: any[]): any => {
     if (data == null) {
         return {};
     }
