@@ -55,7 +55,7 @@ describe('Fetching Folder test', () => {
         const userMail = '';
         const response = await getFolders(userMail);
         expect(response.message).toBe('User email is not provided.');
-        expect(response.statusCode).toBe(500);
+        expect(response.statusCode).toBe(404);
         expect(response.success).toBe(false);
     });
 

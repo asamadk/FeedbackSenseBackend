@@ -2,8 +2,8 @@ import { StartUp } from "../Helpers/Startup";
 import { getFeedbackResponseList, getOverAllComponentsData, getOverallResponse, getSubDataResponse } from "../Service/AnalysisService";
 import { SurveyResponse } from "../Entity/SurveyResponse";
 import { createSurveyFlow, createTestSurvey } from "./TestUtils.ts/SurveyTestUtils";
-import { populateSurveyResponse } from "./TestUtils.ts/AnalysisUtils";
-import { processSingleSelectionComp, processWelcomeMessageComp } from "../Helpers/OverAllComponentHelper";
+import { generateAnswerComponentDataset, generateMultipleAnswerDataset, generateSmileyDataset, populateSurveyResponse } from "./TestUtils.ts/AnalysisUtils";
+import { processMultipleSelectionComp, processSingleSelectionComp, processSmileyComp, processTextAnswerComp, processWelcomeMessageComp } from "../Helpers/OverAllComponentHelper";
 import { TestHelper } from "./TestUtils.ts/TestHelper";
 import { AppDataSource } from "../Config/AppDataSource";
 
@@ -98,25 +98,31 @@ describe('OverAllAnalysis Test', () => {
         const chartData: { [k: string]: any } = overAllResponse?.data?.info;
         const idMap: { [k: string]: number } = overAllResponse?.data?.idMap;
 
+        expect(idMap['dndnode_363'] === 1);
+        expect(idMap['dndnode_52'] === 3);
+        expect(idMap['dndnode_4383'] === 6);
+
         expect(overAllResponse.statusCode === 200);
         expect(overAllResponse.success === true);
         expect(overAllResponse.message === 'OverAll component data fetched.');
 
-        expect(chartData['1'] != null);
-        expect(chartData['1'].clickFrequency === 3);
+        const one = 'dndnode_363';
+        const three = 'dndnode_52';
+        const six = 'dndnode_4383';
+        expect(chartData[one] != null);
+        expect(chartData[one].clickFrequency === 3);
 
-        expect(chartData['3'] != null);
-        expect(chartData['3']?.length === 2);
-        expect(chartData['3'][0].name === 'No');
-        expect(chartData['3'][0].freq === '33');
-        expect(chartData['3'][1].name === 'Yes');
-        expect(chartData['3'][1].freq === '67');
+        expect(chartData[three] != null);
+        expect(chartData[three]?.length === 2);
+        expect(chartData[three]?.statsArr[0].name === 'Yes');
+        expect(chartData[three]?.statsArr[0].Frequency === '67');
+        expect(chartData[three]?.statsArr[1].name === 'No');
+        expect(chartData[three]?.statsArr[1].Frequency === '33');
 
-
-        expect(chartData['6'] != null);
-        expect(chartData['6']?.length === 5);
-        expect(chartData['6'][1].percentage === '33');
-        expect(chartData['6'][4].percentage === '67');
+        expect(chartData[six] != null);
+        expect(chartData[six]?.length === 5);
+        expect(chartData[six]?.statsArr[1].percentage === '33');
+        expect(chartData[six]?.statsArr[4].percentage === '67');
     });
 
     test('Test overall component with no response', async () => {
@@ -128,8 +134,10 @@ describe('OverAllAnalysis Test', () => {
 
 });
 
-//TODO test all components one by one
-describe('OverAllComponentHelper tests', () => {
+
+describe('Test each component separately', () => {
+
+    //1. Welcome component test
     test('Test OverAll Welcome component helper', async () => {
         const result: any[] = processWelcomeMessageComp(null);
         expect(result.length === 0);
@@ -140,17 +148,167 @@ describe('OverAllComponentHelper tests', () => {
         expect(res.clickFrequency === 3);
     });
 
+    //2. Single answer component test
     test('Test overall Single selection component', async () => {
         const result = processSingleSelectionComp(null);
-        expect(result.length === 0);
+        expect(result.statsArr == null);
+        expect(result.question == null);
 
-        const dataStr = '[{"id":3,"data":{"type":"single","selectedVal":"No"},"compData":{"question":"You f****d you","answerList":[null],"type":"single"}},{"id":3,"data":{"type":"single","selectedVal":"Yes"},"compData":{"question":"You f****d you","answerList":[null],"type":"single"}},{"id":3,"data":{"type":"single","selectedVal":"Yes"},"compData":{"question":"You f****d you","answerList":[null],"type":"single"}}]';
+        const dataStr = '[{"id":3,"data":{"type":"single","selectedVal":"No"},"compData":{"question":"You know you","answerList":[null],"type":"single"}},{"id":3,"data":{"type":"single","selectedVal":"Yes"},"compData":{"question":"You know you","answerList":[null],"type":"single"}},{"id":3,"data":{"type":"single","selectedVal":"Yes"},"compData":{"question":"You know you","answerList":[null],"type":"single"}}]';
         const res = processSingleSelectionComp(JSON.parse(dataStr));
         expect(res != null);
-        expect(res?.length === 2);
-        expect(res[0].name === 'No');
-        expect(res[0].freq === '33');
-        expect(res[1].name === 'Yes');
-        expect(res[1].freq === '67');
+        expect(res.statsArr.length === 2);
+        expect(res.statsArr[0].name === 'No');
+        expect(res.statsArr[0].Frequency === '33');
+        expect(res.statsArr[1].name === 'Yes');
+        expect(res.statsArr[1].Frequency === '67');
+
+        const emptyRes = processSingleSelectionComp([{}]);
+        expect(emptyRes.question == null);
+        expect(emptyRes.statsArr.length === 0);
     });
+
+    //3. Multiple answer component test
+    test('Test overall Multiple answer component',async () => {
+        const result = processMultipleSelectionComp(null);
+        expect(result.statsArr == null);
+        expect(result.question == null);
+
+        const dataStr = '[{"uiId":"dndnode_2203","id":4,"data":{"type":"multiple","selectedVal":["old"]},"compData":{"question":"Multiple","answerList":["new","old"],"type":"multiple","existing":true}},{"uiId":"dndnode_2203","id":4,"data":{"type":"multiple","selectedVal":["old"]},"compData":{"question":"Multiple","answerList":["new","old"],"type":"multiple","existing":true}},{"uiId":"dndnode_2203","id":4,"data":{"type":"multiple","selectedVal":["new"]},"compData":{"question":"Multiple","answerList":["new","old"],"type":"multiple","existing":true}}]'; 
+        const dataResult = processMultipleSelectionComp(JSON.parse(dataStr));
+        expect(dataResult.question === 'Multiple');
+        expect(dataResult.statsArr.length === 2);
+        expect(dataResult.statsArr[0].name === 'old');
+        expect(parseInt(dataResult.statsArr[0].Frequency)).toBe(67);
+        expect(dataResult.statsArr[1].name === 'new');
+        expect(parseInt(dataResult.statsArr[1].Frequency)).toBe(33);
+
+        const dataStr2 = '[{"uiId":"dndnode_2203","id":4,"data":{"type":"multiple","selectedVal":["old"]},"compData":{"question":"Multiple","answerList":["new","old"],"type":"multiple","existing":true}},{"uiId":"dndnode_2203","id":4,"data":{"type":"multiple","selectedVal":["old"]},"compData":{"question":"Multiple","answerList":["new","old"],"type":"multiple","existing":true}},{"uiId":"dndnode_2203","id":4,"data":{"type":"multiple","selectedVal":["new"]},"compData":{"question":"Multiple","answerList":["new","old"],"type":"multiple","existing":true}},{"uiId":"dndnode_2203","id":4,"data":{"type":"multiple","selectedVal":["new"]},"compData":{"question":"Multiple","answerList":["new","old"],"type":"multiple","existing":true}}]';
+        const dataResult2 = processMultipleSelectionComp(JSON.parse(dataStr2));
+        expect(dataResult2.question === 'Multiple');
+        expect(dataResult2.statsArr.length === 2);
+        expect(dataResult2.statsArr[0].name === 'old');
+        expect(parseInt(dataResult2.statsArr[0].Frequency)).toBe(50);
+        expect(dataResult2.statsArr[1].name === 'new');
+        expect(parseInt(dataResult2.statsArr[1].Frequency)).toBe(50);
+
+        const dataStr3 = '[{"uiId":"dndnode_2203","id":4,"data":{"type":"multiple","selectedVal":["old"]},"compData":{"question":"Multiple","answerList":["new","old"],"type":"multiple","existing":true}},{"uiId":"dndnode_2203","id":4,"data":{"type":"multiple","selectedVal":["old"]},"compData":{"question":"Multiple","answerList":["new","old"],"type":"multiple","existing":true}},{"uiId":"dndnode_2203","id":4,"data":{"type":"multiple","selectedVal":["new"]},"compData":{"question":"Multiple","answerList":["new","old"],"type":"multiple","existing":true}},{"uiId":"dndnode_2203","id":4,"data":{"type":"multiple","selectedVal":["new","old"]},"compData":{"question":"Multiple","answerList":["new","old"],"type":"multiple","existing":true}}]';
+        const dataResult3 = processMultipleSelectionComp(JSON.parse(dataStr3));
+        expect(dataResult3.question === 'Multiple');
+        expect(dataResult3.statsArr.length === 2);
+        expect(dataResult3.statsArr[0].name === 'old');
+        expect(parseInt(dataResult3.statsArr[0].Frequency)).toBe(60);
+        expect(dataResult3.statsArr[1].name === 'new');
+        expect(parseInt(dataResult3.statsArr[1].Frequency)).toBe(40)
+
+        const dataStr4 = '[{"uiId":"dndnode_2203","id":4,"data":{"type":"multiple","selectedVal":["old"]},"compData":{"question":"Multiple","answerList":["new","old"],"type":"multiple","existing":true}},{"uiId":"dndnode_2203","id":4,"data":{"type":"multiple","selectedVal":["old"]},"compData":{"question":"Multiple","answerList":["new","old"],"type":"multiple","existing":true}},{"uiId":"dndnode_2203","id":4,"data":{"type":"multiple","selectedVal":["old"]},"compData":{"question":"Multiple","answerList":["new","old"],"type":"multiple","existing":true}},{"uiId":"dndnode_2203","id":4,"data":{"type":"multiple","selectedVal":["old"]},"compData":{"question":"Multiple","answerList":["new","old"],"type":"multiple","existing":true}}]';
+        const dataResult4 = processMultipleSelectionComp(JSON.parse(dataStr4));
+        expect(dataResult4.question === 'Multiple');
+        expect(dataResult4.statsArr.length === 2);
+        expect(dataResult4.statsArr[0].name === 'old');
+        expect(parseInt(dataResult4.statsArr[0].Frequency)).toBe(100);
+        expect(dataResult4.statsArr[1]).toBe(undefined);
+
+        const dataStr5 = generateMultipleAnswerDataset(10000,0.7);
+        const dataResult5 = processMultipleSelectionComp(JSON.parse(dataStr5));
+        expect(dataResult5.question === 'Multiple');
+        expect(dataResult5.statsArr.length === 2);
+        expect(dataResult5.statsArr[0].name === 'old');
+        expect(parseInt(dataResult5.statsArr[0].Frequency)).toBe(70);
+        expect(dataResult5.statsArr[1].name === 'new');
+        expect(parseInt(dataResult5.statsArr[1].Frequency)).toBe(30);
+    });
+
+    test('Test overall Text Answer component',async () => {
+        const result = processTextAnswerComp(null);
+        expect(result.statsArr == null);
+        expect(result.question == null);
+
+        const dataSet1 = generateAnswerComponentDataset(10,5);
+        const dataResult1 = processTextAnswerComp(dataSet1);
+        expect(dataResult1.question).toBe('A');
+        expect(dataResult1.statsArr.length).toBe(10);
+        
+        const dataSet2 = generateAnswerComponentDataset(100000,5);
+        const dataResult2 = processTextAnswerComp(dataSet2);
+        expect(dataResult2.question).toBe('A');
+        expect(dataResult2.statsArr.length).toBe(100000);
+    });
+
+    test('Test smiley scale component' ,async() => {
+        const result = processSmileyComp(null);
+        expect(result.statsArr == null);
+        expect(result.question == null);
+
+        const dataSet1 = generateSmileyDataset(10,{
+            "0" : 0,
+            "1" : 4,
+            "2" : 0,
+            "3" : 0,
+            "4" : 0,
+        });
+        const dataResult1 = processSmileyComp(dataSet1);
+        expect(dataResult1.question).toBe('Smiley scale');
+        expect(dataResult1.statsArr.length).toBe(5);
+        expect(dataResult1.statsArr[0].percentage).toBe('0');
+        expect(dataResult1.statsArr[1].percentage).toBe('100');
+        expect(dataResult1.statsArr[2].percentage).toBe('0');
+        expect(dataResult1.statsArr[3].percentage).toBe('0');
+        expect(dataResult1.statsArr[4].percentage).toBe('0');
+
+        const dataSet2 = generateSmileyDataset(10,{
+            "0" : 0,
+            "1" : 4,
+            "2" : 4,
+            "3" : 0,
+            "4" : 0,
+        });
+
+        const dataResult2 = processSmileyComp(dataSet2);
+        expect(dataResult2.question).toBe('Smiley scale');
+        expect(dataResult2.statsArr.length).toBe(5);
+        expect(dataResult2.statsArr[0].percentage).toBe('0');
+        expect(dataResult2.statsArr[1].percentage).toBe('50');
+        expect(dataResult2.statsArr[2].percentage).toBe('50');
+        expect(dataResult2.statsArr[3].percentage).toBe('0');
+        expect(dataResult2.statsArr[4].percentage).toBe('0');
+
+        const dataSet3 = generateSmileyDataset(10,{
+            "0" : 1,
+            "1" : 4,
+            "2" : 4,
+            "3" : 0,
+            "4" : 1,
+        });
+
+        const dataResult3 = processSmileyComp(dataSet3);
+        expect(dataResult3.question).toBe('Smiley scale');
+        expect(dataResult3.statsArr.length).toBe(5);
+        expect(dataResult3.statsArr[0].percentage).toBe('10');
+        expect(dataResult3.statsArr[1].percentage).toBe('40');
+        expect(dataResult3.statsArr[2].percentage).toBe('40');
+        expect(dataResult3.statsArr[3].percentage).toBe('0');
+        expect(dataResult3.statsArr[4].percentage).toBe('10');
+
+        const dataSet4 = generateSmileyDataset(19,{
+            "0" : 1,
+            "1" : 4,
+            "2" : 4,
+            "3" : 9,
+            "4" : 1,
+        });
+        const dataResult4 = processSmileyComp(dataSet4);
+        expect(dataResult4.question).toBe('Smiley scale');
+        expect(dataResult4.statsArr.length).toBe(5);
+        expect(dataResult4.statsArr[0].percentage).toBe('5');
+        expect(dataResult4.statsArr[1].percentage).toBe('21');
+        expect(dataResult4.statsArr[2].percentage).toBe('21');
+        expect(dataResult4.statsArr[3].percentage).toBe('47');
+        expect(dataResult4.statsArr[4].percentage).toBe('5');
+    });
+
+    // test('Test rating component',async() => {
+    //     processRatingComp
+    // });
+
 })
