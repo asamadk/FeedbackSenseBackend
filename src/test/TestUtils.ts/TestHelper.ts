@@ -57,6 +57,7 @@ export class TestHelper {
                 await this.dbConnect.query('DROP TABLE IF EXISTS subscription');
                 await this.dbConnect.query('DROP TABLE IF EXISTS folder');
                 await this.dbConnect.query('DROP TABLE IF EXISTS notification');
+                await this.dbConnect.query('DROP TABLE IF EXISTS custom_settings');
                 await this.dbConnect.query('DROP TABLE IF EXISTS organization');
                 await this.dbConnect.query('DROP TABLE IF EXISTS plan');
                 await this.dbConnect.query('DROP TABLE IF EXISTS user');

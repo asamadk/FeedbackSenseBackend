@@ -44,20 +44,20 @@ export class StartUp {
 
     populatePlanLimit() {
         this.planLimits.set(FREE_PLAN, JSON.stringify(
-            { activeSurveyLimit: 1, responseStoreLimit: 50, responseCapacity: 50 }
+            {}
         ));
         this.planLimits.set(STARTER_PLAN, JSON.stringify(
-            { activeSurveyLimit: 5, responseStoreLimit: 2000, responseCapacity: 2000 }
+            {}
         ));
         this.planLimits.set(GROWTH_PLAN, JSON.stringify(
-            { activeSurveyLimit: 10, responseStoreLimit: 5000, responseCapacity: 5000 }
+            {}
         ));
     }
 
     populatePlanAmount() {
         this.planNamePrice.set(FREE_PLAN, 0);
         this.planNamePrice.set(STARTER_PLAN, 25);
-        this.planNamePrice.set(GROWTH_PLAN,49);
+        this.planNamePrice.set(GROWTH_PLAN, 49);
         // this.planNamePrice.set(ENTERPRISE_PLAN,135);
         // this.planNamePrice.set(ULTIMATE_PLAN,175);
         logger.info('Plan prices populated');

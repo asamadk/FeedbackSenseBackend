@@ -1,4 +1,4 @@
-import { UserProfile } from "../../Types/AuthTypes";
+import { User } from "../../Entity/UserEntity";
 
 export class AuthUserDetails {
 
@@ -11,13 +11,13 @@ export class AuthUserDetails {
         return this.instance;
     }
 
-    private authUserProfile : UserProfile
+    private authUserProfile : User
 
-    setUserDetails(authUserProfile : UserProfile) : void{
+    setUserDetails(authUserProfile : User) : void{
         this.authUserProfile = authUserProfile
     }
 
-    getUserDetails() : UserProfile{
+    getUserDetails() : User{
         return this.authUserProfile;
     }
 

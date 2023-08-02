@@ -28,6 +28,7 @@ import { StartUp } from './Helpers/Startup';
 import { logger } from './Config/LoggerConfig';
 import { logRequest } from './MiddleWares/LogMiddleware';
 import { globalAPILimiter } from './Config/RateLimitConfig';
+import { User } from './Entity/UserEntity';
 
 dotenv.config();
 
@@ -36,7 +37,12 @@ const numCPUs = os.cpus().length;
 const port = process.env.PORT;
 
 app.use(cors({
-  origin: ["http://localhost:3000", "https://www.feedbacksense.io", "https://app.feedbacksense.io"],
+  origin: [
+    "http://localhost:3000",
+    "https://www.feedbacksense.io",
+    "https://app.feedbacksense.io",
+    "https://staging.feedbacksense.io",
+  ],
   methods: "GET,POST,PUT,DELETE",
   credentials: true,
 }));
@@ -66,7 +72,12 @@ passport.use(
     },
     async function (accessToken, refreshToken, profile, callback) {
       handleSuccessfulLogin(profile);
-      callback(null, profile);
+      const currentUser = AppDataSource.getDataSource().getRepository(User).findOne({
+        where: {
+          email: profile?._json?.email
+        }
+      });
+      callback(null, currentUser);
     }
   )
 );

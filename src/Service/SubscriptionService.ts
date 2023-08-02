@@ -7,6 +7,8 @@ import { Subscription } from "../Entity/SubscriptionEntity";
 import { User } from "../Entity/UserEntity";
 import { getCustomResponse, getDefaultResponse } from "../Helpers/ServiceUtils";
 import { responseRest } from "../Types/ApiTypes";
+import { CustomSettingsHelper } from "../Helpers/CustomSettingHelper";
+import { ACTIVE_SURVEY_LIMIT, SURVEY_RESPONSE_CAPACITY } from "../Constants/CustomSettingsCont";
 
 export const getSubScriptionDetailsHome = async (userEmail: string): Promise<responseRest> => {
     try {
@@ -18,34 +20,43 @@ export const getSubScriptionDetailsHome = async (userEmail: string): Promise<res
             .createQueryBuilder('subscription')
             .innerJoin('subscription.user', 'user')
             .innerJoin('subscription.plan', 'plan')
-            .select(['subscription', 'plan.name'])
+            .select(['subscription', 'plan.name','user.organization_id'])
             .where('user.email = :userEmail', { userEmail })
             .getOne();
 
         if (subscription != null) {
             subscriptionObj = subscription;
         }
-
+        
         if (subscriptionObj == null) {
             return getCustomResponse([], 404, 'No subscription details found', false);
         }
+        
+        const orgId = subscription.user.organization_id;
+        if(orgId == null || orgId.length < 1){
+            logger.error(`message - Org Id not found :: getSubScriptionDetailsHome()`);
+            throw new Error('Critical error , please contact support');
+        }
+        
+        await CustomSettingsHelper.getInstance(orgId).initialize();
+        const surveyResponseCapacity = CustomSettingsHelper.getInstance(orgId).getCustomSettings(SURVEY_RESPONSE_CAPACITY);
+        const activeSurveyLimit = CustomSettingsHelper.getInstance(orgId).getCustomSettings(ACTIVE_SURVEY_LIMIT);
+
         const subLimit = subscriptionObj.sub_limit;
-        let activeSurveyLimit = 0;
         let usedSurveyLimit = 0;
         let subLimitObj
         if (subLimit != null) {
             subLimitObj = JSON.parse(subLimit);
-            activeSurveyLimit = subLimitObj.activeSurveyLimit;
             usedSurveyLimit = subLimitObj.usedSurveyLimit;
         }
 
         const responseData: any = {
             name: subscriptionObj.plan.name,
-            totalSurveyLimit: activeSurveyLimit,
+            totalSurveyLimit: parseInt(activeSurveyLimit),
             surveyLimitUsed: usedSurveyLimit,
             billingCycle: subscriptionObj.billing_cycle,
-            responseStoreLimit: subLimitObj?.responseStoreLimit,
-            responseCapacity: subLimitObj?.responseCapacity
+            responseStoreLimit: parseInt(surveyResponseCapacity),
+            responseCapacity: parseInt(surveyResponseCapacity)
         }
 
         const subscriptionData = await getUserStripeSubscriptionDetails(userEmail);

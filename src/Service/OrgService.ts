@@ -7,6 +7,7 @@ import { getUnAuthorizedResponse } from "../MiddleWares/AuthMiddleware";
 import { responseRest } from "../Types/ApiTypes";
 import { createCustomer } from "./StripeService";
 import {UserProfile} from '../Types/AuthTypes'
+import { createCustomSettings } from "./CustomSettingsService";
 
 export const createOrganizationForUser = async (user : UserProfile, reqBody : any) : Promise<responseRest> => {
     try {
@@ -54,6 +55,8 @@ export const createOrganizationForUser = async (user : UserProfile, reqBody : an
         validUser.organization_id = orgObj.id;
         userRepository.save(validUser);
     
+        await createCustomSettings(orgObj.id);
+
         response.data = orgObj;
         return response;
     } catch (error) {

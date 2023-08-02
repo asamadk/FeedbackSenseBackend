@@ -13,3 +13,14 @@ ADD COLUMN emails VARCHAR(500) DEFAULT NULL;
 ALTER TABLE User
 ADD COLUMN address VARCHAR(500) DEFAULT NULL,
 ADD COLUMN image VARCHAR(255) DEFAULT NULL;
+
+-- present till here
+
+CREATE TABLE custom_settings (
+    id VARCHAR(36) NOT NULL PRIMARY KEY,
+    fKey VARCHAR(255) NOT NULL,
+    fValue LONGTEXT,
+    organizationId VARCHAR(36) NOT NULL,
+    CONSTRAINT UC_organization_key UNIQUE (organizationId, fKey),
+    FOREIGN KEY (organizationId) REFERENCES organization (id) ON DELETE CASCADE
+);
