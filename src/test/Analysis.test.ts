@@ -3,7 +3,7 @@ import { getFeedbackResponseList, getOverAllComponentsData, getOverallResponse, 
 import { SurveyResponse } from "../Entity/SurveyResponse";
 import { createSurveyFlow, createTestSurvey } from "./TestUtils.ts/SurveyTestUtils";
 import { generateAnswerComponentDataset, generateMultipleAnswerDataset, generateSmileyDataset, populateSurveyResponse } from "./TestUtils.ts/AnalysisUtils";
-import { processMultipleSelectionComp, processSingleSelectionComp, processSmileyComp, processTextAnswerComp, processWelcomeMessageComp } from "../Helpers/OverAllComponentHelper";
+import { contactInfoComp, dateComp, processMultipleSelectionComp, processNPSComp, processRatingComp, processSingleSelectionComp, processSmileyComp, processTextAnswerComp, processWelcomeMessageComp } from "../Helpers/OverAllComponentHelper";
 import { TestHelper } from "./TestUtils.ts/TestHelper";
 import { AppDataSource } from "../Config/AppDataSource";
 
@@ -219,6 +219,7 @@ describe('Test each component separately', () => {
         expect(parseInt(dataResult5.statsArr[1].Frequency)).toBe(30);
     });
 
+    //4. Test Text answer component
     test('Test overall Text Answer component',async () => {
         const result = processTextAnswerComp(null);
         expect(result.statsArr == null);
@@ -235,6 +236,7 @@ describe('Test each component separately', () => {
         expect(dataResult2.statsArr.length).toBe(100000);
     });
 
+    //5. Test smiley scale component
     test('Test smiley scale component' ,async() => {
         const result = processSmileyComp(null);
         expect(result.statsArr == null);
@@ -307,8 +309,137 @@ describe('Test each component separately', () => {
         expect(dataResult4.statsArr[4].percentage).toBe('5');
     });
 
-    // test('Test rating component',async() => {
-    //     processRatingComp
-    // });
+    //6. Test rating component
+    test('Test rating component',async() => {
+        const dataStr = '[{"compData":{"leftText":"Least","range":6,"rightText":"Most","question":"Rating scale","existing":false},"id":7,"data":{"value":3},"uiId":"dndnode_5623"},{"compData":{"leftText":"Least","range":6,"rightText":"Most","question":"Rating scale","existing":false},"id":7,"data":{"value":1},"uiId":"dndnode_5623"},{"compData":{"leftText":"Least","range":6,"rightText":"Most","question":"Rating scale","existing":false},"id":7,"data":{"value":1},"uiId":"dndnode_5623"},{"compData":{"leftText":"Least","range":6,"rightText":"Most","question":"Rating scale","existing":false},"id":7,"data":{"value":1},"uiId":"dndnode_5623"}]'; 
+        const dataResult = processRatingComp(JSON.parse(dataStr));
+        expect(dataResult.question).toBe('Rating scale');
+        expect(dataResult.statsArr.length).toBe(6);
+        expect(dataResult.statsArr[0].percentage).toBe('75');
+        expect(dataResult.statsArr[1].percentage).toBe('0');
+        expect(dataResult.statsArr[2].percentage).toBe('25');
+        expect(dataResult.statsArr[3].percentage).toBe('0');
+        expect(dataResult.statsArr[4].percentage).toBe('0');
+        expect(dataResult.statsArr[5].percentage).toBe('0');
+    
+        const dataStr1 = '[{"compData":{"leftText":"Least","range":6,"rightText":"Most","question":"Rating scale","existing":false},"id":7,"data":{"value":6},"uiId":"dndnode_5623"},{"compData":{"leftText":"Least","range":6,"rightText":"Most","question":"Rating scale","existing":false},"id":7,"data":{"value":6},"uiId":"dndnode_5623"},{"compData":{"leftText":"Least","range":6,"rightText":"Most","question":"Rating scale","existing":false},"id":7,"data":{"value":6},"uiId":"dndnode_5623"},{"compData":{"leftText":"Least","range":6,"rightText":"Most","question":"Rating scale","existing":false},"id":7,"data":{"value":6},"uiId":"dndnode_5623"}]';
+        const dataResult1 = processRatingComp(JSON.parse(dataStr1));
+        expect(dataResult1.statsArr.length).toBe(6);
+        expect(dataResult1.statsArr[0].percentage).toBe('0');
+        expect(dataResult1.statsArr[1].percentage).toBe('0');
+        expect(dataResult1.statsArr[2].percentage).toBe('0');
+        expect(dataResult1.statsArr[3].percentage).toBe('0');
+        expect(dataResult1.statsArr[4].percentage).toBe('0');
+        expect(dataResult1.statsArr[5].percentage).toBe('100');
+
+        const dataStr2 = '[{"compData":{"leftText":"Least","range":6,"rightText":"Most","question":"Rating scale","existing":false},"id":7,"data":{},"uiId":"dndnode_5623"},{"compData":{"leftText":"Least","range":6,"rightText":"Most","question":"Rating scale","existing":false},"id":7,"data":{},"uiId":"dndnode_5623"},{"compData":{"leftText":"Least","range":6,"rightText":"Most","question":"Rating scale","existing":false},"id":7,"data":{},"uiId":"dndnode_5623"},{"compData":{"leftText":"Least","range":6,"rightText":"Most","question":"Rating scale","existing":false},"id":7,"data":{},"uiId":"dndnode_5623"}]';
+        const dataResult2 = processRatingComp(JSON.parse(dataStr2));
+        expect(dataResult2.statsArr[0].percentage).toBe('0');
+        expect(dataResult2.statsArr[1].percentage).toBe('0');
+        expect(dataResult2.statsArr[2].percentage).toBe('0');
+        expect(dataResult2.statsArr[3].percentage).toBe('0');
+        expect(dataResult2.statsArr[4].percentage).toBe('0');
+        expect(dataResult2.statsArr[5].percentage).toBe('0');
+    });
+
+    //7. Test NPS component
+    test('Test NPS component',async () => {
+        const dataStr = '[{"compData":{"leftText":"least","existing":false,"rightText":"most","question":"NPS"},"id":8,"data":{"value":"10"},"uiId":"dndnode_6789"},{"compData":{"leftText":"least","existing":false,"rightText":"most","question":"NPS"},"id":8,"data":{"value":"10"},"uiId":"dndnode_6789"},{"compData":{"leftText":"least","existing":false,"rightText":"most","question":"NPS"},"id":8,"data":{"value":"10"},"uiId":"dndnode_6789"},{"compData":{"leftText":"least","existing":false,"rightText":"most","question":"NPS"},"id":10,"data":{"value":"10"},"uiId":"dndnode_6789"}]';
+        const dataResult = processNPSComp(JSON.parse(dataStr));
+        expect(dataResult.question).toBe('NPS');
+        expect(dataResult.nps).toBe(100);
+        expect(dataResult.chart.length).toBe(10);
+        expect(dataResult.chart[0].percentage).toBe(0);
+        expect(dataResult.chart[1].percentage).toBe(0);
+        expect(dataResult.chart[2].percentage).toBe(0);
+        expect(dataResult.chart[3].percentage).toBe(0);
+        expect(dataResult.chart[4].percentage).toBe(0);
+        expect(dataResult.chart[5].percentage).toBe(0);
+        expect(dataResult.chart[6].percentage).toBe(0);
+        expect(dataResult.chart[7].percentage).toBe(0);
+        expect(dataResult.chart[8].percentage).toBe(0);
+        expect(dataResult.chart[9].percentage).toBe(100);
+
+        const dataStr1 = '[{"compData":{"leftText":"least","existing":false,"rightText":"most","question":"NPS"},"id":8,"data":{"value":"8"},"uiId":"dndnode_6789"},{"compData":{"leftText":"least","existing":false,"rightText":"most","question":"NPS"},"id":8,"data":{"value":"10"},"uiId":"dndnode_6789"},{"compData":{"leftText":"least","existing":false,"rightText":"most","question":"NPS"},"id":8,"data":{"value":"10"},"uiId":"dndnode_6789"},{"compData":{"leftText":"least","existing":false,"rightText":"most","question":"NPS"},"id":10,"data":{"value":"10"},"uiId":"dndnode_6789"}]';
+        const dataResult1 = processNPSComp(JSON.parse(dataStr1));
+        expect(dataResult1.chart[0].percentage).toBe(0);
+        expect(dataResult1.chart[1].percentage).toBe(0);
+        expect(dataResult1.chart[2].percentage).toBe(0);
+        expect(dataResult1.chart[3].percentage).toBe(0);
+        expect(dataResult1.chart[4].percentage).toBe(0);
+        expect(dataResult1.chart[5].percentage).toBe(0);
+        expect(dataResult1.chart[6].percentage).toBe(0);
+        expect(dataResult1.chart[7].percentage).toBe(25);
+        expect(dataResult1.chart[8].percentage).toBe(0);
+        expect(dataResult1.chart[9].percentage).toBe(75);
+
+        const dataStr2 = '[{"compData":{"leftText":"least","existing":false,"rightText":"most","question":"NPS"},"id":8,"data":{"value":"8"},"uiId":"dndnode_6789"},{"compData":{"leftText":"least","existing":false,"rightText":"most","question":"NPS"},"id":8,"data":{"value":"8"},"uiId":"dndnode_6789"},{"compData":{"leftText":"least","existing":false,"rightText":"most","question":"NPS"},"id":8,"data":{"value":"10"},"uiId":"dndnode_6789"},{"compData":{"leftText":"least","existing":false,"rightText":"most","question":"NPS"},"id":10,"data":{"value":"10"},"uiId":"dndnode_6789"},{"compData":{"leftText":"least","existing":false,"rightText":"most","question":"NPS"},"id":10,"data":{"value":"10"},"uiId":"dndnode_6789"}]';
+        const dataResult2 = processNPSComp(JSON.parse(dataStr2));
+        expect(dataResult2.chart[0].percentage).toBe(0);
+        expect(dataResult2.chart[1].percentage).toBe(0);
+        expect(dataResult2.chart[2].percentage).toBe(0);
+        expect(dataResult2.chart[3].percentage).toBe(0);
+        expect(dataResult2.chart[4].percentage).toBe(0);
+        expect(dataResult2.chart[5].percentage).toBe(0);
+        expect(dataResult2.chart[6].percentage).toBe(0);
+        expect(dataResult2.chart[7].percentage).toBe(40);
+        expect(dataResult2.chart[8].percentage).toBe(0);
+        expect(dataResult2.chart[9].percentage).toBe(60);
+
+        const dataResult3 = processNPSComp([]);
+        expect(dataResult3.length).toBe(0);
+    });
+
+    //8. Test Contact Form component
+    test('Test Contact Form component',async () => {
+        const dataResult = contactInfoComp([]);
+        expect(dataResult.contactInfoRow.length).toBe(0);
+        expect(dataResult.contactColumn.length).toBe(0);
+        
+        const dataResult1 = contactInfoComp(JSON.parse('[{"compData":{"existing":false,"question":"Contact form","answerList":["Name","Age","Email"]},"id":11,"data":{"Age":"24","Name":"Abdul Samad","Email":"founder@feedbacksense.io"},"uiId":"dndnode_7706"}]'));
+        expect(dataResult1.contactInfoRow[0].length).toBe(dataResult1.contactColumn.length);
+
+        const dataResult2 = contactInfoComp(JSON.parse('[{"compData":{"existing":false,"question":"Contact form","answerList":["Name","Age","Email"]},"id":11,"data":{"Age":"24","Name":"Abdul Samad","Email":"founder@feedbacksense.io"},"uiId":"dndnode_7706"},{"compData":{"existing":false,"question":"Contact form","answerList":["Name","Age","Email"]},"id":11,"data":{"Age":"25","Name":"Amar Soni","Email":"founder@feedbacksense.io"},"uiId":"dndnode_7706"},{"compData":{"existing":false,"question":"Contact form","answerList":["Name","Age","Email"]},"id":11,"data":{"Age":"24","Name":"Abdul Samad","Email":"founder@feedbacksense.io"},"uiId":"dndnode_7706"}]'));
+        expect(dataResult2.contactInfoRow[0].length).toBe(dataResult2.contactColumn.length);
+        expect(dataResult2.contactInfoRow[0].length).toBe(3);
+        expect(dataResult2.contactInfoRow[1].length).toBe(3);
+        expect(dataResult2.contactInfoRow[2].length).toBe(3);
+        expect(dataResult2.contactInfoRow[0][0]).toBe('24');
+        expect(dataResult2.contactInfoRow[0][1]).toBe('Abdul Samad');
+        expect(dataResult2.contactInfoRow[0][2]).toBe('founder@feedbacksense.io');
+
+        const dataResult3 = contactInfoComp(JSON.parse('[{"compData":{"existing":false,"question":"Contact form","answerList":["Name","Age","Email","Gender"]},"id":11,"data":{"Age":"24","Name":"Abdul Samad","Email":"founder@feedbacksense.io"},"uiId":"dndnode_7706"},{"compData":{"existing":false,"question":"Contact form","answerList":["Name","Age","Email"]},"id":11,"data":{"Age":"25","Name":"Amar Soni","Email":"founder@feedbacksense.io"},"uiId":"dndnode_7706"},{"compData":{"existing":false,"question":"Contact form","answerList":["Name","Age","Email"]},"id":11,"data":{"Age":"24","Name":"Abdul Samad","Email":"founder@feedbacksense.io"},"uiId":"dndnode_7706"}]'));
+        expect(dataResult3.contactInfoRow[0].length).toBe(dataResult3.contactColumn.length);
+
+        const dataResult4 = contactInfoComp(JSON.parse('[{"compData":{"existing":false,"question":"Contact form","answerList":["Name","Age","Email","Gender"]},"id":11,"data":{"Age":"24","Name":"Abdul Samad","Email":"founder@feedbacksense.io"},"uiId":"dndnode_7706"},{"compData":{"existing":false,"question":"Contact form","answerList":["Name","Age","Email"]},"id":11,"data":{},"uiId":"dndnode_7706"},{"compData":{"existing":false,"question":"Contact form","answerList":["Name","Age","Email"]},"id":11,"data":{},"uiId":"dndnode_7706"}]'));
+        expect(dataResult4.contactInfoRow[0].length).toBe(dataResult4.contactColumn.length);
+        expect(dataResult4.contactInfoRow[1].length).toBe(0);
+        expect(dataResult4.contactInfoRow[2].length).toBe(0);
+
+        const dataResult5 = contactInfoComp(JSON.parse('[{"compData":{"existing":false,"question":"Contact form","answerList":["Name","Age","Email","Gender"]},"id":11,"data":{},"uiId":"dndnode_7706"},{"compData":{"existing":false,"question":"Contact form","answerList":["Name","Age","Email"]},"id":11,"data":{},"uiId":"dndnode_7706"},{"compData":{"existing":false,"question":"Contact form","answerList":["Name","Age","Email"]},"id":11,"data":{},"uiId":"dndnode_7706"}]'));
+        expect(dataResult5.contactInfoRow[0].length).toBe(dataResult5.contactColumn.length); 
+    });
+
+    // 9. Test Date component
+    test('Test Date component',async() => {
+        const dataResult = dateComp([]);
+        expect(dataResult.actions.length).toBe(0);
+        expect(dataResult.clickFrequency).toBe(0);
+        expect(dataResult.question).toBe('');
+        
+        const dataResult1 = dateComp(JSON.parse('[{"compData":{"question":"Date selector","existing":false},"id":13,"data":"2023-06-26","uiId":"dndnode_8940"},{"compData":{"question":"Date selector","existing":false},"id":13,"data":"2023-06-29","uiId":"dndnode_8940"},{"compData":{"question":"Date selector","existing":false},"id":13,"data":"2023-06-28","uiId":"dndnode_8940"}]'));
+        expect(dataResult1.actions.length).toBe(dataResult1.clickFrequency);
+        expect(dataResult1.question).toBe('Date selector');
+        expect(dataResult1.actions[0]).toBe('2023-06-26');
+        expect(dataResult1.actions[1]).toBe('2023-06-29');
+        expect(dataResult1.actions[2]).toBe('2023-06-28');
+
+        const dataResult2 = dateComp(JSON.parse('[{"compData":{"question":"Date selector","existing":false},"id":13,"data":"2023-06-26","uiId":"dndnode_8940"},{"compData":{"question":"Date selector","existing":false},"id":13,"data":"","uiId":"dndnode_8940"},{"compData":{"question":"Date selector","existing":false},"id":13,"data":"2023-06-28","uiId":"dndnode_8940"}]'));
+        expect(dataResult2.actions.length).toBe(dataResult2.clickFrequency);
+        expect(dataResult2.question).toBe('Date selector');
+        expect(dataResult2.actions[0]).toBe('2023-06-26');
+        expect(dataResult2.actions[1]).toBe('');
+        expect(dataResult2.actions[2]).toBe('2023-06-28');
+    });
 
 })

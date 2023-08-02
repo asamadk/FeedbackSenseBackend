@@ -18,7 +18,7 @@ export const getCustomerId = async (): Promise<string> => {
     const userRepository = AppDataSource.getDataSource().getRepository(User);
     const currentUser = await userRepository.findOne({
         where: {
-            email: userDetails._json.email
+            email: userDetails.email
         }
     });
     const orgDetails = await orgRepo.findOne({ where: { id: currentUser.organization_id } });
@@ -30,8 +30,8 @@ export const createCustomer = async (currentUser: User) => {
     const userDetails = AuthUserDetails.getInstance().getUserDetails();
     const address = JSON.parse(currentUser?.address);
     const customer = await stripe.customers.create({
-        name: userDetails._json.name,
-        email: userDetails._json.email,
+        name: userDetails.name,
+        email: userDetails.email,
         address: {
             line1: address?.address,
             postal_code: address?.pinCode,
@@ -45,7 +45,7 @@ export const createCustomer = async (currentUser: User) => {
 
 export const checkUserCurrentPlan = async (planId: string): Promise<boolean> => {
     const userDetails = AuthUserDetails.getInstance().getUserDetails();
-    const userEmail = userDetails._json.email;
+    const userEmail = userDetails.email;
     const subscriptionRepo = AppDataSource.getDataSource().getRepository(Subscription);
     const currentSubscription = await subscriptionRepo
         .createQueryBuilder('subscription')
@@ -95,7 +95,7 @@ export const cancelCurrentSubscription = async (): Promise<responseRest> => {
             where: {
                 subscription: {
                     user: {
-                        email: AuthUserDetails.getInstance().getUserDetails()?._json?.email
+                        email: AuthUserDetails.getInstance().getUserDetails()?.email
                     },
                     plan: {
                         price_cents: Not(0)

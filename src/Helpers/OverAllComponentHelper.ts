@@ -197,7 +197,7 @@ export const processSmileyComp = (data: any[]): any => {
     }
 }
 
-const processRatingComp = (data: any[]): any => {
+export const processRatingComp = (data: any[]): any => {
     if (data == null) {
         return {};
     }
@@ -212,6 +212,9 @@ const processRatingComp = (data: any[]): any => {
             maxRange = tempRange;
         }
         range = tempRange;
+        if(selectedValue == null || selectedValue === 0){
+            return;
+        }
         let freq = freqMap.get(selectedValue);
         if (freq == null || freq == 0) {
             freq = 0;
@@ -220,7 +223,7 @@ const processRatingComp = (data: any[]): any => {
         freqMap.set(selectedValue, freq);
         question = d?.compData?.question
     });
-    for (let i = 1; i < range; i++) {
+    for (let i = 1; i <= range; i++) {
         if (freqMap.has(i) === false) {
             freqMap.set(i, 0);
         }
@@ -241,8 +244,8 @@ const processRatingComp = (data: any[]): any => {
     }
 }
 
-const processNPSComp = (data: any[]): any => {
-    if (data == null) {
+export const processNPSComp = (data: any[]): any => {
+    if (data == null || data.length < 1) {
         return [];
     }
     let question: string;
@@ -303,7 +306,7 @@ const processNPSComp = (data: any[]): any => {
     };
 }
 
-const contactInfoComp = (data: any[]): any => {
+export const contactInfoComp = (data: any[]): any => {
     if (data == null) {
         return [];
     }
@@ -325,11 +328,11 @@ const contactInfoComp = (data: any[]): any => {
     }
 }
 
-const dateComp = (data: any[]): any => {
+export const dateComp = (data: any[]): any => {
     if (data == null) {
         return [];
     }
-    let question: string;
+    let question = '';
     const actionSet = new Set<string>();
     data?.forEach(d => {
         actionSet.add(d?.data);

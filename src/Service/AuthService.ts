@@ -9,35 +9,27 @@ import { logger } from "../Config/LoggerConfig";
 import { MailHelper } from "../Utils/MailUtils/MailHelper";
 import { generateLoginEmailHtml } from "../Utils/MailUtils/MailMarkup/LoginMarkup";
 
-
 export const handleSuccessfulLogin = async (user: any): Promise<void> => {
     try {
         const userRepository = AppDataSource.getDataSource().getRepository(User);
         const planRepo = AppDataSource.getDataSource().getRepository(Plan);
         const subscriptionRepo = AppDataSource.getDataSource().getRepository(Subscription);
-
         let userEntity = new User();
-
         const userEmail: string = user?._json?.email;
         if (userEmail == null || userEmail === '') {
             return;
         }
-
         const savedUser = await userRepository.findOneBy({
             email: userEmail
         });
-
         const planObj = await planRepo.findOneBy({
             name: FREE_PLAN
         });
-
         if (savedUser != null) { return; }
-
         userEntity.name = user._json?.name;
         userEntity.email = user._json?.email;
         userEntity.emailVerified = user?._json?.email_verified;
         userEntity.oauth_provider = user?.provider;
-
         userEntity = await userRepository.save(userEntity);
         if (planObj != null) {
             const subscObj = new Subscription();
@@ -66,10 +58,7 @@ export const handleSuccessfulLogin = async (user: any): Promise<void> => {
 
 export const getFreeSubscriptionLimit = (): string => {
     const freeSubLimit = {
-        usedSurveyLimit: 0,
-        activeSurveyLimit: 1,
-        responseStoreLimit: 500,
-        responseCapacity: 500
+        usedSurveyLimit: 0
     }
     return JSON.stringify(freeSubLimit);
 }
@@ -97,6 +86,7 @@ export const getUserAfterLogin = async (user: any): Promise<responseRest> => {
         if (userSubscription == null) {
             return getCustomResponse(null, 404, 'Subscription not found', false);
         }
+
         response.data = userObj;
         return response;
     } catch (error) {

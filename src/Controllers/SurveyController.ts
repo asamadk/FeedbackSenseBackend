@@ -1,5 +1,5 @@
 import express from 'express';
-import { createSurvey, enableDisableSurvey, getAllSurveys, getDetailedSurvey, moveSurveyToFolder, saveSurveyFlow, softDeleteSurvey,saveSurveyDesign, updateSurveyConfig, getSurveyConfigData, updateSurveyName, checkIfSurveyHasResponse, duplicateSurvey } from '../Service/SurveyService';
+import { createSurvey, enableDisableSurvey, getAllSurveys, getDetailedSurvey, moveSurveyToFolder, saveSurveyFlow, permDeleteSurvey,saveSurveyDesign, updateSurveyConfig, getSurveyConfigData, updateSurveyName, checkIfSurveyHasResponse, duplicateSurvey } from '../Service/SurveyService';
 import { responseRest } from '../Types/ApiTypes';
 import { getCustomResponse } from '../Helpers/ServiceUtils';
 import { getUserEmailFromRequest } from '../Helpers/RestUtils';
@@ -87,7 +87,7 @@ router.post('/enable/:surveyId', async (req,res) => {
 router.post('/delete/:surveyId', async (req,res) => {
     try {
         const surveyId = req.params.surveyId;
-        const response = await softDeleteSurvey(surveyId);
+        const response = await permDeleteSurvey(surveyId);
         res.statusCode = response.statusCode;
         res.json(response);    
     } catch (error) {

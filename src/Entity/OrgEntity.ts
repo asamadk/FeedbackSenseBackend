@@ -1,5 +1,6 @@
-import { Column, CreateDateColumn, Entity, UpdateDateColumn } from "typeorm";
+import { Column, CreateDateColumn, Entity, OneToMany, UpdateDateColumn } from "typeorm";
 import { PrimaryGeneratedColumn } from "typeorm/decorator/columns/PrimaryGeneratedColumn";
+import { CustomSettings } from "./CustomSettingsEntity";
 
 @Entity()
 export class Organization {
@@ -17,4 +18,8 @@ export class Organization {
 
   @UpdateDateColumn()
   updated_at!: Date;
+
+  @OneToMany(() => CustomSettings, keyValue => keyValue.organization)
+  customSettings!: CustomSettings[];
+
 }

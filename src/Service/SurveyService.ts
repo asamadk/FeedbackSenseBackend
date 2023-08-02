@@ -11,6 +11,9 @@ import { cleanSurveyFlowJSON, createSurveyConfig, getMaxResponseLimit, validateI
 import { logger } from "../Config/LoggerConfig";
 import { SurveyResponse } from "../Entity/SurveyResponse";
 import { In, Not } from "typeorm";
+import { CustomSettingsHelper } from "../Helpers/CustomSettingHelper";
+import { AuthUserDetails } from "../Helpers/AuthHelper/AuthUserDetails";
+import { ACTIVE_SURVEY_LIMIT } from "../Constants/CustomSettingsCont";
 
 
 export const getDetailedSurvey = async (surveyId: string): Promise<responseRest> => {
@@ -162,7 +165,6 @@ export const enableDisableSurvey = async (surveyId: string, enable: boolean): Pr
             }
         }
 
-
         surveyObj.is_published = enable;
         const result: boolean = await updateActiveSurveyLimit(enable, surveyObj.user_id);
         if (result == false) {
@@ -184,11 +186,15 @@ const updateActiveSurveyLimit = async (enable: boolean, userId: string): Promise
         user: { id: userId }
     });
 
+    const orgId = AuthUserDetails?.getInstance()?.getUserDetails()?.organization_id;
+    await CustomSettingsHelper.getInstance(orgId).initialize();
+    const activeSurveyLimit = CustomSettingsHelper.getInstance(orgId).getCustomSettings(ACTIVE_SURVEY_LIMIT);
+
     if (subscriptionObj != null) {
         const subLimitStr = subscriptionObj.sub_limit;
         const subLimitObj = JSON.parse(subLimitStr);
         let usedSurveyLimit: number = subLimitObj.usedSurveyLimit;
-        const maxSurveyLimit: number = subLimitObj.activeSurveyLimit;
+        const maxSurveyLimit: number = parseInt(activeSurveyLimit);
         if (enable == true) {
             usedSurveyLimit++;
         } else {
@@ -208,7 +214,7 @@ const updateActiveSurveyLimit = async (enable: boolean, userId: string): Promise
     return true;
 }
 
-export const softDeleteSurvey = async (surveyId: string): Promise<responseRest> => {
+export const permDeleteSurvey = async (surveyId: string): Promise<responseRest> => {
     try {
         const response = getDefaultResponse('Survey deleted successfully');
         const surveyRepository = AppDataSource.getDataSource().getRepository(Survey);
@@ -222,10 +228,7 @@ export const softDeleteSurvey = async (surveyId: string): Promise<responseRest> 
             return response;
         }
         const wasSurveyPublished = surveyObj.is_published;
-        surveyObj.is_deleted = true;
-        surveyObj.is_published = false;
-
-        await surveyRepository.save(surveyObj);
+        await surveyRepository.delete(surveyObj.id);
         if (wasSurveyPublished === true) {
             await updateActiveSurveyLimit(false, surveyObj.user_id);
         }

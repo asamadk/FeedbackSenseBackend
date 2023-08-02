@@ -1,9 +1,11 @@
 import { AppDataSource } from "../Config/AppDataSource";
 import { logger } from "../Config/LoggerConfig";
+import { SURVEY_RESPONSE_CAPACITY } from "../Constants/CustomSettingsCont";
 import { Subscription } from "../Entity/SubscriptionEntity";
 import { SurveyConfig } from "../Entity/SurveyConfigEntity";
 import { SurveyResponse } from "../Entity/SurveyResponse";
 import { AuthUserDetails } from "./AuthHelper/AuthUserDetails";
+import { CustomSettingsHelper } from "./CustomSettingHelper";
 
 export const cleanSurveyFlowJSON = (surveyJSON: string): string => {
     if (surveyJSON == null || surveyJSON.length < 1) {
@@ -95,29 +97,22 @@ const getSubscriptionLimit = (userSubscription: Subscription) => {
 
 export const getMaxResponseLimit = async () => {
     const userDetails = AuthUserDetails.getInstance().getUserDetails();
-    const userEmail = userDetails?._json?.email;
-
-    const subscriptionRepo = AppDataSource.getDataSource().getRepository(Subscription);
-    const userSubscription = await subscriptionRepo.findOne({ where: { user: { email: userEmail } } });
-    const subLimitObj = getSubscriptionLimit(userSubscription);
-    const responseCapacity = subLimitObj?.responseCapacity;
-    return parseInt(responseCapacity);
+    const orgId = userDetails.organization_id;
+    await CustomSettingsHelper.getInstance(orgId).initialize();
+    const surveyResponseCapacity = CustomSettingsHelper.getInstance(orgId).getCustomSettings(SURVEY_RESPONSE_CAPACITY);
+    return parseInt(surveyResponseCapacity);
 }
 
 export const createSurveyConfig = async (userId: string, surveyId: string) => {
-    const subscriptionRepo = AppDataSource.getDataSource().getRepository(Subscription);
     const surveyConfigRepo = AppDataSource.getDataSource().getRepository(SurveyConfig);
-
-    const userSubscription = await subscriptionRepo.findOne({ where: { user: { id: userId } } });
-    const subLimitObj = getSubscriptionLimit(userSubscription);
-
-    let responseCapacity = subLimitObj?.responseCapacity;
-    if (responseCapacity == null) {
-        responseCapacity = 0;
-    }
+    
+    const userDetails = AuthUserDetails.getInstance().getUserDetails();
+    const orgId = userDetails.organization_id;
+    await CustomSettingsHelper.getInstance(orgId).initialize();
+    const surveyResponseCapacity = CustomSettingsHelper.getInstance(orgId).getCustomSettings(SURVEY_RESPONSE_CAPACITY);
 
     await surveyConfigRepo.save({
-        response_limit: parseInt(responseCapacity),
+        response_limit: parseInt(surveyResponseCapacity),
         time_limit: null,
         survey_id: surveyId,
     })
