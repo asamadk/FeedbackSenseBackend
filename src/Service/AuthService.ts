@@ -9,13 +9,13 @@ import { logger } from "../Config/LoggerConfig";
 import { MailHelper } from "../Utils/MailUtils/MailHelper";
 import { generateLoginEmailHtml } from "../Utils/MailUtils/MailMarkup/LoginMarkup";
 
-export const handleSuccessfulLogin = async (user: any): Promise<void> => {
+export const handleSuccessfulLogin = async (user: User): Promise<void> => {
     try {
         const userRepository = AppDataSource.getDataSource().getRepository(User);
         const planRepo = AppDataSource.getDataSource().getRepository(Plan);
         const subscriptionRepo = AppDataSource.getDataSource().getRepository(Subscription);
         let userEntity = new User();
-        const userEmail: string = user?._json?.email;
+        const userEmail: string = user?.email;
         if (userEmail == null || userEmail === '') {
             return;
         }
@@ -26,10 +26,10 @@ export const handleSuccessfulLogin = async (user: any): Promise<void> => {
             name: FREE_PLAN
         });
         if (savedUser != null) { return; }
-        userEntity.name = user._json?.name;
-        userEntity.email = user._json?.email;
-        userEntity.emailVerified = user?._json?.email_verified;
-        userEntity.oauth_provider = user?.provider;
+        userEntity.name = user?.name;
+        userEntity.email = user?.email;
+        userEntity.emailVerified = true;
+        userEntity.oauth_provider = 'GOOGLE';
         userEntity = await userRepository.save(userEntity);
         if (planObj != null) {
             const subscObj = new Subscription();
@@ -73,14 +73,14 @@ export const getUserAfterLogin = async (user: any): Promise<responseRest> => {
             return getCustomResponse(null, 403, 'Not Authorized', false);
         }
         const userObj = await userRepository.findOneBy({
-            email: user?._json?.email
+            email: user?.email
         });
         if (userObj == null) {
             return getCustomResponse(null, 404, 'User not found', false);
         }
         const userSubscription = subscriptionRepo.findOneByOrFail({
             user: {
-                email: user?._json?.email
+                email: user?.email
             }
         });
         if (userSubscription == null) {

@@ -2,7 +2,7 @@ import { logger } from "../Config/LoggerConfig";
 import express from 'express';
 
 export const logRequest = (req : any, res : express.Response, next) => {
-    let userEmail : string = req?.user?._json.email;
+    let userEmail : string = req?.user?.email;
     if(req.user == null){
         userEmail = '';
     }

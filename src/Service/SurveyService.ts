@@ -59,9 +59,7 @@ export const getAllSurveys = async (userEmail: string): Promise<responseRest> =>
     }
 }
 
-
-
-export const createSurvey = async (surveyName: string, user: any): Promise<responseRest> => {
+export const createSurvey = async (surveyName: string, user: User): Promise<responseRest> => {
     try {
         const response = getDefaultResponse('Survey created successfully');
         const surveyRepository = AppDataSource.getDataSource().getRepository(Survey);
@@ -76,15 +74,15 @@ export const createSurvey = async (surveyName: string, user: any): Promise<respo
             response.statusCode = 404;
             return response;
         }
-        const userEmail: string = user?._json?.email;
+        const userEmail: string = user?.email;
         if (userEmail == null || userEmail.length < 1) {
             return getCustomResponse(null, 404, 'User not found', false);
         }
         const savedUser = await userRepository.findOneBy({
-            email: user?._json?.email
+            email: user?.email
         });
         if (savedUser == null) {
-            return getCustomResponse([], 404, ' The user does not exists ', false);
+            return getCustomResponse([], 404, 'The user does not exists', false);
         }
         const surveyCount = await surveyRepository.count({where : {name : surveyName}});
         if(surveyCount > 0){

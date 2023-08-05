@@ -21,12 +21,20 @@ afterAll(async () => {
 describe('User test', () => {
     test("Create user test.", async () => {
         await handleSuccessfulLogin({
-            _json: {
-                email: 'abdul@pr.io',
-                name: 'Abdul Samad Kirmani',
-                email_verified: true,
-            },
-            provider: 'GOOGLE',
+            email: 'abdul@pr.io',
+            name: 'Abdul Samad Kirmani',
+            id: '',
+            oauth_provider: '',
+            oauth_id: '',
+            organization_id: '',
+            created_at: undefined,
+            updated_at: undefined,
+            emailVerified: false,
+            address: '',
+            image: '',
+            surveys: undefined,
+            notifications: undefined,
+            subscriptions: undefined
         });
 
         const response = await getUserAfterLogin({
@@ -48,9 +56,7 @@ describe('User test', () => {
 
     test("Get user with invalid email test.", async () => {
         const response = await getUserAfterLogin({
-            _json: {
-                email: 'invalid_email@pr.io'
-            }
+            email: 'invalid_email@pr.io'
         });
         expect(response != null).toBe(response.success === false);
         expect(response.statusCode).toBe(404);
@@ -60,12 +66,20 @@ describe('User test', () => {
 
 describe('handleSuccessfulLogin', () => {
     const user = {
-        _json: {
-            email: 'test@example.com',
-            name: 'Test User',
-            email_verified: true
-        },
-        provider: 'google'.toUpperCase()
+        email: 'test@example.com',
+        name: 'Test User',
+        id: '',
+        oauth_provider: '',
+        oauth_id: '',
+        organization_id: '',
+        created_at: undefined,
+        updated_at: undefined,
+        emailVerified: false,
+        address: '',
+        image: '',
+        surveys: undefined,
+        notifications: undefined,
+        subscriptions: undefined
     };
 
     it('should create a new user if not already saved', async () => {
@@ -116,7 +130,22 @@ describe('handleSuccessfulLogin', () => {
             save: jest.fn()
         };
 
-        await handleSuccessfulLogin({ _json: { name: 'Test User' } });
+        await handleSuccessfulLogin({
+            name: 'Test User',
+            id: '',
+            email: '',
+            oauth_provider: '',
+            oauth_id: '',
+            organization_id: '',
+            created_at: undefined,
+            updated_at: undefined,
+            emailVerified: false,
+            address: '',
+            image: '',
+            surveys: undefined,
+            notifications: undefined,
+            subscriptions: undefined
+        });
 
         expect(userRepository.findOneBy).not.toHaveBeenCalled();
         expect(userRepository.save).not.toHaveBeenCalled();

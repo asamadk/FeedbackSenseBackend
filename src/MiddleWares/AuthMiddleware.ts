@@ -3,7 +3,7 @@ import { USER_UNAUTH_TEXT } from "../Helpers/Constants";
 import { responseRest } from "../Types/ApiTypes";
 
 export const isLoggedIn = (req, res, next) => {
-    if (req.user && req.user._json.email) {
+    if (req.user && req.user.email) {
         AuthUserDetails.getInstance().setUserDetails(req.user);
         next();
     } else {

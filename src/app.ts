@@ -72,7 +72,7 @@ passport.use(
     },
     async function (accessToken, refreshToken, profile, callback) {
       handleSuccessfulLogin(profile);
-      const currentUser = AppDataSource.getDataSource().getRepository(User).findOne({
+      const currentUser = await AppDataSource.getDataSource().getRepository(User).findOne({
         where: {
           email: profile?._json?.email
         }
