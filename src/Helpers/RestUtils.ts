@@ -1,4 +1,4 @@
 export const getUserEmailFromRequest = (req : any) => {
-    const userEmail = req.user._json.email;
+    const userEmail = req.user.email;
     return userEmail;
 }

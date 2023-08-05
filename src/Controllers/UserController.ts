@@ -7,7 +7,7 @@ const router = express.Router();
 
 router.get('/list/org', async (req : any,res) => {
     try {
-        const userEmail = req.user._json.email;
+        const userEmail = req.user.email;
         const response : responseRest = await getAllUsersOfSameOrg(userEmail);
         res.statusCode = response.statusCode;
         res.json(response);

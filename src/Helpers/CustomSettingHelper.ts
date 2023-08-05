@@ -1,3 +1,4 @@
+import { Repository } from "typeorm";
 import { AppDataSource } from "../Config/AppDataSource";
 import { CustomSettings } from "../Entity/CustomSettingsEntity";
 
@@ -13,6 +14,7 @@ export class CustomSettingsHelper {
     }
 
     orgId: string
+    customSettingsRepo : Repository<CustomSettings>
     settings: {
         key : string,
         value : string
@@ -20,11 +22,11 @@ export class CustomSettingsHelper {
 
     constructor(orgId: string) {
         this.orgId = orgId;
+        this.customSettingsRepo = AppDataSource.getDataSource().getRepository(CustomSettings);
     }
 
     async initialize(): Promise<void> {
-        const customSettingsRepo = AppDataSource.getDataSource().getRepository(CustomSettings);
-        const orgCustomSettings = await customSettingsRepo.find({
+        const orgCustomSettings = await this.customSettingsRepo.find({
             where: {
                 organizationId: this.orgId
             }
@@ -36,6 +38,24 @@ export class CustomSettingsHelper {
 
     getCustomSettings(key : string):string{
         return this.settings[key];
+    }
+
+    //Does not saves in database
+    setCustomSettings(key : string, value : string){
+        this.settings[key] = value;
+    }
+
+    //save updated values in database
+    async saveCustomSettings(){
+        const orgCustomSettings = await this.customSettingsRepo.find({
+            where: {
+                organizationId: this.orgId
+            }
+        });
+        orgCustomSettings.forEach(setting => {
+            setting.fValue = this.settings[setting.fKey];
+        });
+        await this.customSettingsRepo.save(orgCustomSettings);
     }
 
 }

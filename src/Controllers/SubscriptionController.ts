@@ -8,7 +8,7 @@ const router = express.Router();
 
 router.get('/sub/details',async(req : any,res) => {
     try {
-        const userEmail = req.user._json.email;
+        const userEmail = req.user.email;
         const response : responseRest = await getSubScriptionDetailsHome(userEmail);
         res.statusCode = response.statusCode;
         res.json(response);

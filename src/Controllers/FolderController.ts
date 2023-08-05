@@ -8,7 +8,7 @@ const router = express.Router();
 
 router.get('/list', async (req : any,res) => {
     try {
-        const userEmail = req.user._json.email;
+        const userEmail = req.user.email;
         if(userEmail == null){
             res.status(500).json(getCustomResponse([], 401, 'User not authorized', false));
         }
@@ -23,7 +23,7 @@ router.get('/list', async (req : any,res) => {
 
 router.post('/create/:folderName', async (req : any,res) => {
     try {
-        const userEmail = req.user._json.email;
+        const userEmail = req.user.email;
         const foldername : string = req.params.folderName;
         const response = await createFolders(foldername,userEmail);
         res.statusCode = response.statusCode;
