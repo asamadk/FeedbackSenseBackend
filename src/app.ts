@@ -71,12 +71,15 @@ passport.use(
       scope: ["profile", "email"],
     },
     async function (accessToken, refreshToken, profile, callback) {
-      handleSuccessfulLogin(profile);
+      await handleSuccessfulLogin(profile);
       const currentUser = await AppDataSource.getDataSource().getRepository(User).findOne({
         where: {
           email: profile?._json?.email
         }
       });
+      if(currentUser == null){
+        throw new Error('Unable to create user.Please contact support.');
+      }
       callback(null, currentUser);
     }
   )
