@@ -21,7 +21,7 @@ import LiveSurveyController from './Controllers/LiveSurveyController';
 import AnalysisController from './Controllers/AnalysisController';
 import StripeController from './Controllers/StripeController';
 import WebhookController from './Controllers/WebhooksController'
-import { AppDataSource, mainDataSource } from './Config/AppDataSource';
+import { AppDataSource, initializeDataSource, mainDataSource } from './Config/AppDataSource';
 import { handleSuccessfulLogin } from './Service/AuthService';
 import { isLoggedIn } from './MiddleWares/AuthMiddleware';
 import { StartUp } from './Helpers/Startup';
@@ -77,7 +77,7 @@ passport.use(
           email: profile?._json?.email
         }
       });
-      if(currentUser == null){
+      if (currentUser == null) {
         throw new Error('Unable to create user.Please contact support.');
       }
       callback(null, currentUser);
@@ -117,41 +117,27 @@ app.use('/analysis', isLoggedIn, logRequest, AnalysisController);
 app.use('/stripe', isLoggedIn, logRequest, StripeController);
 
 
-//Nodejs cluster in production & no cluster in development environment
-
-if (cluster.isPrimary && process.env.NODE_ENV === 'prod') {
-  logger.info(`Primary process (master) with PID ${process.pid} is running`);
-  for (let i = 0; i < numCPUs; i++) {
-    cluster.fork();
-  }
-  cluster.on('exit', (worker) => {
-    logger.info(`Worker ${worker.process.pid} died`);
-    cluster.fork();
-  });
-  mainDataSource
-    .initialize()
-    .then(() => {
-      AppDataSource.setDataSource(mainDataSource);
-      new StartUp().startExecution();
-    })
-    .catch((error) => {
-      logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
-    });
-} else {
-  app.listen(port, async () => {
-    logger.info(`Server started.`)
-    logger.info(`Express is listening at http://localhost:${port}`);
-    if (process.env.NODE_ENV === 'dev') {
-      try {
-        await mainDataSource.initialize()
-        AppDataSource.setDataSource(mainDataSource);
-        new StartUp().startExecution();
-      } catch (error) {
-        logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
-      }
+const startServer = async () => {
+  await initializeDataSource();
+  if (cluster.isPrimary && process.env.NODE_ENV === 'prod') {
+    logger.info(`Primary process (master) with PID ${process.pid} is running`);
+    for (let i = 0; i < numCPUs; i++) {
+      cluster.fork();
     }
-  });
+    cluster.on('exit', (worker) => {
+      logger.info(`Worker ${worker.process.pid} died`);
+      cluster.fork();
+    });
+  } else {
+    app.listen(port, async () => {
+      logger.info(`Server started.`)
+      logger.info(`Express is listening at ${process.env.SERVER_URL}`);
+    });
+  }
 }
+
+//Nodejs cluster in production & no cluster in development environment
+startServer();
 
 //Handling unhandled exceptions
 process
