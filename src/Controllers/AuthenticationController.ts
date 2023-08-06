@@ -24,10 +24,11 @@ router.get('/login/success', async (req:any , res) => {
 
 router.get("/login/failed", (req, res) => {
     try {
+        logger.error(`Login failure :: ${req.query}`);
         res.status(401).json({
             error: true,
             message: "Log in failure",
-        });       
+        });
     } catch (error) {
         logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
         res.status(500).json(getCustomResponse(null,500,error.message,false));
@@ -38,7 +39,7 @@ router.get(
     "/oauth2/redirect",
     passport.authenticate("google", {
         successRedirect: clienT_URL,
-        failureRedirect: "/login/failed",
+        failureRedirect: "/auth/login/failed",
         prompt : 'select_account'
     })
 );
