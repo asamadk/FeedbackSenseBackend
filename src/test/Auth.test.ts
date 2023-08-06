@@ -21,20 +21,26 @@ afterAll(async () => {
 describe('User test', () => {
     test("Create user test.", async () => {
         await handleSuccessfulLogin({
-            email: 'abdul@pr.io',
-            name: 'Abdul Samad Kirmani',
+            _json: {
+                email: 'abdul@pr.io',
+                sub: '',
+                name: '',
+                given_name: '',
+                family_name: '',
+                picture: '',
+                email_verified: true,
+                locale: 'string'
+            },
+            displayName: 'Abdul Samad Kirmani',
             id: '',
-            oauth_provider: '',
-            oauth_id: '',
-            organization_id: '',
-            created_at: undefined,
-            updated_at: undefined,
-            emailVerified: false,
-            address: '',
-            image: '',
-            surveys: undefined,
-            notifications: undefined,
-            subscriptions: undefined
+            name: {
+                familyName: '',
+                givenName: ''
+            },
+            emails: [],
+            photos: [],
+            provider: '',
+            _raw: ''
         });
 
         const response = await getUserAfterLogin({
@@ -66,20 +72,26 @@ describe('User test', () => {
 
 describe('handleSuccessfulLogin', () => {
     const user = {
-        email: 'test@example.com',
-        name: 'Test User',
+        _json: {
+            email: 'test@example.com',
+            sub: '',
+            name: 'Test User',
+            given_name: '',
+            family_name: '',
+            picture: '',
+            email_verified: true,
+            locale: 'string'
+        },
+        displayName: 'Test User',
         id: '',
-        oauth_provider: '',
-        oauth_id: '',
-        organization_id: '',
-        created_at: undefined,
-        updated_at: undefined,
-        emailVerified: false,
-        address: '',
-        image: '',
-        surveys: undefined,
-        notifications: undefined,
-        subscriptions: undefined
+        name: {
+            familyName: '',
+            givenName: ''
+        },
+        emails: [],
+        photos: [],
+        provider: '',
+        _raw: ''
     };
 
     it('should create a new user if not already saved', async () => {
@@ -131,20 +143,26 @@ describe('handleSuccessfulLogin', () => {
         };
 
         await handleSuccessfulLogin({
-            name: 'Test User',
+            _json: {
+                email: 'test@example.com',
+                sub: '',
+                name: 'Test User',
+                given_name: '',
+                family_name: '',
+                picture: '',
+                email_verified: true,
+                locale: 'string'
+            },
+            displayName: 'Test User',
             id: '',
-            email: '',
-            oauth_provider: '',
-            oauth_id: '',
-            organization_id: '',
-            created_at: undefined,
-            updated_at: undefined,
-            emailVerified: false,
-            address: '',
-            image: '',
-            surveys: undefined,
-            notifications: undefined,
-            subscriptions: undefined
+            name: {
+                familyName: '',
+                givenName: ''
+            },
+            emails: [],
+            photos: [],
+            provider: '',
+            _raw: ''
         });
 
         expect(userRepository.findOneBy).not.toHaveBeenCalled();

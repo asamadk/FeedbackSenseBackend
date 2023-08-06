@@ -8,14 +8,15 @@ import { Subscription } from "../Entity/SubscriptionEntity";
 import { logger } from "../Config/LoggerConfig";
 import { MailHelper } from "../Utils/MailUtils/MailHelper";
 import { generateLoginEmailHtml } from "../Utils/MailUtils/MailMarkup/LoginMarkup";
+import {UserProfile} from '../Types/AuthTypes'
 
-export const handleSuccessfulLogin = async (user: User): Promise<void> => {
+export const handleSuccessfulLogin = async (user: UserProfile): Promise<void> => {
     try {
         const userRepository = AppDataSource.getDataSource().getRepository(User);
         const planRepo = AppDataSource.getDataSource().getRepository(Plan);
         const subscriptionRepo = AppDataSource.getDataSource().getRepository(Subscription);
         let userEntity = new User();
-        const userEmail: string = user?.email;
+        const userEmail: string = user._json.email;
         if (userEmail == null || userEmail === '') {
             return;
         }
@@ -26,8 +27,9 @@ export const handleSuccessfulLogin = async (user: User): Promise<void> => {
             name: FREE_PLAN
         });
         if (savedUser != null) { return; }
-        userEntity.name = user?.name;
-        userEntity.email = user?.email;
+        userEntity.name = user.displayName;
+        userEntity.email = user?._json.email;
+        userEntity.image = user?._json.picture
         userEntity.emailVerified = true;
         userEntity.oauth_provider = 'GOOGLE';
         userEntity = await userRepository.save(userEntity);
