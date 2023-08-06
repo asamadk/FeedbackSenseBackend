@@ -84,7 +84,16 @@ export const createSurvey = async (surveyName: string, user: User): Promise<resp
         if (savedUser == null) {
             return getCustomResponse([], 404, 'The user does not exists', false);
         }
-        const surveyCount = await surveyRepository.count({where : {name : surveyName}});
+        const surveyCount = await surveyRepository.count(
+            {
+                where : {
+                    name : surveyName,
+                    user : {
+                        organization_id : savedUser.organization_id
+                    }
+                }
+            }
+        );
         if(surveyCount > 0){
             throw new Error('Survey already exist with this name');
         }
@@ -220,7 +229,7 @@ export const permDeleteSurvey = async (surveyId: string): Promise<responseRest> 
             id: surveyId
         });
         if (surveyObj == null) {
-            response.message = 'The survey does not exists ';
+            response.message = 'The survey does not exists';
             response.success = false;
             response.statusCode = 404;
             return response;
@@ -241,7 +250,7 @@ export const saveSurveyFlow = async (surveyId: string, surveyJSON: string, delet
     const response = getDefaultResponse('Survey flow saved successfully');
     try {
         if (surveyId == null || surveyId === '') {
-            return getCustomResponse([], 404, ' Survey id not found ', false);
+            return getCustomResponse([], 404, ' Survey id not found', false);
         }
         const surveyRepository = AppDataSource.getDataSource().getRepository(Survey);
         const surveyResponseRepo = AppDataSource.getDataSource().getRepository(SurveyResponse);
@@ -311,6 +320,9 @@ export const saveSurveyDesign = async (surveyId: string, surveyJSON: string): Pr
         const surveyData = await surveyRepository.findOneBy({ id: surveyId });
         if (surveyData == null) {
             return getCustomResponse([], 404, ' Survey not found ', false);
+        }
+        if(surveyJSON == null || surveyJSON.length < 1){
+            throw new Error('Survey design not found.')
         }
         surveyData.survey_design_json = surveyJSON;
         await surveyRepository.save(surveyData);
