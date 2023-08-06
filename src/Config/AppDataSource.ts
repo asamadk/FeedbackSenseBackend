@@ -1,5 +1,7 @@
 import { DataSource } from "typeorm"
 import dotenv from "dotenv";
+import { logger } from "./LoggerConfig";
+import { StartUp } from "../Helpers/Startup";
 
 dotenv.config();
 
@@ -25,6 +27,17 @@ export class AppDataSource {
 
 }
 
+export const initializeDataSource = async() => {
+    try {
+        await mainDataSource.initialize();
+        AppDataSource.setDataSource(mainDataSource);
+        logger.info('Data source initialized');
+        await new StartUp().startExecution();
+      } catch (error) {
+        logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
+      }
+}
+
 export const mainDataSource = new DataSource({
     type: 'mysql',
     host: process.env.DB_HOST,
@@ -38,20 +51,4 @@ export const mainDataSource = new DataSource({
     ],
     logging: false,
     synchronize: false,
-});
-
-export const testDataSource = new DataSource({
-    "name": "test",
-    "type": "mysql",
-    "host": process.env.DB_HOST,
-    "port": parseInt(process.env.DB_PORT),
-    "username": process.env.DB_USER,
-    "password": process.env.DB_PASSWORD,
-    "database": process.env.DB_TEST_NAME,
-    "synchronize": true,
-    "migrationsRun": false,
-    "logging": false,
-    "dropSchema": true,
-    "entities": ["dist/Entity/*.{js,ts}"],
-    "migrations": ["dist/migration/*.js"],
 });
