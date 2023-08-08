@@ -17,7 +17,7 @@ export const createCustomSettings = async (orgId : string) :Promise<void> => {
 
     const setting2 = new CustomSettings();
     setting2.fKey = 'activeSurveyLimit';
-    setting2.fValue = '5';
+    setting2.fValue = '1';
     setting2.organizationId = orgId;
     customSettingsList.push(setting2);
 

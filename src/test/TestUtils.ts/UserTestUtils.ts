@@ -14,6 +14,21 @@ export const createTestUser = async(conection : DataSource) : Promise<User> => {
     return await userRepository.save(user);
 }
 
+export const createUserWithOrgId = async (email : string , orgId : string) : Promise<User> => {
+    const userRepository = AppDataSource.getDataSource().getRepository(User);
+    const existingUser = await userRepository.findOneBy({email : email});
+    if(existingUser != null){
+        throw new Error('User already exists');
+    }
+    const user = new User();
+    user.name = 'Jane Smith';
+    user.email = email;
+    user.emailVerified = true;
+    user.oauth_provider = 'GOOGLE';
+    user.organization_id = orgId;
+    return await userRepository.save(user);
+}
+
 export const createCompleteUser = async(email : string) :Promise<User> => {
     const userRepository = AppDataSource.getDataSource().getRepository(User);
     const existingUser = await userRepository.findOneBy({email : email});
