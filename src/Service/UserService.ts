@@ -16,7 +16,10 @@ export const getAllUsersOfSameOrg = async (userEmail: string): Promise<responseR
         }
         const users = await userRepository.find({ 
             where : {
-                organization_id: user.organization_id 
+                organization_id: user.organization_id
+            },
+            order : {
+                created_at : "ASC"
             }
         });
         response.data = users;

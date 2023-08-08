@@ -413,6 +413,7 @@ export const updateSurveyName = async (surveyId: string, payload: any): Promise<
     try {
         const response = getDefaultResponse('Survey name updated successfully');
         const surveyRepo = AppDataSource.getDataSource().getRepository(Survey);
+        const userInfo = AuthUserDetails.getInstance().getUserDetails();
         const surveyObj = await surveyRepo.findOneBy({
             id: surveyId
         });
@@ -423,6 +424,9 @@ export const updateSurveyName = async (surveyId: string, payload: any): Promise<
             {
                 where : {
                     name : payload.surveyName,
+                    user : {
+                        organization_id : userInfo.organization_id
+                    },
                     id : Not(surveyId)
                 }
             }

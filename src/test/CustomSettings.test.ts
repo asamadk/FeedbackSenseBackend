@@ -29,7 +29,7 @@ describe('Initial custom settings tests', () => {
         const surveyResponseCapacity = customSettingHelper.getCustomSettings(SURVEY_RESPONSE_CAPACITY);
         const removeFeedbackLogo = customSettingHelper.getCustomSettings(REMOVE_FEEDBACK_SENSE_LOGO);
 
-        expect(activeSurveyLimit).toBe('5');
+        expect(activeSurveyLimit).toBe('1');
         expect(folderFeatureActive).toBe('true');
         expect(surveyResponseCapacity).toBe('500');
         expect(removeFeedbackLogo).toBe('false');
@@ -51,7 +51,7 @@ describe('Initial custom settings tests', () => {
         CustomSettingsHelper.instance = null;
         customSettingHelper = CustomSettingsHelper.getInstance(user2.organization_id);
         await customSettingHelper.initialize();
-        expect(customSettingHelper.getCustomSettings(ACTIVE_SURVEY_LIMIT)).toBe('5');
+        expect(customSettingHelper.getCustomSettings(ACTIVE_SURVEY_LIMIT)).toBe('1');
 
         customSettingHelper.setCustomSettings(SURVEY_RESPONSE_CAPACITY,'2000');
         await customSettingHelper.saveCustomSettings();
