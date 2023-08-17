@@ -14,8 +14,6 @@ ALTER TABLE User
 ADD COLUMN address VARCHAR(500) DEFAULT NULL,
 ADD COLUMN image VARCHAR(255) DEFAULT NULL;
 
--- present till here
-
 CREATE TABLE custom_settings (
     id VARCHAR(36) NOT NULL PRIMARY KEY,
     fKey VARCHAR(255) NOT NULL,
@@ -24,3 +22,20 @@ CREATE TABLE custom_settings (
     CONSTRAINT UC_organization_key UNIQUE (organizationId, fKey),
     FOREIGN KEY (organizationId) REFERENCES organization (id) ON DELETE CASCADE
 );
+
+-- present till here
+
+CREATE TABLE templates (
+    id VARCHAR(36) PRIMARY KEY,
+    category VARCHAR(255) NOT NULL,
+    subCategory VARCHAR(255) NOT NULL,
+    data LONGTEXT,
+    questionCount INT NOT NULL,
+    timeTaken INT NOT NULL,
+    name VARCHAR(255) NOT NULL,
+    description VARCHAR(255) NOT NULL
+);
+
+ALTER TABLE Templates
+ADD COLUMN design_json JSON DEFAULT NULL;
+

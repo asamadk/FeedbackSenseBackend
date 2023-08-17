@@ -138,7 +138,7 @@ export const moveSurveyToFolder = async (folderId: string, surveyId: string): Pr
 
 export const enableDisableSurvey = async (surveyId: string, enable: boolean): Promise<responseRest> => {
     try {
-        const response = getDefaultResponse(`Survey ${enable == true ? ' enabled ' : ' disabled '} successfully`);
+        const response = getDefaultResponse(`Survey ${enable == true ? ' published ' : ' unpublished '} successfully`);
         const surveyRepository = AppDataSource.getDataSource().getRepository(Survey);
         const surveyObj = await surveyRepository.findOne({
             where: {
