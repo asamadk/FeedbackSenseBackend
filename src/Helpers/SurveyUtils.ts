@@ -105,7 +105,7 @@ export const getMaxResponseLimit = async () => {
 
 export const createSurveyConfig = async (userId: string, surveyId: string) => {
     const surveyConfigRepo = AppDataSource.getDataSource().getRepository(SurveyConfig);
-    
+
     const userDetails = AuthUserDetails.getInstance().getUserDetails();
     const orgId = userDetails.organization_id;
     await CustomSettingsHelper.getInstance(orgId).initialize();

@@ -147,7 +147,7 @@ describe('Test Survey creation',() => {
         });
         expect(surveyObj2.is_published).toBe(true);
         expect(response1.success).toBe(true);
-        expect(response1.message).toBe('Survey  enabled  successfully');
+        expect(response1.message).toBe('Survey  published  successfully');
         
         const subscriptionRepo = AppDataSource.getDataSource().getRepository(Subscription);
         const subscriptionObj: Subscription = await subscriptionRepo.findOneBy({
@@ -157,7 +157,7 @@ describe('Test Survey creation',() => {
 
         const response2 = await enableDisableSurvey(surveyObj.id,false);
         expect(response2.success).toBe(true);
-        expect(response2.message).toBe('Survey  disabled  successfully');
+        expect(response2.message).toBe('Survey  unpublished  successfully');
 
         const surveyObj3 = await surveyRepo.findOne({
             where : {

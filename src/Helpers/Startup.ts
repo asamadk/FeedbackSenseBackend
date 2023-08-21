@@ -4,6 +4,7 @@ import { Plan } from "../Entity/PlanEntity";
 import { SurveyType } from "../Entity/SurveyTypeEntity";
 import { ENTERPRISE_PLAN, FREE_PLAN, GROWTH_PLAN, STARTER_PLAN, ULTIMATE_PLAN } from "./Constants";
 import { logger } from "../Config/LoggerConfig";
+import { TemplateStartupScript } from "./StartupScripts/TemplateStartupScript";
 
 export class StartUp {
 
@@ -23,6 +24,7 @@ export class StartUp {
             this.populatePlanDescription();
             await this.createSurveyType();
             await this.createPlans();
+            await new TemplateStartupScript().initialize();
         } catch (error) {
             logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
         }

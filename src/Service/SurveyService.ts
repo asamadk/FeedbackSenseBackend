@@ -48,7 +48,7 @@ export const getAllSurveys = async (userEmail: string): Promise<responseRest> =>
             `SELECT s.*, u.image,u.name as username
             FROM survey AS s
             JOIN user AS u ON u.id = s.user_id
-            WHERE u.email = '${userEmail}' AND s.is_deleted = false;
+            WHERE u.email = '${userEmail}' AND s.is_deleted = false ORDER BY s.updated_at DESC;
             `
         );
         response.data = surveyList;
@@ -138,7 +138,7 @@ export const moveSurveyToFolder = async (folderId: string, surveyId: string): Pr
 
 export const enableDisableSurvey = async (surveyId: string, enable: boolean): Promise<responseRest> => {
     try {
-        const response = getDefaultResponse(`Survey ${enable == true ? ' enabled ' : ' disabled '} successfully`);
+        const response = getDefaultResponse(`Survey ${enable == true ? ' published ' : ' unpublished '} successfully`);
         const surveyRepository = AppDataSource.getDataSource().getRepository(Survey);
         const surveyObj = await surveyRepository.findOne({
             where: {

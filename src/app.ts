@@ -9,22 +9,23 @@ import { Strategy } from 'passport-google-oauth20';
 import cookieParser from 'cookie-parser';
 
 import OrgController from './Controllers/OrgController';
-import HomeController from './Controllers/HomeController'
+import HomeController from './Controllers/HomeController';
 import SurveyController from './Controllers/SurveyController';
-import AuthController from './Controllers/AuthenticationController'
+import AuthController from './Controllers/AuthenticationController';
 import FolderController from './Controllers/FolderController';
 import UserController from './Controllers/UserController';
 import SurveyTypeController from './Controllers/SurveyTypeController';
 import SubscriptionController from './Controllers/SubscriptionController';
-import PlanController from './Controllers/PlanController'
+import PlanController from './Controllers/PlanController';
 import LiveSurveyController from './Controllers/LiveSurveyController';
 import AnalysisController from './Controllers/AnalysisController';
 import StripeController from './Controllers/StripeController';
-import WebhookController from './Controllers/WebhooksController'
-import { AppDataSource, initializeDataSource, mainDataSource } from './Config/AppDataSource';
+import WebhookController from './Controllers/WebhooksController';
+import TemplateController from './Controllers/TemplateController';
+
+import { AppDataSource, initializeDataSource } from './Config/AppDataSource';
 import { handleSuccessfulLogin } from './Service/AuthService';
 import { isLoggedIn } from './MiddleWares/AuthMiddleware';
-import { StartUp } from './Helpers/Startup';
 import { logger } from './Config/LoggerConfig';
 import { logRequest } from './MiddleWares/LogMiddleware';
 import { globalAPILimiter } from './Config/RateLimitConfig';
@@ -115,6 +116,7 @@ app.use('/subscription', isLoggedIn, logRequest, SubscriptionController);
 app.use('/plan', isLoggedIn, logRequest, PlanController);
 app.use('/analysis', isLoggedIn, logRequest, AnalysisController);
 app.use('/stripe', isLoggedIn, logRequest, StripeController);
+app.use('/template',isLoggedIn,logRequest,TemplateController);
 
 
 const startServer = async () => {
@@ -136,10 +138,8 @@ const startServer = async () => {
   }
 }
 
-//Nodejs cluster in production & no cluster in development environment
 startServer();
 
-//Handling unhandled exceptions
 process
   .on('unhandledRejection', (reason, p) => {
     logger.error(`Unhandled Rejection at Promise : Reason - ${reason}, Promise - ${p}`);
