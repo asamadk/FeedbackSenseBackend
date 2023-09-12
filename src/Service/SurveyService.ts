@@ -7,7 +7,7 @@ import { SurveyConfig } from "../Entity/SurveyConfigEntity";
 import { getCustomResponse, getDefaultResponse } from "../Helpers/ServiceUtils";
 import { Workflow } from "../Entity/WorkflowEntity";
 import { Subscription } from "../Entity/SubscriptionEntity";
-import { cleanSurveyFlowJSON, createSurveyConfig, getMaxResponseLimit, validateIsNodeDisconnected, validateSurveyFlowOnSave } from "../Helpers/SurveyUtils";
+import { cleanSurveyFlowJSON, createSurveyConfig, getMaxResponseLimit, validateIsNodeDisconnected, validateLogicEdge, validateSurveyFlowOnSave } from "../Helpers/SurveyUtils";
 import { logger } from "../Config/LoggerConfig";
 import { SurveyResponse } from "../Entity/SurveyResponse";
 import { In, Not } from "typeorm";
@@ -86,15 +86,15 @@ export const createSurvey = async (surveyName: string, user: User): Promise<resp
         }
         const surveyCount = await surveyRepository.count(
             {
-                where : {
-                    name : surveyName,
-                    user : {
-                        organization_id : savedUser.organization_id
+                where: {
+                    name: surveyName,
+                    user: {
+                        organization_id: savedUser.organization_id
                     }
                 }
             }
         );
-        if(surveyCount > 0){
+        if (surveyCount > 0) {
             throw new Error('Survey already exist with this name');
         }
         const surveyObj = new Survey();
@@ -162,13 +162,18 @@ export const enableDisableSurvey = async (surveyId: string, enable: boolean): Pr
             const workflowJSON = JSON.parse(surveyObj.workflows[0]?.json);
             const isSurveyFlowValid = validateSurveyFlowOnSave(workflowJSON);
             const isNodeDisconnected = validateIsNodeDisconnected(workflowJSON);
+            const areEdgeCorrectlyDefined = validateLogicEdge(workflowJSON);
 
             if (isNodeDisconnected === true) {
                 throw new Error('Please make sure all components are connected.');
             }
 
-            if (isSurveyFlowValid === false) {
-                throw new Error('Survey is invalid.');
+            if (isSurveyFlowValid != null) {
+                throw new Error(isSurveyFlowValid);
+            }
+
+            if (areEdgeCorrectlyDefined != null) {
+                throw new Error(areEdgeCorrectlyDefined);
             }
         }
 
@@ -269,6 +274,12 @@ export const saveSurveyFlow = async (surveyId: string, surveyJSON: string, delet
                 survey_id: surveyId
             });
         }
+
+        const validated = validateSurveyFlowOnSave(JSON.parse(surveyJSON));
+        if (validated != null) {
+            response.message = `Saved: ${validated}`;
+        }
+
     } catch (error) {
         logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
         return getCustomResponse(null, 500, error.message, false)
@@ -321,7 +332,7 @@ export const saveSurveyDesign = async (surveyId: string, surveyJSON: string): Pr
         if (surveyData == null) {
             return getCustomResponse([], 404, ' Survey not found ', false);
         }
-        if(surveyJSON == null || surveyJSON.length < 1){
+        if (surveyJSON == null || surveyJSON.length < 1) {
             throw new Error('Survey design not found.')
         }
         surveyData.survey_design_json = surveyJSON;
@@ -422,16 +433,16 @@ export const updateSurveyName = async (surveyId: string, payload: any): Promise<
         }
         const surveyCount = await surveyRepo.count(
             {
-                where : {
-                    name : payload.surveyName,
-                    user : {
-                        organization_id : userInfo.organization_id
+                where: {
+                    name: payload.surveyName,
+                    user: {
+                        organization_id: userInfo.organization_id
                     },
-                    id : Not(surveyId)
+                    id: Not(surveyId)
                 }
             }
         );
-        if(surveyCount > 0){
+        if (surveyCount > 0) {
             throw new Error('Survey already exist with this name');
         }
         surveyObj.name = payload.surveyName;
@@ -444,7 +455,7 @@ export const updateSurveyName = async (surveyId: string, payload: any): Promise<
     }
 }
 
-export const duplicateSurvey = async (surveyId : string) : Promise<responseRest> => {
+export const duplicateSurvey = async (surveyId: string): Promise<responseRest> => {
     try {
         const response = getDefaultResponse('Survey duplicated.');
         const surveyRepo = AppDataSource.getDataSource().getRepository(Survey);
@@ -465,8 +476,8 @@ export const duplicateSurvey = async (surveyId : string) : Promise<responseRest>
 
         const surveyConfigRepo = AppDataSource.getDataSource().getRepository(SurveyConfig);
         const surveyConfigs = await surveyConfigRepo.find({
-            where : {
-                survey_id : surveyId
+            where: {
+                survey_id: surveyId
             }
         });
 
@@ -483,8 +494,8 @@ export const duplicateSurvey = async (surveyId : string) : Promise<responseRest>
 
         const workflowRepo = AppDataSource.getDataSource().getRepository(Workflow);
         const surveyWorkflow = await workflowRepo.findOne({
-            where : {
-                surveyId : surveyId
+            where: {
+                surveyId: surveyId
             }
         });
 
