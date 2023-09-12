@@ -4,7 +4,9 @@ import { SURVEY_RESPONSE_CAPACITY } from "../Constants/CustomSettingsCont";
 import { Subscription } from "../Entity/SubscriptionEntity";
 import { SurveyConfig } from "../Entity/SurveyConfigEntity";
 import { SurveyResponse } from "../Entity/SurveyResponse";
+import { LiveSurveyNodes, logicType } from "../Types/SurveyTypes";
 import { AuthUserDetails } from "./AuthHelper/AuthUserDetails";
+import { answerNotNeededSet } from "./Constants";
 import { CustomSettingsHelper } from "./CustomSettingHelper";
 
 export const cleanSurveyFlowJSON = (surveyJSON: string): string => {
@@ -27,30 +29,94 @@ export const cleanSurveyFlowJSON = (surveyJSON: string): string => {
     return JSON.stringify(suveyFlowData);
 }
 
-export const sortSurveyFlowNodes = (nodes: any[], edges: any[]): any[] => {
-    const sortedNodes: any[] = [];
-    const visitedNodes = new Set<string>();
+// export const sortSurveyFlowNodes = (nodes: any[], edges: any[]): LiveSurveyNodes[] => {
+    
+//     // Helper function to check if a node is a starting node
+//     const isStartingNode = (nodeId: string) => {
+//         return !edges.some(edge => edge.target === nodeId);
+//     };
+    
+//     return nodes.map(node => {
+//         const compConfig = JSON.parse(node.data.compConfig);
+//         const logic : any[] = compConfig.logic || [];
+//         const connectedEdges = edges.filter(edge => edge.source === node.id);
+//         let paths = [];
+//         if (logic.length > 0) {
+//             paths = connectedEdges.map(edge => ({
+//                 condition: (logic.find((logItem: any) => logItem.path === edge.label) || {}).operator || "default",
+//                 value: (logic.find((logItem: any) => logItem.path === edge.label) || {}).value || "",
+//                 uId: edge.target
+//             }));
+//         } else if (connectedEdges.length > 0) {
+//             paths.push({
+//                 condition: "default",
+//                 uId: connectedEdges[0].target
+//             });
+//         }
 
-    const traverse = (nodeId: string) => {
-        if (visitedNodes.has(nodeId)) {
-            return;
-        }
-        visitedNodes.add(nodeId);
-        const node = nodes.find((n) => n.id === nodeId);
-        if (!node) {
-            return;
-        }
-        const outgoingEdges = edges.filter((edge) => edge.source === nodeId);
-        for (const edge of outgoingEdges) {
-            traverse(edge.target);
-        }
-        sortedNodes.unshift(node);
+//         return {
+//             uId: node.id,
+//             data: node.data,
+//             paths: paths,
+//             isStartingNode: isStartingNode(node.id)
+//         };
+//     });
+// };
+
+export const sortSurveyFlowNodes = (nodes: any[], edges: any[]): LiveSurveyNodes[] => {
+    
+    // Helper function to check if a node is a starting node
+    const isStartingNode = (nodeId: string) => {
+        return !edges.some(edge => edge.target === nodeId);
     };
-    for (const edge of edges) {
-        traverse(edge.source);
-    }
-    return sortedNodes;
+
+    // Helper function to extract path details from edge and logic
+    const getPathDetails = (edge: any, logItem: any) => {
+        return {
+            condition: logItem.operator || "default",
+            value: logItem.value || "",
+            uId: edge.target
+        };
+    };
+    
+    return nodes.map(node => {
+        const compConfig = JSON.parse(node.data.compConfig);
+        const logic: any[] = compConfig.logic || [];
+        const connectedEdges = edges.filter(edge => edge.source === node.id);
+        const paths = [];
+        
+        if (logic.length > 0) {
+            for (const logItem of logic) {
+                const matchedEdge = connectedEdges.find(edge => edge.label === logItem.path);
+                if (matchedEdge) {
+                    paths.push(getPathDetails(matchedEdge, logItem));
+                }
+            }
+            // Add default paths for edges not covered in logic
+            for (const edge of connectedEdges) {
+                if (!paths.some(path => path.uId === edge.target)) {
+                    paths.push({
+                        condition: "default",
+                        uId: edge.target
+                    });
+                }
+            }
+        } else if (connectedEdges.length > 0) {
+            paths.push({
+                condition: "default",
+                uId: connectedEdges[0].target
+            });
+        }
+
+        return {
+            uId: node.id,
+            data: node.data,
+            paths: paths,
+            isStartingNode: isStartingNode(node.id)
+        };
+    });
 };
+
 
 export const getPercentage = (partialValue: number, totalValue: number): string => {
     const percentage = (100 * partialValue) / totalValue;
@@ -119,21 +185,74 @@ export const createSurveyConfig = async (userId: string, surveyId: string) => {
 
 }
 
-export const validateSurveyFlowOnSave = (flow: any): boolean => {
+export const validateSurveyFlowOnSave = (flow: any): string | null => {
     const nodes: any[] = flow?.nodes;
     for (const node of nodes) {
         if (node == null || node.data == null) {
             continue;
         }
         if (node?.data?.compConfig == null) {
-            throw new Error('One or more components are have missing information.');
+            node.data.compConfig = '{}'
         }
-        const validatedComp = validateFlowComponent(JSON.parse(node?.data?.compConfig), node.data.compId);
-        if (validatedComp != null) {
-            throw new Error(validatedComp);
+        const isValidated = validateFlowComponent(JSON.parse(node?.data?.compConfig), node.data.compId);
+        const componentLogicValidate = validateComponentLogic(JSON.parse(node?.data?.compConfig), node.data.compId);
+        if (isValidated != null) {
+            return isValidated;
+        } else if (componentLogicValidate != null) {
+            return componentLogicValidate;
         }
     }
-    return true;
+    return null;
+}
+
+export const validateLogicEdge = (flow: any): string | null => {
+    const edges: any[] = flow.edges;
+    const nodes: any[] = flow.nodes;
+
+    const nodeEdgeMap = {};
+
+    edges?.forEach(edge => {
+        if (!nodeEdgeMap[edge.source]) {
+            nodeEdgeMap[edge.source] = [];
+        }
+        nodeEdgeMap[edge.source].push(edge);
+    });
+
+    for (const node of nodes) {
+        const compConfigStr: string | null = node?.data?.compConfig;
+        if (compConfigStr == null || compConfigStr.length < 1) { continue; }
+        const compConfig = JSON.parse(compConfigStr);
+        const logics: logicType[] = compConfig.logic;
+        if (logics == null || logics?.length < 1) {
+            const nodeEdges: any[] = nodeEdgeMap[node.id];
+            if (nodeEdges?.length > 1) {
+                return 'Each component without logic should have only one connecting edge.';
+            }
+        } else {
+            const nodeEdges: any[] = nodeEdgeMap[node.id];
+            if (nodeEdges == null || nodeEdges.length < 1) {
+                return 'A component with logic requires connected nodes.';
+            }
+            const logicPaths = new Set<string>();
+            logicPaths.add('default');
+            logics.forEach(logic => {
+                logicPaths.add(logic.path);
+            });
+            if (nodeEdges.length !== logicPaths.size) {
+                return 'Complete all logic connections before proceeding.';
+            }
+            for (const nodeEdge of nodeEdges) {
+                const path: string = nodeEdge.label;
+                if (path == null || path.length < 1) {
+                    return 'Ensure all logic-based edges have a designated path name.';
+                }
+                if (logicPaths.has(path) == false) {
+                    return 'Ensure all logic-based edges have a designated path.';
+                }
+            }
+        }
+    }
+    return null;
 }
 
 export const validateIsNodeDisconnected = (flow: any): boolean => {
@@ -162,11 +281,11 @@ export const validateIsNodeDisconnected = (flow: any): boolean => {
     return false;
 }
 
-const validateFlowComponent = (data: any, componentId: number | undefined): string | null => {
+export const validateFlowComponent = (data: any, componentId: number | undefined): string | null => {
     switch (componentId) {
         case 1:
             if (data.welcomeText == null || data.welcomeText?.length < 1) {
-                return 'Please fill in all required fields before saving.';
+                return 'Important: Don\'t forget to fill the required fields.'
             }
 
             if (data.buttonText == null || data.buttonText?.length < 1) {
@@ -177,7 +296,7 @@ const validateFlowComponent = (data: any, componentId: number | undefined): stri
         case 4:
         case 11:
             if (data.question == null || data.question?.length < 1) {
-                return 'Question field cannot be empty.'
+                return 'Important: Don\'t forget to fill in the question field.'
             }
             if (data.answerList == null) {
                 return 'Component should have at least one answer choice.'
@@ -185,7 +304,7 @@ const validateFlowComponent = (data: any, componentId: number | undefined): stri
                 const comChoiceList: string[] = data.answerList;
                 for (const choice of comChoiceList) {
                     if (choice == null || choice.length < 1) {
-                        return 'Answer fields cannot be empty.'
+                        return 'Important: Please fill in the answer fields.'
                     }
                 }
             }
@@ -193,26 +312,83 @@ const validateFlowComponent = (data: any, componentId: number | undefined): stri
         case 5:
         case 13:
             if (data.question == null || data.question?.length < 1) {
-                return 'Question field cannot be empty.'
+                return 'Important: Don\'t forget to fill in the question field.'
             }
             break;
         case 6:
         case 7:
         case 8:
             if (data.question == null || data.question?.length < 1) {
-                return 'Question field cannot be empty.'
+                return 'Important: Don\'t forget to fill in the question field.'
             }
 
-            if (data.leftText == null || data.leftText?.length < 1) {
-                return 'Left text field cannot be empty.'
-            }
-
-            if (data.rightText == null || data.rightText?.length < 1) {
-                return 'Right text field cannot be empty.'
-            }
             break;
+        case 14:
+            return 'Important : Please update the selector node.';
         default:
             break;
     }
     return null;
+
+}
+
+export const validateComponentLogic = (data: any, componentId: number | undefined): string | null => {
+    const logics: logicType[] = data?.logic;
+    const answerList: string[] = data?.answerList;
+    const range: number = data?.range;
+    if (logics == null || logics.length < 1) { return null }
+    for (let i = 0; i < logics.length; i++) {
+        const logic = logics[i];
+        switch (componentId) {
+            case 3:
+            case 4:
+            case 5:
+            case 6:
+            case 7:
+            case 8:
+            case 13:
+                {
+                    if (!logic.operator) {
+                        return 'Essential: Please specify the logic operator.';
+                    }
+                    if (!logic.path) {
+                        return 'Essential: Please define the logic path.';
+                    }
+                    if (componentId === 3 || componentId === 4) {
+                        if ((!logic.value || !answerList?.includes(logic.value)) && !answerNotNeededSet.has(logic.operator)) {
+                            return 'Essential: Specify a valid logic value from the available answers.';
+                        }
+                    }
+
+                    if (componentId === 5 || componentId === 6 || componentId === 8) {
+                        if ((!logic.value) && !answerNotNeededSet.has(logic.operator)) {
+                            return 'Essential: Specify a valid logic value from the available answers.';
+                        }
+                    }
+                    if (componentId === 7) {
+                        if ((!logic.value || parseInt(logic.value) > range) && !answerNotNeededSet.has(logic.operator)) {
+                            return 'Essential: Specify a valid logic value from the available answers.';
+                        }
+                    }
+                    break;
+                }
+        }
+    }
+    const hasDuplicates = hasDuplicateLogic(logics);
+    if (hasDuplicates === true) {
+        return 'Important : Component contains duplicate logic.'
+    }
+    return null;
+}
+
+function hasDuplicateLogic(logicObjects: logicType[]): boolean {
+    if (logicObjects == null || logicObjects.length < 1) { return false }
+    const serializedObjects = logicObjects.map(obj => JSON.stringify({
+        operator: obj.operator,
+        value: obj.value,
+        path: obj.path,
+        showValue: obj.showValue
+    }));
+    const uniqueObjects = new Set(serializedObjects);
+    return serializedObjects.length !== uniqueObjects.size;
 }

@@ -77,6 +77,9 @@ export const getLiveSurveyNodes = async (surveyId: string): Promise<responseRest
             theme: surveyDesign,
             nodes: sortSurveyFlowNodes(surveyDetail.nodes, surveyDetail.edges)
         }
+
+        console.log("🚀 ~ file: LiveSurveyService.ts:84 ~ getLiveSurveyNodes ~ resData.nodes:", JSON.stringify(resData.nodes))
+
         response.statusCode = 200;
         response.data = resData;
         return response;
