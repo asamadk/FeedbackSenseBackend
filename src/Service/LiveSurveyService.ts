@@ -23,7 +23,7 @@ export const getLiveSurveyNodes = async (surveyId: string): Promise<responseRest
         if (surveyConfig != null) {
             const isEnded = isSurveyEnded(surveyConfig.time_limit);
             const isResLimitReached = await hasSurveyReachedResponseLimit(surveyConfig.response_limit, surveyId);
-    
+
             if (isEnded === true || isResLimitReached === true) {
                 return getCustomResponse({}, 410, 'Survey Closed, The survey is no longer accepting responses.', false);
             }
@@ -33,18 +33,18 @@ export const getLiveSurveyNodes = async (surveyId: string): Promise<responseRest
             id: surveyId
         });
 
-        if(surveyObj == null){
+        if (surveyObj == null) {
             return getCustomResponse({}, 410, 'Survey not found', false);
         }
 
         if (surveyObj.is_published === false) {
             return getCustomResponse({}, 410, 'This survey is not published', false);
         }
-        
+
         if (surveyObj.is_deleted === true || surveyObj.is_archived === true) {
             return getCustomResponse({}, 410, 'This survey is no longer available', false);
         }
-        
+
         if (surveyObj.workflow_id == null) {
             return getCustomResponse({}, 410, 'This survey is empty', false);
         }
@@ -78,7 +78,7 @@ export const getLiveSurveyNodes = async (surveyId: string): Promise<responseRest
             nodes: sortSurveyFlowNodes(surveyDetail.nodes, surveyDetail.edges)
         }
 
-        console.log("🚀 ~ file: LiveSurveyService.ts:84 ~ getLiveSurveyNodes ~ resData.nodes:", JSON.stringify(resData.nodes))
+        // console.log("🚀 ~ file: LiveSurveyService.ts:84 ~ getLiveSurveyNodes ~ resData.nodes:", JSON.stringify(resData.nodes))
 
         response.statusCode = 200;
         response.data = resData;
