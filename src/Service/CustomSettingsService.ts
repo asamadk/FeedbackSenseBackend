@@ -1,13 +1,13 @@
 import { AppDataSource } from "../Config/AppDataSource";
 import { CustomSettings } from "../Entity/CustomSettingsEntity";
 
-export const createCustomSettings = async (orgId : string) :Promise<void> => {
+export const createCustomSettings = async (orgId: string): Promise<void> => {
 
-    const customSettingsList :CustomSettings[] = [];
+    const customSettingsList: CustomSettings[] = [];
     const customSetRepo = AppDataSource.getDataSource().getRepository(CustomSettings);
-   
-    const settingsCount = await customSetRepo.count({where : {organizationId : orgId}});
-    if(settingsCount === 4){return;}
+
+    const settingsCount = await customSetRepo.count({ where: { organizationId: orgId } });
+    if (settingsCount === 4) { return; }
 
     const setting1 = new CustomSettings();
     setting1.fKey = 'removeFeedbackLogo';

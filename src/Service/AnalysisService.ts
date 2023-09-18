@@ -103,11 +103,18 @@ export const getSubDataResponse = async (surveyId: string): Promise<responseRest
             }
         });
 
+
         let defaulters = 0;
 
         toCheckCompletionRate.forEach(comRateCheck => {
-            const compRateLength: number = comRateCheck?.length;
-            if (compRateLength < surveyLength) {
+            let surveyCompleted = false;
+            comRateCheck.forEach(temp => {
+                if (temp?.data?.surveyCompleted === true) {
+                    surveyCompleted = true;
+                    return;
+                }
+            });
+            if (surveyCompleted === false) {
                 defaulters++;
             }
         });
@@ -148,10 +155,10 @@ export const getOverAllComponentsData = async (surveyId: string): Promise<respon
         //This map will hold component id as key and all components as value
         const combinedComponentMap = new Map<number, any[]>();
         const combinedComponentUIMap = new Map<string, any[]>();
-        const uiIdVsIdMap = new Map<string,number>();
+        const uiIdVsIdMap = new Map<string, number>();
 
         componentResponses.forEach(compRes => {
-            uiIdVsIdMap.set(compRes.uiId,compRes.id);
+            uiIdVsIdMap.set(compRes.uiId, compRes.id);
             let tempArr = combinedComponentMap.get(compRes.id);
             let tempUniqueComp = combinedComponentUIMap.get(compRes.uiId);
             if (tempUniqueComp == null) {
@@ -166,10 +173,10 @@ export const getOverAllComponentsData = async (surveyId: string): Promise<respon
             combinedComponentMap.set(compRes.id, tempArr);
         });
         response.data = {
-            info : Object.fromEntries(
-                processCombinedComponents(combinedComponentUIMap,uiIdVsIdMap)
+            info: Object.fromEntries(
+                processCombinedComponents(combinedComponentUIMap, uiIdVsIdMap)
             ),
-            idMap : Object.fromEntries(uiIdVsIdMap)
+            idMap: Object.fromEntries(uiIdVsIdMap)
         }
         return response;
     } catch (error) {

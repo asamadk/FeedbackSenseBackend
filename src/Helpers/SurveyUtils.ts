@@ -30,12 +30,12 @@ export const cleanSurveyFlowJSON = (surveyJSON: string): string => {
 }
 
 // export const sortSurveyFlowNodes = (nodes: any[], edges: any[]): LiveSurveyNodes[] => {
-    
+
 //     // Helper function to check if a node is a starting node
 //     const isStartingNode = (nodeId: string) => {
 //         return !edges.some(edge => edge.target === nodeId);
 //     };
-    
+
 //     return nodes.map(node => {
 //         const compConfig = JSON.parse(node.data.compConfig);
 //         const logic : any[] = compConfig.logic || [];
@@ -64,7 +64,7 @@ export const cleanSurveyFlowJSON = (surveyJSON: string): string => {
 // };
 
 export const sortSurveyFlowNodes = (nodes: any[], edges: any[]): LiveSurveyNodes[] => {
-    
+
     // Helper function to check if a node is a starting node
     const isStartingNode = (nodeId: string) => {
         return !edges.some(edge => edge.target === nodeId);
@@ -78,13 +78,13 @@ export const sortSurveyFlowNodes = (nodes: any[], edges: any[]): LiveSurveyNodes
             uId: edge.target
         };
     };
-    
+
     return nodes.map(node => {
         const compConfig = JSON.parse(node.data.compConfig);
         const logic: any[] = compConfig.logic || [];
         const connectedEdges = edges.filter(edge => edge.source === node.id);
         const paths = [];
-        
+
         if (logic.length > 0) {
             for (const logItem of logic) {
                 const matchedEdge = connectedEdges.find(edge => edge.label === logItem.path);
