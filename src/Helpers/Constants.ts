@@ -10,3 +10,8 @@ export const USER_UNAUTH_TEXT = 'User is not authorized';
 
 export const WEBHOOK_SUBSCRIPTION_CREATE = 'create';
 export const WEBHOOK_SUBSCRIPTION_UPDATE = 'update';
+
+export const answerNotNeededSet = new Set<string>([
+    'has any value', 'includes all of the following', 'answer has any value', 'question is answered',
+    'question is not answered'
+]);

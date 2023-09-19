@@ -13,7 +13,7 @@ export class Survey {
   @Column()
   name!: string;
 
-  @Column({ nullable: true})
+  @Column({ nullable: true })
   folder_id!: string;
 
   @Column()
@@ -31,7 +31,7 @@ export class Survey {
   @Column({ default: false })
   is_deleted!: boolean;
 
-  @Column({ nullable : true})
+  @Column({ nullable: true })
   survey_design_json!: string;
 
   @CreateDateColumn()
@@ -43,23 +43,23 @@ export class Survey {
   @Column({ nullable: true })
   workflow_id!: string;
 
-  @ManyToOne(() => User, user => user.surveys,{onDelete : 'CASCADE'})
+  @ManyToOne(() => User, user => user.surveys, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'user_id' })
   user!: User;
 
-  @ManyToOne(() => SurveyType, surveyType => surveyType.surveys,{onDelete : 'CASCADE'})
+  @ManyToOne(() => SurveyType, surveyType => surveyType.surveys, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'survey_type_id' })
   surveyType!: SurveyType;
 
-  @ManyToOne(() => Folder, folder => folder.surveys,{onDelete : 'CASCADE'})
+  @ManyToOne(() => Folder, folder => folder.surveys, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'folder_id' })
   folder!: Folder;
 
-  @OneToMany(() => SurveyConfig, surveyConfig => surveyConfig.survey,{onDelete : 'CASCADE'})
+  @OneToMany(() => SurveyConfig, surveyConfig => surveyConfig.survey, { onDelete: 'CASCADE' })
   surveyConfigs!: SurveyConfig[];
 
-  @OneToMany(() => Workflow, workflow => workflow.survey,{onDelete : 'CASCADE'})
+  @OneToMany(() => Workflow, workflow => workflow.survey, { onDelete: 'CASCADE' })
   workflows!: Workflow[];
 
-  responses : any
+  responses: any
 }
