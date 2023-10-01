@@ -1,5 +1,6 @@
 import { AppDataSource } from "../Config/AppDataSource";
 import { CustomSettings } from "../Entity/CustomSettingsEntity";
+import { FSCustomSetting } from "../Utils/SettingsUtils/CustomSettingsData";
 
 export const createCustomSettings = async (orgId: string): Promise<void> => {
 
@@ -7,31 +8,15 @@ export const createCustomSettings = async (orgId: string): Promise<void> => {
     const customSetRepo = AppDataSource.getDataSource().getRepository(CustomSettings);
 
     const settingsCount = await customSetRepo.count({ where: { organizationId: orgId } });
-    if (settingsCount === 4) { return; }
+    if (settingsCount === 5) { return; }
 
-    const setting1 = new CustomSettings();
-    setting1.fKey = 'removeFeedbackLogo';
-    setting1.fValue = 'false';
-    setting1.organizationId = orgId;
-    customSettingsList.push(setting1);
-
-    const setting2 = new CustomSettings();
-    setting2.fKey = 'activeSurveyLimit';
-    setting2.fValue = '1';
-    setting2.organizationId = orgId;
-    customSettingsList.push(setting2);
-
-    const setting3 = new CustomSettings();
-    setting3.fKey = 'folderFeatureActive';
-    setting3.fValue = 'true';
-    setting3.organizationId = orgId;
-    customSettingsList.push(setting3);
-
-    const setting4 = new CustomSettings();
-    setting4.fKey = 'surveyResponseCapacity';
-    setting4.fValue = '500';
-    setting4.organizationId = orgId;
-    customSettingsList.push(setting4);
+    for (const [key, value] of FSCustomSetting) {
+        const setting = new CustomSettings();
+        setting.fKey = key;
+        setting.fValue = value;
+        setting.organizationId = orgId;
+        customSettingsList.push(setting);
+    }
 
     await customSetRepo.save(customSettingsList);
 }

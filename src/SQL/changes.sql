@@ -36,6 +36,6 @@ CREATE TABLE templates (
     description VARCHAR(255) NOT NULL
 );
 
-ALTER TABLE Templates
+ALTER TABLE templates
 ADD COLUMN design_json JSON DEFAULT NULL;
 

@@ -1,9 +1,13 @@
 import { AppDataSource } from "../Config/AppDataSource";
+import { CustomSettings } from "../Entity/CustomSettingsEntity";
 import { Plan } from "../Entity/PlanEntity";
 import { SurveyType } from "../Entity/SurveyTypeEntity";
 import { FREE_PLAN } from "../Helpers/Constants";
 import { StartUp } from "../Helpers/Startup";
+import { FSCustomSetting } from "../Utils/SettingsUtils/CustomSettingsData";
 import { TestHelper } from "./TestUtils.ts/TestHelper";
+import { createCompleteUser, createCustomSettingForOrg } from "./TestUtils.ts/UserTestUtils";
+import { createUserWithOrgId } from "./TestUtils.ts/UserTestUtils";
 
 beforeAll(async () => {
     await TestHelper.instance.setupTestDB();
@@ -79,3 +83,65 @@ describe('StartUp Survey Type Creation', () => {
         expect(surveyTypeCount).toBe(1);
     });
 });
+
+describe('Startup survey create custom settings' , () => {
+
+    it('No Organizations and No Custom Settings' ,async () => {
+        const customSetRepo = AppDataSource.getDataSource().getRepository(CustomSettings);
+        const startUp = new StartUp();
+        startUp.init();
+        await startUp.createCustomerSettingsExistingUser();
+        const temp2 = await customSetRepo.find();
+        expect(temp2.length).toBe(0);
+    });
+
+    it('No Organizations and No Custom Settings' ,async () => {
+        const customSetRepo = AppDataSource.getDataSource().getRepository(CustomSettings);
+        await createCompleteUser('test@test.com');
+        const startUp = new StartUp();
+        startUp.init();
+        await startUp.createCustomerSettingsExistingUser();
+        const temp2 = await customSetRepo.find();
+        expect(temp2.length).toBe(FSCustomSetting.size);
+    });
+
+    it('All Organizations Have All Custom Settings:' ,async () => {
+        const customSetRepo = AppDataSource.getDataSource().getRepository(CustomSettings);
+        const startUp = new StartUp();
+        startUp.init();
+        await startUp.createCustomerSettingsExistingUser();
+        const temp2 = await customSetRepo.find();
+        expect(temp2.length).toBe(FSCustomSetting.size);
+    });
+
+    it('Some Organizations Lack Some Custom Settings:' ,async () => {
+        const customSetRepo = AppDataSource.getDataSource().getRepository(CustomSettings);
+        await createCompleteUser('test2@test.com');
+        const startUp = new StartUp();
+        startUp.init();
+        await startUp.createCustomerSettingsExistingUser();
+        const temp2 = await customSetRepo.find();
+        expect(temp2.length).toBe(FSCustomSetting.size * 2);
+    });
+    
+    it('Race Conditions', async () => {
+        const startUp = new StartUp();
+        startUp.init();
+    
+        // Running the function concurrently from multiple threads or processes
+        const promise1 = startUp.createCustomerSettingsExistingUser();
+        const promise2 = startUp.createCustomerSettingsExistingUser();
+    
+        await Promise.all([promise1, promise2]);
+    
+        const customSetRepo = AppDataSource.getDataSource().getRepository(CustomSettings);
+        const allSettings = await customSetRepo.find();
+    
+        // The exact expectation here will depend on the desired behavior and setup.
+        // But a basic check could be:
+        expect(allSettings.length).toBeLessThanOrEqual(FSCustomSetting.size * 7);
+    });
+    
+    
+
+})

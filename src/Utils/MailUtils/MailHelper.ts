@@ -25,7 +25,7 @@ export class MailHelper {
     static async sendMail(data: MailDataType, receivers: 'customers' | 'support' | 'both') {
         //Don't send mails if in test mode
         const runningMode :string = process.env.NODE_ENV;
-        if(runningMode.toLowerCase() === 'test'){
+        if(runningMode.toLowerCase() === 'test' || runningMode.toLowerCase() === 'dev'){
             return;
         }
         data.from = process.env.MAIL_SENDER

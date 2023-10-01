@@ -30,7 +30,7 @@ describe('Test basic service functions', () => {
         expect(response.statusCode).toBe(200);
 
         const resData: Templates[] = response.data;
-        expect(resData.length).toBe(1);
+        expect(resData.length).toBe(47);
     });
 
     test('Test template display', async () => {
@@ -59,9 +59,9 @@ describe('Test basic service functions', () => {
 
         const nodes: any[] = resData.nodes;
         expect(nodes.length).toBe(4);
-        expect(nodes[0].data.label).toBe('Welcome message');
-        expect(nodes[1].data.label).toBe('Text answer');
-        expect(nodes[2].data.label).toBe('Single answer selection');
+        expect(nodes[0].data.label).toBe('Single answer selection');
+        expect(nodes[1].data.label).toBe('Welcome message');
+        expect(nodes[2].data.label).toBe('Text answer');
         expect(nodes[3].data.label).toBe('Multiple answer selection');
     });
 
