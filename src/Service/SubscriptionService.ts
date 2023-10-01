@@ -8,7 +8,26 @@ import { User } from "../Entity/UserEntity";
 import { getCustomResponse, getDefaultResponse } from "../Helpers/ServiceUtils";
 import { responseRest } from "../Types/ApiTypes";
 import { CustomSettingsHelper } from "../Helpers/CustomSettingHelper";
+import { MailHelper } from "../Utils/MailUtils/MailHelper";
 import { ACTIVE_SURVEY_LIMIT, SURVEY_RESPONSE_CAPACITY } from "../Constants/CustomSettingsCont";
+import { generatePriceSelectionEmail } from "../Utils/MailUtils/MailMarkup/SubscriptionMarkup";
+import { AuthUserDetails } from "../Helpers/AuthHelper/AuthUserDetails";
+
+export const informSupportUserPricing = async (body : any) => {
+    try {
+        const response = getDefaultResponse('Thank you for your interest! We\'ll reach out to you within the next 24 hours');
+        await MailHelper.sendMail({
+            from : process.env.MAIL_SENDER,
+            html : generatePriceSelectionEmail(AuthUserDetails.getInstance().getUserDetails(),body.price,body.planId),
+            subject : 'FeedbackSense App : User selected a pricing plan',
+            to : process.env.SUPPORT_EMAIL
+        },'support');
+        return response;
+    } catch (error) {
+        logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
+        return getCustomResponse(null, 500, error.message, false)
+    }
+}
 
 export const getSubScriptionDetailsHome = async (userEmail: string): Promise<responseRest> => {
     try {

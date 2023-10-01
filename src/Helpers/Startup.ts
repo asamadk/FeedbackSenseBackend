@@ -5,6 +5,10 @@ import { SurveyType } from "../Entity/SurveyTypeEntity";
 import { ENTERPRISE_PLAN, FREE_PLAN, GROWTH_PLAN, STARTER_PLAN, ULTIMATE_PLAN } from "./Constants";
 import { logger } from "../Config/LoggerConfig";
 import { TemplateStartupScript } from "./StartupScripts/TemplateStartupScript";
+import { CustomSettings } from "../Entity/CustomSettingsEntity";
+import { Organization } from "../Entity/OrgEntity";
+import { FSCustomSetting } from "../Utils/SettingsUtils/CustomSettingsData";
+import { createCustomSettings } from "../Service/CustomSettingsService";
 
 export class StartUp {
 
@@ -24,6 +28,7 @@ export class StartUp {
             this.populatePlanDescription();
             await this.createSurveyType();
             await this.createPlans();
+            await this.createCustomerSettingsExistingUser();
             await new TemplateStartupScript().initialize();
         } catch (error) {
             logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
@@ -200,6 +205,58 @@ export class StartUp {
         // surveyObj1.label = 'Website or App Survey';
         // surveyObj1.name = 'app/site';
         // this.surveyTypeRepo.save(surveyObj1);
+    }
+
+
+    async createCustomerSettingsExistingUser() {
+        try {
+            const customSetRepo = AppDataSource.getDataSource().getRepository(CustomSettings);
+            const customSettings = await customSetRepo.find();
+            const orgRepo = AppDataSource.getDataSource().getRepository(Organization);
+            const orgList = await orgRepo.find();
+            
+            if (customSettings.length < 1) {
+                for (const org of orgList) {
+                    await createCustomSettings(org.id);
+                }
+                return;
+            }
+
+            const orgIdVsSettingsKey = new Map<string, Set<string>>();
+            customSettings.forEach(settings => {
+                let keys = orgIdVsSettingsKey.get(settings.organizationId);
+                if (keys == null) {
+                    keys = new Set<string>();
+                }
+                keys.add(settings.fKey);
+                orgIdVsSettingsKey.set(settings.organizationId, keys);
+            });
+
+            orgList.forEach(org => {
+                if(!orgIdVsSettingsKey.has(org.id)){
+                    orgIdVsSettingsKey.set(org.id,new Set<string>());
+                }
+            })
+
+            const availableKeys = Array.from(FSCustomSetting.keys());
+            const customSettingsList: CustomSettings[] = [];
+
+            for (const [orgId, values] of orgIdVsSettingsKey) {
+                availableKeys.forEach(availableKey => {
+                    if (!values.has(availableKey)) {
+                        const setting = new CustomSettings();
+                        setting.fKey = availableKey;
+                        setting.fValue = FSCustomSetting.get(availableKey);
+                        setting.organizationId = orgId;
+                        customSettingsList.push(setting);
+                    }
+                });
+            }
+            customSetRepo.save(customSettingsList);
+
+        } catch (error) {
+            logger.error(`CreateCustomerSettingsExistingUser :: message - ${error.message}, stack trace - ${error.stack}`);
+        }
     }
 
 }
