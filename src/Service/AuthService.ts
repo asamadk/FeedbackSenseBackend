@@ -1,42 +1,39 @@
 import { User } from "../Entity/UserEntity";
-import { getDataSource } from '../Config/AppDataSource';
+import { AppDataSource } from '../Config/AppDataSource';
 import { responseRest } from "../Types/ApiTypes";
 import { getCustomResponse, getDefaultResponse } from "../Helpers/ServiceUtils";
 import { Plan } from "../Entity/PlanEntity";
-import { MONTHLY_BILLING, STARTER_PLAN } from "../Helpers/Constants";
+import { FREE_PLAN, MONTHLY_BILLING, STARTER_PLAN } from "../Helpers/Constants";
 import { Subscription } from "../Entity/SubscriptionEntity";
+import { logger } from "../Config/LoggerConfig";
+import { MailHelper } from "../Utils/MailUtils/MailHelper";
+import { generateLoginEmailHtml } from "../Utils/MailUtils/MailMarkup/LoginMarkup";
+import {UserProfile} from '../Types/AuthTypes'
 
-
-export const handleSuccessfulLogin = async (user : any) : Promise<void> => {
-    try{
-        const userRepository = getDataSource(false).getRepository(User);
-        const planRepo = getDataSource(false).getRepository(Plan);
-        const subscriptionRepo = getDataSource(false).getRepository(Subscription);
-    
+export const handleSuccessfulLogin = async (user: UserProfile): Promise<void> => {
+    try {
+        const userRepository = AppDataSource.getDataSource().getRepository(User);
+        const planRepo = AppDataSource.getDataSource().getRepository(Plan);
+        const subscriptionRepo = AppDataSource.getDataSource().getRepository(Subscription);
         let userEntity = new User();
-    
-        const userEmail : string = user?._json?.email;
-        if(userEmail == null || userEmail === ''){
+        const userEmail: string = user._json.email;
+        if (userEmail == null || userEmail === '') {
             return;
         }
-    
         const savedUser = await userRepository.findOneBy({
-            email : userEmail
+            email: userEmail
         });
-
         const planObj = await planRepo.findOneBy({
-            name : STARTER_PLAN
+            name: FREE_PLAN
         });
-    
-        if(savedUser != null){return;}
-
-        userEntity.name = user._json?.name;
-        userEntity.email = user._json?.email;
-        userEntity.emailVerified = user?._json?.email_verified;
-        userEntity.oauth_provider = user?.provider;
-             
+        if (savedUser != null) { return; }
+        userEntity.name = user.displayName;
+        userEntity.email = user?._json.email;
+        userEntity.image = user?._json.picture
+        userEntity.emailVerified = true;
+        userEntity.oauth_provider = 'GOOGLE';
         userEntity = await userRepository.save(userEntity);
-        if(planObj != null){
+        if (planObj != null) {
             const subscObj = new Subscription();
             subscObj.user = userEntity;
             subscObj.plan = planObj;
@@ -48,36 +45,54 @@ export const handleSuccessfulLogin = async (user : any) : Promise<void> => {
             subscObj.billing_cycle = MONTHLY_BILLING;
             await subscriptionRepo.save(subscObj);
         }
-    }catch(err){
-        console.error('Exception :: handleSuccessfulLogin :: ',err);
+        await MailHelper.sendMail(
+            {
+                html: generateLoginEmailHtml(userEntity.name),
+                subject: 'Welcome to FeedbackSense - Let\'s Get Started!',
+                to: userEntity.email,
+                from: process.env.MAIL_SENDER
+            }, 'customers'
+        );
+    } catch (error) {
+        logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
     }
 }
 
-export const getFreeSubscriptionLimit = () : string => {
+export const getFreeSubscriptionLimit = (): string => {
     const freeSubLimit = {
-        usedSurveyLimit : 0,
-        activeSurveyLimit : 1,
-        responseStoreLimit : 5000
+        usedSurveyLimit: 0
     }
     return JSON.stringify(freeSubLimit);
 }
 
-export const getUserAfterLogin = async (user : any) : Promise<responseRest> => {
-    const response = getDefaultResponse('Login success');
-    const userRepository = getDataSource(false).getRepository(User);
-    
-    if(user == null){
-        return getCustomResponse(null,403,'Not Authorized',false);
-    }
+export const getUserAfterLogin = async (user: any): Promise<responseRest> => {
+    try {
+        const response = getDefaultResponse('Login success');
+        const userRepository = AppDataSource.getDataSource().getRepository(User);
+        const subscriptionRepo = AppDataSource.getDataSource().getRepository(Subscription);
 
-    const userObj = await userRepository.findOneBy({
-        email : user?._json?.email
-    });
+        if (user == null) {
+            return getCustomResponse(null, 403, 'Not Authorized', false);
+        }
+        const userObj = await userRepository.findOneBy({
+            email: user?.email
+        });
+        if (userObj == null) {
+            return getCustomResponse(null, 404, 'User not found', false);
+        }
+        const userSubscription = subscriptionRepo.findOneByOrFail({
+            user: {
+                email: user?.email
+            }
+        });
+        if (userSubscription == null) {
+            return getCustomResponse(null, 404, 'Subscription not found', false);
+        }
 
-    if(userObj == null){
-        return getCustomResponse(null,404,'User not found',false);
+        response.data = userObj;
+        return response;
+    } catch (error) {
+        logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
+        return getCustomResponse(null, 500, error.message, false)
     }
-    
-    response.data = userObj;
-    return response;
 }

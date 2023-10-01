@@ -1,20 +1,31 @@
-import { getDataSource } from "../Config/AppDataSource";
+import { AppDataSource } from "../Config/AppDataSource";
+import { logger } from "../Config/LoggerConfig";
 import { User } from "../Entity/UserEntity";
 import { getCustomResponse, getDefaultResponse } from "../Helpers/ServiceUtils";
 import { responseRest } from "../Types/ApiTypes";
 
-export const  getAllUsersOfSameOrg = async(orgId : string) :Promise<responseRest>  => {
-    const response = getDefaultResponse('Retrived users successfully');
-    
-    if(orgId == null || orgId.length == 0){
-        return getCustomResponse([],404,' Organization Id is not present ',false);
+export const getAllUsersOfSameOrg = async (userEmail: string): Promise<responseRest> => {
+    try {
+        const response = getDefaultResponse('Retrieved users successfully');
+        const userRepository = AppDataSource.getDataSource().getRepository(User);
+        const user = await userRepository.findOne({
+            where : {email : userEmail}
+        });
+        if (!user) {
+            return getCustomResponse(null,401,'User not found',false);
+        }
+        const users = await userRepository.find({ 
+            where : {
+                organization_id: user.organization_id
+            },
+            order : {
+                created_at : "ASC"
+            }
+        });
+        response.data = users;
+        return response;
+    } catch (error) {
+        logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
+        return getCustomResponse(null, 500, error.message, false)
     }
-
-    const userRepository = getDataSource(false).getRepository(User);
-    const userList = await userRepository.findBy({
-        organization_id : orgId
-    });
-
-    response.data = userList;
-    return response;
 }

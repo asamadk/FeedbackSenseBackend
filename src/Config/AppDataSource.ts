@@ -1,39 +1,54 @@
 import { DataSource } from "typeorm"
+import dotenv from "dotenv";
+import { logger } from "./LoggerConfig";
+import { StartUp } from "../Helpers/Startup";
 
-export const getDataSource = (isTest: boolean): DataSource => {
-    if (isTest === true) {
-        return testDataSource;
-    } else {
-        return mainDataSource
+dotenv.config();
+
+export class AppDataSource {
+
+    static dataSource :DataSource;
+    static instance :AppDataSource;
+
+    static getInstance(){
+        if(this.instance == null){
+            this.instance = new AppDataSource();
+        }
+        return this.instance;
     }
+
+    static setDataSource(dataSource :DataSource){
+        this.dataSource = dataSource;
+    }
+
+    static getDataSource(){
+        return this.dataSource;
+    }
+
 }
 
+export const initializeDataSource = async() => {
+    try {
+        await mainDataSource.initialize();
+        AppDataSource.setDataSource(mainDataSource);
+        logger.info('Data source initialized');
+        await new StartUp().startExecution();
+      } catch (error) {
+        logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
+      }
+}
 
 export const mainDataSource = new DataSource({
-    type: "mysql",
-    host: "localhost",
-    port: 3306,
-    username: "root",
-    password: "password",
-    database: "feedbackSense",
+    type: 'mysql',
+    host: process.env.DB_HOST,
+    port: parseInt(process.env.DB_PORT),
+    username: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    database: process.env.DB_NAME,
     entities: ["dist/Entity/*.js"],
-    migrations: ["dist/migration/*.js"],
-    logging: true,
+    migrations: [
+        "src/migration/**/*.ts"
+    ],
+    logging: false,
     synchronize: false,
-    migrationsTableName: "feedbackSense_migration_table",
-});
-
-export const testDataSource = new DataSource({
-    "name": "test",
-    "type": "mysql",
-    "host": "localhost",
-    "port": 3306,
-    "username": "root",
-    "password": "password",
-    "database": "test_feedbackSense",
-    "synchronize": true,
-    "logging": false,
-    "dropSchema": true,
-    "entities": ["dist/Entity/*.{js,ts}"],
-    "migrations": ["dist/migration/*.js"],
 });

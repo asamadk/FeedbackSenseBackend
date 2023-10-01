@@ -28,6 +28,18 @@ export class Invoice {
     @Column({ type: "timestamp", nullable: false })
     invoiceDate: Date;
 
+    @Column()
+    stripeSubscriptionId: string;
+
+    @Column()
+    stripeInvoiceId: string
+
+    @Column()
+    currency: string
+
+    @Column()
+    billingInterval: string
+
     @CreateDateColumn({ type: "timestamp" })
     createdAt: Date;
 

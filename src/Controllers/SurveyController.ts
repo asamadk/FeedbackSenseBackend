@@ -1,38 +1,63 @@
 import express from 'express';
-import { isLoggedIn } from '../MiddleWares/AuthMiddleware';
-import { createSurvey, enableDisableSurvey, getAllSurveys, getDetailedSurvey, moveSurveyToFolder, saveSurveyFlow, softDeleteSurvey,saveSurveyDesign, updateSurveyConfig, getSurveyConfigData, updateSurveyName } from '../Service/SurveyService';
+import { createSurvey, enableDisableSurvey, getAllSurveys, getDetailedSurvey, moveSurveyToFolder, saveSurveyFlow, permDeleteSurvey,saveSurveyDesign, updateSurveyConfig, getSurveyConfigData, updateSurveyName, checkIfSurveyHasResponse, duplicateSurvey } from '../Service/SurveyService';
 import { responseRest } from '../Types/ApiTypes';
+import { getCustomResponse } from '../Helpers/ServiceUtils';
+import { getUserEmailFromRequest } from '../Helpers/RestUtils';
+import { logger } from '../Config/LoggerConfig';
 
 const router = express.Router();
 
 router.get('/details/:surveyId', async (req,res) => {
-    const surveyId = req.params.surveyId;
-    const response = await getDetailedSurvey(surveyId);
-    res.statusCode = response.statusCode;
-    res.json(response);
+    try {
+        const surveyId = req.params.surveyId;
+        const response = await getDetailedSurvey(surveyId);
+        res.statusCode = response.statusCode;
+        res.json(response);     
+    } catch (error) {
+        logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
+        res.status(500).json(getCustomResponse(null,500,error.message,false));
+    }
 });
 
 
-router.get('/list/:orgId' , async (req , res ) => {
-    const orgId : string = req.params.orgId;
-    const response = await getAllSurveys(orgId);
-    res.statusCode = response.statusCode;
-    res.json(response);
+router.get('/list' , async (req , res ) => {
+    try {
+        const userEmail = getUserEmailFromRequest(req);
+        const response = await getAllSurveys(userEmail);
+        res.statusCode = response.statusCode;
+        res.json(response);    
+    } catch (error) {
+        logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
+        res.status(500).json(getCustomResponse(null,500,error.message,false));
+    }
 });
 
-router.post('/create/:surveyTypeId', async (req : any , res) => {
-    const surveyTypeId : string = req.params.surveyTypeId;
-    const response : responseRest = await createSurvey(surveyTypeId,req.user);
-    res.statusCode = response.statusCode;
-    res.json(response);
+router.post('/create/:surveyName', async (req :any , res) => {
+    try {
+        const surveyName : string = req.params.surveyName;
+        if(surveyName == null || surveyName.length < 1){
+            throw new Error('Survey name is empty');
+        }
+        const response : responseRest = await createSurvey(surveyName,req.user);
+        res.statusCode = response.statusCode;
+        res.json(response);    
+    } catch (error) {
+        logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
+        res.status(500).json(getCustomResponse(null,500,error.message,false));
+    }
 });
 
 router.post('/move/:folderId/:surveyId', async (req,res) => {
-    const folderId = req.params.folderId;
-    const surveyId = req.params.surveyId;
-    const response = await moveSurveyToFolder(folderId,surveyId);
-    res.statusCode = response.statusCode;
-    res.json(response);
+    try {
+        const folderId = req.params.folderId;
+        const surveyId = req.params.surveyId;
+        const response = await moveSurveyToFolder(folderId,surveyId);
+        res.statusCode = response.statusCode;
+        res.json(response);    
+    } catch (error) {
+        logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
+        res.status(500).json(getCustomResponse(null,500,error.message,false));
+    }
 })
 
 router.post('/disable/:surveyId', async (req,res) => {
@@ -42,7 +67,8 @@ router.post('/disable/:surveyId', async (req,res) => {
         res.statusCode = response.statusCode;
         res.json(response);    
     } catch (error) {
-        console.log("🚀 ~ file: SurveyController.ts:45 ~ router.post ~ error:", error)
+        logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
+        res.status(500).json(getCustomResponse(null,500,error.message,false));
     }
 })
 
@@ -53,18 +79,20 @@ router.post('/enable/:surveyId', async (req,res) => {
         res.statusCode = response.statusCode;
         res.json(response);    
     } catch (error) {
-        console.log("🚀 ~ file: SurveyController.ts:56 ~ router.post ~ error:", error)
+        logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
+        res.status(500).json(getCustomResponse(null,500,error.message,false));
     }
 })
 
 router.post('/delete/:surveyId', async (req,res) => {
     try {
         const surveyId = req.params.surveyId;
-        const response = await softDeleteSurvey(surveyId);
+        const response = await permDeleteSurvey(surveyId);
         res.statusCode = response.statusCode;
         res.json(response);    
     } catch (error) {
-        console.log("🚀 ~ file: SurveyController.ts:67 ~ router.post ~ error:", error)
+        logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
+        res.status(500).json(getCustomResponse(null,500,error.message,false));
     }
 })
 
@@ -72,13 +100,26 @@ router.post('/save/flow/:surveyId', async (req,res) => {
     try {
         const reqBody = req.body;
         const surveyId = req.params.surveyId;
-        const response = await saveSurveyFlow(surveyId,JSON.stringify(reqBody));
+        const deleteResponses = req.query?.delete;
+        const response = await saveSurveyFlow(surveyId,JSON.stringify(reqBody),deleteResponses === 'true');
         res.statusCode = response.statusCode;
         res.json(response);    
     } catch (error) {
-        console.log("🚀 ~ file: SurveyController.ts:79 ~ router.post ~ error:", error)
+        logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
+        res.status(500).json(getCustomResponse(null,500,error.message,false));
     }
 });
+
+router.get('/save/check/:surveyId',async (req,res) => {
+    try {
+        const surveyId = req.params.surveyId;
+        const response = await checkIfSurveyHasResponse(surveyId);
+        res.status(response.statusCode).json(response);
+    } catch (error) {
+        logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
+        res.status(500).json(getCustomResponse(null,500,error.message,false));
+    }
+})
 
 router.post('/save/design/:surveyId', async (req,res) => {
     try {
@@ -88,7 +129,8 @@ router.post('/save/design/:surveyId', async (req,res) => {
         res.statusCode = response.statusCode;
         res.json(response);    
     } catch (error) {
-        console.log("🚀 ~ file: SurveyController.ts:91 ~ router.post ~ error:", error)
+        logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
+        res.status(500).json(getCustomResponse(null,500,error.message,false));
     }
 });
 
@@ -100,7 +142,8 @@ router.post('/config/update/:surveyId',async(req,res) => {
         res.statusCode = response.statusCode;
         res.json(response);    
     } catch (error) {
-        console.log("🚀 ~ file: SurveyController.ts:103 ~ router.post ~ error:", error)
+        logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
+        res.status(500).json(getCustomResponse(null,500,error.message,false));
     }
 });
 
@@ -111,7 +154,8 @@ router.get('/config/detail/:surveyId', async (req,res) => {
         res.statusCode = response.statusCode;
         res.json(response);    
     } catch (error) {
-        console.log("🚀 ~ file: SurveyController.ts:114 ~ router.get ~ error:", error)
+        logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
+        res.status(500).json(getCustomResponse(null,500,error.message,false));
     }
 });
 
@@ -123,8 +167,24 @@ router.post('/update/name/:surveyId',async(req,res) => {
         res.statusCode = response.statusCode;
         res.json(response);    
     } catch (error) {
-        console.log("🚀 ~ file: SurveyController.ts:126 ~ router.post ~ error:", error)
+        logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
+        res.status(500).json(getCustomResponse(null,500,error.message,false));
     }
 });
+
+router.post('/duplicate/:surveyId',async (req,res) => {
+    try {
+        const surveyId = req.params.surveyId as string;
+        if(surveyId == null || surveyId.length < 1){
+            throw new Error('Survey Id not provided.');
+        }
+        const response = await duplicateSurvey(surveyId);
+        res.statusCode = response.statusCode;
+        res.json(response);    
+    } catch (error) {
+        logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
+        res.status(500).json(getCustomResponse(null,500,error.message,false));
+    }
+})
 
 export default router

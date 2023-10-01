@@ -18,6 +18,6 @@ export class SurveyType {
   @UpdateDateColumn()
   updated_at!: Date;
 
-  @OneToMany(() => Survey, survey => survey.surveyType)
+  @OneToMany(() => Survey, survey => survey.surveyType,{onDelete : 'CASCADE'})
   surveys!: Survey[];
 }

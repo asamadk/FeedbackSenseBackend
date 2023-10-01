@@ -3,8 +3,6 @@ import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, OneToMany, JoinColum
 @Entity()
 export class User {
 
-//TODO add same domain same org field
-
     @PrimaryGeneratedColumn('uuid')
     id!: string;
 
@@ -31,6 +29,12 @@ export class User {
 
     @Column()
     emailVerified!: boolean;
+
+    @Column({ nullable: true })
+    address!: string;
+
+    @Column({ nullable: true })
+    image!: string;
     
     surveys: any;
     notifications: any;

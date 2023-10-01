@@ -12,10 +12,15 @@ export class SurveyConfig {
   @Column({nullable : true})
   time_limit!: string;
 
+  @Column({nullable : true})
+  emails!: string;
+
   @Column()
   response_limit!: number;
 
-  @ManyToOne(() => Survey, survey => survey.surveyConfigs)
+  @ManyToOne(() => Survey, survey => survey.surveyConfigs,{
+    onDelete : 'CASCADE'
+  })
   @JoinColumn({ name: 'survey_id' })
   survey!: Survey;
 }

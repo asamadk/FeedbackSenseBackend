@@ -1,28 +1,45 @@
 import express from "express";
 import passport from "passport";
 import dotenv from "dotenv";
+
+dotenv.config();
+const clienT_URL = process.env.CLIENT_URL;
+
 import { getUserAfterLogin } from "../Service/AuthService";
+import { getCustomResponse } from "../Helpers/ServiceUtils";
+import { logger } from "../Config/LoggerConfig";
 
 const router = express.Router();
 
 router.get('/login/success', async (req:any , res) => {
-    const response = await getUserAfterLogin(req.user);
-    res.statusCode = response.statusCode;
-    res.json(response);
+    try {
+        const response = await getUserAfterLogin(req.user);
+        res.statusCode = response.statusCode;
+        res.json(response);    
+    } catch (error) {
+        logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
+        res.status(500).json(getCustomResponse(null,500,error.message,false));
+    }
 });
 
 router.get("/login/failed", (req, res) => {
-	res.status(401).json({
-		error: true,
-		message: "Log in failure",
-	});
+    try {
+        logger.error(`Login failure :: ${req.query}`);
+        res.status(401).json({
+            error: true,
+            message: "Log in failure",
+        });
+    } catch (error) {
+        logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
+        res.status(500).json(getCustomResponse(null,500,error.message,false));
+    }
 });
 
 router.get(
     "/oauth2/redirect",
     passport.authenticate("google", {
-        successRedirect: 'http://localhost:3000/',
-        failureRedirect: "/login/failed",
+        successRedirect: clienT_URL,
+        failureRedirect: "/auth/login/failed",
         prompt : 'select_account'
     })
 );
@@ -37,8 +54,13 @@ router.get(
 
 
 router.get("/logout", (req : any , res) => {
-	req.logout();
-	res.redirect(process.env.CLIENT_URL);
+    try {
+        req.logout();
+        res.redirect(process.env.CLIENT_URL);       
+    } catch (error) {
+        logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
+        res.status(500).json(getCustomResponse(null,500,error.message,false));
+    }
 });
 
 export default router;

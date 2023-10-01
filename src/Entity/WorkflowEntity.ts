@@ -10,7 +10,7 @@ export class Workflow {
   @Column()
   surveyId: string;
 
-  @ManyToOne(() => Survey, survey => survey.workflows)
+  @ManyToOne(() => Survey, survey => survey.workflows,{onDelete : 'CASCADE'})
   survey: Survey;
 
   @Column("longtext")
