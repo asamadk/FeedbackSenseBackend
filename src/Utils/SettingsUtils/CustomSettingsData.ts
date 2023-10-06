@@ -4,3 +4,4 @@ FSCustomSetting.set('activeSurveyLimit', '1');
 FSCustomSetting.set('folderFeatureActive', 'true');
 FSCustomSetting.set('surveyResponseCapacity', '500');
 FSCustomSetting.set('skipLogicFeature', 'false');
+FSCustomSetting.set('teamMemberSeats', '1');

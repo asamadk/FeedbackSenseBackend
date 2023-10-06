@@ -137,11 +137,7 @@ describe('Startup survey create custom settings' , () => {
         const customSetRepo = AppDataSource.getDataSource().getRepository(CustomSettings);
         const allSettings = await customSetRepo.find();
     
-        // The exact expectation here will depend on the desired behavior and setup.
-        // But a basic check could be:
         expect(allSettings.length).toBeLessThanOrEqual(FSCustomSetting.size * 7);
     });
-    
-    
 
 })
