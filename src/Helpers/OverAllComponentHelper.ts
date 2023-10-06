@@ -335,7 +335,7 @@ export const dateComp = (data: any[]): any => {
     let question = '';
     const actionSet = new Set<string>();
     data?.forEach(d => {
-        actionSet.add(d?.data);
+        actionSet.add(d?.data?.value);
         question = d?.compData?.question
     });
     return {

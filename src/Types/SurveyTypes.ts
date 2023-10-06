@@ -23,10 +23,12 @@ export type logicType = {
 type Condition = {
     condition: string;
     uId: string;
+    value ?:string;
 };
 
 export interface LiveSurveyNodes {
     uId: string;
     data: string;
     paths: Condition[];
+    isStartingNode : boolean
 }
