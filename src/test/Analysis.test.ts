@@ -427,18 +427,18 @@ describe('Test each component separately', () => {
         expect(dataResult.clickFrequency).toBe(0);
         expect(dataResult.question).toBe('');
         
-        const dataResult1 = dateComp(JSON.parse('[{"compData":{"question":"Date selector","existing":false},"id":13,"data":"2023-06-26","uiId":"dndnode_8940"},{"compData":{"question":"Date selector","existing":false},"id":13,"data":"2023-06-29","uiId":"dndnode_8940"},{"compData":{"question":"Date selector","existing":false},"id":13,"data":"2023-06-28","uiId":"dndnode_8940"}]'));
+        const dataResult1 = dateComp(JSON.parse('[{"compData":{"question":"Date selector","existing":false},"id":13,"data":{"value":"2023-06-26"},"uiId":"dndnode_8940"},{"compData":{"question":"Date selector","existing":false},"id":13,"data":{"value":"2023-06-29"},"uiId":"dndnode_8940"},{"compData":{"question":"Date selector","existing":false},"id":13,"data":{"value":"2023-06-28"},"uiId":"dndnode_8940"}]'));
         expect(dataResult1.actions.length).toBe(dataResult1.clickFrequency);
         expect(dataResult1.question).toBe('Date selector');
         expect(dataResult1.actions[0]).toBe('2023-06-26');
         expect(dataResult1.actions[1]).toBe('2023-06-29');
         expect(dataResult1.actions[2]).toBe('2023-06-28');
 
-        const dataResult2 = dateComp(JSON.parse('[{"compData":{"question":"Date selector","existing":false},"id":13,"data":"2023-06-26","uiId":"dndnode_8940"},{"compData":{"question":"Date selector","existing":false},"id":13,"data":"","uiId":"dndnode_8940"},{"compData":{"question":"Date selector","existing":false},"id":13,"data":"2023-06-28","uiId":"dndnode_8940"}]'));
+        const dataResult2 = dateComp(JSON.parse('[{"compData":{"question":"Date selector","existing":false},"id":13,"data":{"value":"2023-06-26"},"uiId":"dndnode_8940"},{"compData":{"question":"Date selector","existing":false},"id":13,"data":{},"uiId":"dndnode_8940"},{"compData":{"question":"Date selector","existing":false},"id":13,"data":{"value":"2023-06-28"},"uiId":"dndnode_8940"}]'));
         expect(dataResult2.actions.length).toBe(dataResult2.clickFrequency);
         expect(dataResult2.question).toBe('Date selector');
         expect(dataResult2.actions[0]).toBe('2023-06-26');
-        expect(dataResult2.actions[1]).toBe('');
+        expect(dataResult2.actions[1]).toBe(undefined);
         expect(dataResult2.actions[2]).toBe('2023-06-28');
     });
 
