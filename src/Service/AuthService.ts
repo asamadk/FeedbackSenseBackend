@@ -8,7 +8,7 @@ import { Subscription } from "../Entity/SubscriptionEntity";
 import { logger } from "../Config/LoggerConfig";
 import { MailHelper } from "../Utils/MailUtils/MailHelper";
 import { generateLoginEmailHtml } from "../Utils/MailUtils/MailMarkup/LoginMarkup";
-import {UserProfile} from '../Types/AuthTypes'
+import { UserProfile } from '../Types/AuthTypes'
 
 export const handleSuccessfulLogin = async (user: UserProfile): Promise<void> => {
     try {
@@ -75,7 +75,7 @@ export const getUserAfterLogin = async (user: any): Promise<responseRest> => {
             return getCustomResponse(null, 403, 'Not Authorized', false);
         }
         const userObj = await userRepository.findOneBy({
-            email: user?.email
+            email: user?.email,
         });
         if (userObj == null) {
             return getCustomResponse(null, 404, 'User not found', false);

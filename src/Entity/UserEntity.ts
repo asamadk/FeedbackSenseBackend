@@ -15,10 +15,10 @@ export class User {
     @Column()
     oauth_provider!: string;
 
-    @Column({nullable : true})
+    @Column({ nullable: true })
     oauth_id!: string;
 
-    @Column({ nullable : true})
+    @Column({ nullable: true })
     organization_id!: string;
 
     @CreateDateColumn()
@@ -35,7 +35,13 @@ export class User {
 
     @Column({ nullable: true })
     image!: string;
-    
+
+    @Column({ type: 'enum', enum: ['OWNER', 'ADMIN', 'USER', 'GUEST'], default: 'OWNER' })
+    role!: 'OWNER' | 'ADMIN' | 'USER' | 'GUEST';
+
+    @Column()
+    isDeleted!: boolean;
+
     surveys: any;
     notifications: any;
     subscriptions: any;

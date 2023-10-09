@@ -63,4 +63,13 @@ router.get("/logout", (req : any , res) => {
     }
 });
 
+router.get('/invite',(req,res) => {
+    try {
+        //TODO handle user invite
+    } catch (error) {
+        logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
+        res.status(500).json(getCustomResponse(null,500,error.message,false));
+    }
+});
+
 export default router;

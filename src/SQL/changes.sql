@@ -39,3 +39,20 @@ CREATE TABLE templates (
 ALTER TABLE templates
 ADD COLUMN design_json JSON DEFAULT NULL;
 
+CREATE TABLE `survey_log` (
+    `id` CHAR(36) NOT NULL PRIMARY KEY,
+    `survey_id` CHAR(36) NOT NULL,
+    `user_id` VARCHAR(36) NOT NULL,
+    `timestamp` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    `action_type` VARCHAR(50) NOT NULL,
+    `description` TEXT DEFAULT NULL,
+    `data_before` TEXT DEFAULT NULL,
+    `data_after` TEXT DEFAULT NULL,
+    `IP_address` VARCHAR(45) DEFAULT NULL,
+    FOREIGN KEY (`survey_id`) REFERENCES `survey`(`id`) ON DELETE CASCADE
+);
+
+ALTER TABLE user 
+ADD COLUMN role ENUM('OWNER', 'ADMIN', 'USER', 'GUEST') NOT NULL DEFAULT 'OWNER';
+
+ALTER TABLE user ADD isDeleted BOOLEAN DEFAULT FALSE;

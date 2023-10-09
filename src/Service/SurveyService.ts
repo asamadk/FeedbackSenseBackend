@@ -14,6 +14,9 @@ import { In, Not } from "typeorm";
 import { CustomSettingsHelper } from "../Helpers/CustomSettingHelper";
 import { AuthUserDetails } from "../Helpers/AuthHelper/AuthUserDetails";
 import { ACTIVE_SURVEY_LIMIT } from "../Constants/CustomSettingsCont";
+import { SurveyLog } from "../Entity/SurveyLogEntity";
+import { SurveyLogHelper } from "../Helpers/SurveyLogHelper";
+import { Folder } from "../Entity/FolderEntity";
 
 
 export const getDetailedSurvey = async (surveyId: string): Promise<responseRest> => {
@@ -105,6 +108,17 @@ export const createSurvey = async (surveyName: string, user: User): Promise<resp
         await surveyRepository.save(surveyObj);
 
         await createSurveyConfig(savedUser.id, surveyObj.id);
+
+        await SurveyLogHelper.createLogEntry({
+            survey: surveyObj,
+            user_id: AuthUserDetails.getInstance().getUserDetails().id,
+            action_type: SurveyLogHelper.CREATE_ACTION,
+            description: `${AuthUserDetails.getInstance().getUserDetails().name} created survey.`,
+            data_before: '',
+            data_after: '',
+            IP_address: ''
+        });
+
         response.data = surveyObj;
         return response;
     } catch (error) {
@@ -120,15 +134,37 @@ export const moveSurveyToFolder = async (folderId: string, surveyId: string): Pr
             return getCustomResponse([], 404, ' Folder id is not present ', false);
         }
         const surveyRepository = AppDataSource.getDataSource().getRepository(Survey);
-        const surveyObj = await surveyRepository.findOneBy({
-            id: surveyId
+        const surveyObj = await surveyRepository.findOne({
+            where: {
+                id: surveyId
+            },
+            relations: ['folder']
         });
         if (surveyObj == null) {
             return getCustomResponse([], 404, ' Survey not found ', false);
         }
+
+        let prevFolderName = 'No folder';
+        if (surveyObj.folder_id != null) {
+            prevFolderName = surveyObj?.folder?.name;
+        }
+
         surveyObj.folder_id = folderId;
         await surveyRepository.save(surveyObj);
         response.data = surveyObj;
+
+        const folderRepo = AppDataSource.getDataSource().getRepository(Folder);
+        const newFolder = await folderRepo.findOne({ where: { id: folderId } })
+
+        await SurveyLogHelper.createLogEntry({
+            survey: surveyObj,
+            user_id: AuthUserDetails.getInstance().getUserDetails().id,
+            action_type: SurveyLogHelper.UPDATE_ACTION,
+            description: `${AuthUserDetails.getInstance().getUserDetails().name} moved survey.`,
+            data_before: prevFolderName,
+            data_after: newFolder.name,
+            IP_address: ''
+        });
         return response;
     } catch (error) {
         logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
@@ -185,6 +221,15 @@ export const enableDisableSurvey = async (surveyId: string, enable: boolean): Pr
             return response;
         }
         await surveyRepository.save(surveyObj);
+        await SurveyLogHelper.createLogEntry({
+            survey: surveyObj,
+            user_id: AuthUserDetails.getInstance().getUserDetails().id,
+            action_type: SurveyLogHelper.UPDATE_ACTION,
+            description: `${AuthUserDetails.getInstance().getUserDetails().name} ${enable == true ? 'published' : 'unpublished'} survey.`,
+            data_before: surveyObj.is_published === true ? 'unpublished' : 'published',
+            data_after: surveyObj.is_published === true ? 'published' : 'unpublished',
+            IP_address: ''
+        });
         return response;
     } catch (error) {
         logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
@@ -273,6 +318,15 @@ export const saveSurveyFlow = async (surveyId: string, surveyJSON: string, delet
             await surveyResponseRepo.delete({
                 survey_id: surveyId
             });
+            await SurveyLogHelper.createLogEntry({
+                survey: surveyData,
+                user_id: AuthUserDetails.getInstance().getUserDetails().id,
+                action_type: SurveyLogHelper.DELETE_ACTION,
+                description: `${AuthUserDetails.getInstance().getUserDetails().name} deleted survey responses while saving.`,
+                data_before: '',
+                data_after: '',
+                IP_address: ''
+            });
         }
 
         const validated = validateSurveyFlowOnSave(JSON.parse(surveyJSON));
@@ -280,6 +334,15 @@ export const saveSurveyFlow = async (surveyId: string, surveyJSON: string, delet
             response.message = `Saved: ${validated}`;
         }
 
+        await SurveyLogHelper.createLogEntry({
+            survey: surveyData,
+            user_id: AuthUserDetails.getInstance().getUserDetails().id,
+            action_type: SurveyLogHelper.UPDATE_ACTION,
+            description: `${AuthUserDetails.getInstance().getUserDetails().name} saved survey.`,
+            data_before: '',
+            data_after: '',
+            IP_address: ''
+        });
     } catch (error) {
         logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
         return getCustomResponse(null, 500, error.message, false)
@@ -335,9 +398,22 @@ export const saveSurveyDesign = async (surveyId: string, surveyJSON: string): Pr
         if (surveyJSON == null || surveyJSON.length < 1) {
             throw new Error('Survey design not found.')
         }
+
+        const oldSurveyTheme = surveyData.survey_design_json;
+
         surveyData.survey_design_json = surveyJSON;
         await surveyRepository.save(surveyData);
         response.data = surveyData;
+
+        await SurveyLogHelper.createLogEntry({
+            survey: surveyData,
+            user_id: AuthUserDetails.getInstance().getUserDetails().id,
+            action_type: SurveyLogHelper.UPDATE_THEME_ACTION,
+            description: `${AuthUserDetails.getInstance().getUserDetails().name} changed survey's theme.`,
+            data_before: oldSurveyTheme,
+            data_after: surveyData.survey_design_json,
+            IP_address: ''
+        });
         return response;
     } catch (error) {
         logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
@@ -445,9 +521,19 @@ export const updateSurveyName = async (surveyId: string, payload: any): Promise<
         if (surveyCount > 0) {
             throw new Error('Survey already exist with this name');
         }
+        const surveyOldName = surveyObj.name;
         surveyObj.name = payload.surveyName;
         await surveyRepo.save(surveyObj);
         response.data = surveyObj;
+        await SurveyLogHelper.createLogEntry({
+            survey: surveyObj,
+            user_id: AuthUserDetails.getInstance().getUserDetails().id,
+            action_type: SurveyLogHelper.UPDATE_ACTION,
+            description: `${AuthUserDetails.getInstance().getUserDetails().name} changed survey's name.`,
+            data_before: surveyOldName,
+            data_after: surveyObj.name,
+            IP_address: ''
+        });
         return response;
     } catch (error) {
         logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
