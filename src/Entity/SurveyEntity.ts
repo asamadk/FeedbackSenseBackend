@@ -4,6 +4,7 @@ import { SurveyConfig } from "./SurveyConfigEntity";
 import { SurveyType } from "./SurveyTypeEntity";
 import { User } from "./UserEntity";
 import { Workflow } from "./WorkflowEntity";
+import { SurveyLog } from "./SurveyLogEntity";
 
 @Entity()
 export class Survey {
@@ -60,6 +61,9 @@ export class Survey {
 
   @OneToMany(() => Workflow, workflow => workflow.survey, { onDelete: 'CASCADE' })
   workflows!: Workflow[];
+  
+  @OneToMany(() => SurveyLog, log => log.survey)
+  logs: SurveyLog[];
 
   responses: any
 }

@@ -116,7 +116,7 @@ app.use('/subscription', isLoggedIn, logRequest, SubscriptionController);
 app.use('/plan', isLoggedIn, logRequest, PlanController);
 app.use('/analysis', isLoggedIn, logRequest, AnalysisController);
 app.use('/stripe', isLoggedIn, logRequest, StripeController);
-app.use('/template',isLoggedIn,logRequest,TemplateController);
+app.use('/template', isLoggedIn, logRequest, TemplateController);
 
 
 const startServer = async () => {

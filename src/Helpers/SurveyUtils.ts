@@ -3,11 +3,13 @@ import { logger } from "../Config/LoggerConfig";
 import { SURVEY_RESPONSE_CAPACITY } from "../Constants/CustomSettingsCont";
 import { Subscription } from "../Entity/SubscriptionEntity";
 import { SurveyConfig } from "../Entity/SurveyConfigEntity";
+import { Survey } from "../Entity/SurveyEntity";
 import { SurveyResponse } from "../Entity/SurveyResponse";
 import { LiveSurveyNodes, logicType } from "../Types/SurveyTypes";
 import { AuthUserDetails } from "./AuthHelper/AuthUserDetails";
 import { answerNotNeededSet } from "./Constants";
 import { CustomSettingsHelper } from "./CustomSettingHelper";
+import { SurveyLogHelper } from "./SurveyLogHelper";
 
 export const cleanSurveyFlowJSON = (surveyJSON: string): string => {
     if (surveyJSON == null || surveyJSON.length < 1) {
@@ -181,8 +183,7 @@ export const createSurveyConfig = async (userId: string, surveyId: string) => {
         response_limit: parseInt(surveyResponseCapacity),
         time_limit: null,
         survey_id: surveyId,
-    })
-
+    });
 }
 
 export const validateSurveyFlowOnSave = (flow: any): string | null => {
