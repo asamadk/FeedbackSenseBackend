@@ -9,23 +9,23 @@ dotenv.config();
 const router = express.Router();
 const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
-router.post('/stripe', async (req, res) => {
-    const stripe = getStripe();
-    const sig = req.headers['stripe-signature'];
-    let event;
-    try {
-        event = stripe.webhooks.constructEvent(req.body, sig, endpointSecret);
-    } catch (error) {
-        logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
-        return res.sendStatus(400);
-    }
-    const success = await handleStripeWebHooks(event);
-    if (success === true) {
-        res.send();
-    } else {
-        res.sendStatus(400);
-    }
+// router.post('/stripe', async (req, res) => {
+//     const stripe = getStripe();
+//     const sig = req.headers['stripe-signature'];
+//     let event;
+//     try {
+//         event = stripe.webhooks.constructEvent(req.body, sig, endpointSecret);
+//     } catch (error) {
+//         logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
+//         return res.sendStatus(400);
+//     }
+//     const success = await handleStripeWebHooks(event);
+//     if (success === true) {
+//         res.send();
+//     } else {
+//         res.sendStatus(400);
+//     }
 
-});
+// });
 
 export default router;

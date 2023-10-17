@@ -1,7 +1,6 @@
 import { AppDataSource } from "../Config/AppDataSource";
 import { logger } from "../Config/LoggerConfig";
 import { SURVEY_RESPONSE_CAPACITY } from "../Constants/CustomSettingsCont";
-import { Subscription } from "../Entity/SubscriptionEntity";
 import { SurveyConfig } from "../Entity/SurveyConfigEntity";
 import { Survey } from "../Entity/SurveyEntity";
 import { SurveyResponse } from "../Entity/SurveyResponse";
@@ -152,15 +151,6 @@ export const hasSurveyReachedResponseLimit = async (resLimit: number, surveyId: 
         return true;
     }
     return false;
-}
-
-const getSubscriptionLimit = (userSubscription: Subscription) => {
-    const subLimit = userSubscription.sub_limit;
-    if (subLimit == null || subLimit.length < 1) {
-        logger.error('User subscription has no sub_limit.');
-        throw new Error('User subscription has no sub_limit.');
-    }
-    return JSON.parse(subLimit);
 }
 
 export const getMaxResponseLimit = async () => {

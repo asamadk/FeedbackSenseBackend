@@ -1,11 +1,22 @@
+import { AppDataSource } from "../Config/AppDataSource";
+import { User } from "../Entity/UserEntity";
 import { AuthUserDetails } from "../Helpers/AuthHelper/AuthUserDetails";
 import { USER_ROLE_ERROR_TEXT, USER_UNAUTH_TEXT } from "../Helpers/Constants";
 import { responseRest } from "../Types/ApiTypes";
 
-export const isLoggedIn = (req: any, res: any, next: any) => {
+export const isLoggedIn = async (req: any, res: any, next: any) => {
     if (req.user && req.user.email) {
-        AuthUserDetails.getInstance().setUserDetails(req.user);
-        next();
+        const userRepo = AppDataSource.getDataSource().getRepository(User);
+        
+        const updatedUser = await userRepo.findOneBy({id : req.user.id});
+        AuthUserDetails.getInstance().setUserDetails(updatedUser);
+        const user = AuthUserDetails.getInstance().getUserDetails();
+        if (user.isDeleted === true) {
+            res.statusCode = 401;
+            res.json(getUnAuthorizedResponse());
+        } else {
+            next();
+        }
     } else {
         res.statusCode = 401;
         res.json(getUnAuthorizedResponse());

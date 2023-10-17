@@ -10,6 +10,14 @@ import { User } from "../Entity/UserEntity";
 import { MailHelper } from "../Utils/MailUtils/MailHelper";
 import { generateUpgradeSubEmailHtml } from "../Utils/MailUtils/MailMarkup/UpgradeSubMarkup";
 
+
+/**
+ * Stopping webhook for now
+ * When restarting the webhook check Subscription entity
+ * Previously subscription was tied to userId but now it is change to orgID
+ * Each org have one subscription
+ * Update subscription instance when using this file
+ */
 export const handleStripeWebHooks = async (event: any): Promise<boolean> => {
     try {
         logger.info('Webhook called...');

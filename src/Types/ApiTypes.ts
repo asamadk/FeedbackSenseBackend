@@ -4,3 +4,10 @@ export type responseRest = {
     data : any,
     statusCode : number
 }
+
+export type InviteData = {
+    role: 'OWNER' | 'ADMIN' | 'USER' | 'GUEST';
+    email: string;
+    invitedBy: string;
+    date: Date;
+};

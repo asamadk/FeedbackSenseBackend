@@ -1,6 +1,7 @@
-import { Column, CreateDateColumn, Entity, OneToMany, UpdateDateColumn } from "typeorm";
+import { Column, CreateDateColumn, Entity, OneToMany, OneToOne, UpdateDateColumn } from "typeorm";
 import { PrimaryGeneratedColumn } from "typeorm/decorator/columns/PrimaryGeneratedColumn";
 import { CustomSettings } from "./CustomSettingsEntity";
+import { Subscription } from "./SubscriptionEntity";
 
 @Entity()
 export class Organization {
@@ -21,5 +22,8 @@ export class Organization {
 
   @OneToMany(() => CustomSettings, keyValue => keyValue.organization)
   customSettings!: CustomSettings[];
+
+  @OneToOne(() => Subscription, subscription => subscription.organization)
+  subscription: Subscription;
 
 }
