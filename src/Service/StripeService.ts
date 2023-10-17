@@ -45,14 +45,13 @@ export const createCustomer = async (currentUser: User) => {
 
 export const checkUserCurrentPlan = async (planId: string): Promise<boolean> => {
     const userDetails = AuthUserDetails.getInstance().getUserDetails();
-    const userEmail = userDetails.email;
+    const organizationId = userDetails.organization_id;
     const subscriptionRepo = AppDataSource.getDataSource().getRepository(Subscription);
     const currentSubscription = await subscriptionRepo
         .createQueryBuilder('subscription')
-        .innerJoin('subscription.user', 'user')
         .innerJoin('subscription.plan', 'plan')
         .select(['subscription', 'plan.id'])
-        .where('user.email = :userEmail', { userEmail })
+        .where('organization.id = :organizationId', { organizationId })
         .getOne();
 
     return currentSubscription?.plan?.id === planId
@@ -87,15 +86,14 @@ export const getCurrentPlanIdFromStrip = async (stripe: Stripe, amount: number):
 
 export const cancelCurrentSubscription = async (): Promise<responseRest> => {
     try {
-        // console.log('cancelCurrentSubscription');
         const response = getCustomResponse({}, 200, 'Subscription updated.', true);
         const invoiceRepo = AppDataSource.getDataSource().getRepository(Invoice);
 
         const invoice = await invoiceRepo.findOne({
             where: {
                 subscription: {
-                    user: {
-                        email: AuthUserDetails.getInstance().getUserDetails()?.email
+                    organization: {
+                        id: AuthUserDetails.getInstance().getUserDetails()?.organization_id
                     },
                     plan: {
                         price_cents: Not(0)

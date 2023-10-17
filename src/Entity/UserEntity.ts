@@ -39,7 +39,7 @@ export class User {
     @Column({ type: 'enum', enum: ['OWNER', 'ADMIN', 'USER', 'GUEST'], default: 'OWNER' })
     role!: 'OWNER' | 'ADMIN' | 'USER' | 'GUEST';
 
-    @Column()
+    @Column({ default: false })
     isDeleted!: boolean;
 
     surveys: any;

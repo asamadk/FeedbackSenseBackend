@@ -56,3 +56,12 @@ ALTER TABLE user
 ADD COLUMN role ENUM('OWNER', 'ADMIN', 'USER', 'GUEST') NOT NULL DEFAULT 'OWNER';
 
 ALTER TABLE user ADD isDeleted BOOLEAN DEFAULT FALSE;
+
+-- Add the organization_id column to the Subscription table
+ALTER TABLE Subscription ADD organization_id VARCHAR(255) NULL;
+
+
+-- Establish a foreign key relationship
+ALTER TABLE Subscription ADD CONSTRAINT fk_subscription_organization
+FOREIGN KEY (organization_id) REFERENCES Organization(id)
+ON DELETE CASCADE;

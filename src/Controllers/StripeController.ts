@@ -32,17 +32,6 @@ router.post('/api/subscribe', async (req, res) => {
             status : 'active'
         });
         if (existingSubscription.data.length > 0) {
-            // const subscriptionId = existingSubscription.data[0].id;
-            // await stripe.subscriptions.update(subscriptionId, {
-            //     cancel_at_period_end: false,
-            //     items: [
-            //         {
-            //             id: existingSubscription.data[0].items.data[0].id,
-            //             price: planId,
-            //         },
-            //     ],
-            // });
-            // res.status(200).json(getCustomResponse({}, 200, 'Subscription updated.', true));
             res.status(400).json(getCustomResponse({}, 400, 'To Upgrade/Downgrade subscription please contact support.', false));
             return;
         }

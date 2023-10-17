@@ -4,9 +4,10 @@ import { TEAM_SEATS } from "../Constants/CustomSettingsCont";
 import { Organization } from "../Entity/OrgEntity";
 import { User } from "../Entity/UserEntity";
 import { AuthUserDetails } from "../Helpers/AuthHelper/AuthUserDetails";
+import { INVITE_QUERY_PARAM } from "../Helpers/Constants";
 import { CustomSettingsHelper } from "../Helpers/CustomSettingHelper";
 import { getCustomResponse, getDefaultResponse } from "../Helpers/ServiceUtils";
-import { responseRest } from "../Types/ApiTypes";
+import { InviteData, responseRest } from "../Types/ApiTypes";
 import { EncryptionHelper } from "../Utils/CryptoHelper";
 import { MailHelper } from "../Utils/MailUtils/MailHelper";
 import { generateInviteEmailHtml } from "../Utils/MailUtils/MailMarkup/InviteMarkup";
@@ -97,13 +98,16 @@ export const handleInviteUsers = async (email: string, role: 'OWNER' | 'ADMIN' |
 
 
         emailList.forEach(async email => {
-            const inviteData = {
+            const inviteData : InviteData = {
                 role: role,
                 email: email,
-                invitedBy: userDetails.id
+                invitedBy: userDetails.id,
+                date : new Date()
             }
             const encryptedData = EncryptionHelper.encryptData(JSON.stringify(inviteData));
-            const url = `${process.env.SERVER_URL}auth/invite?code=${encryptedData}`;
+            // const url = `${process.env.SERVER_URL}auth/invite?${INVITE_QUERY_PARAM}=${encryptedData}`;
+            const url = `${process.env.CLIENT_URL}invite?${INVITE_QUERY_PARAM}=${encryptedData}`;
+            console.log("🚀 ~ file: UserService.ts:109 ~ handleInviteUsers ~ url:", url);
             await MailHelper.sendMail(
                 {
                     html: generateInviteEmailHtml(url, userDetails.name),

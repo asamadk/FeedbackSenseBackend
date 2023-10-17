@@ -46,14 +46,24 @@ export const getDetailedSurvey = async (surveyId: string): Promise<responseRest>
 
 export const getAllSurveys = async (userEmail: string): Promise<responseRest> => {
     try {
+        const orgId = AuthUserDetails.getInstance().getUserDetails().organization_id;
         const response = getDefaultResponse('Survey retrieved successfully');
+        // const surveyList = await AppDataSource.getDataSource().query(
+        //     `SELECT s.*, u.image,u.name as username
+        //     FROM survey AS s
+        //     JOIN user AS u ON u.id = s.user_id
+        //     WHERE u.email = '${userEmail}' AND s.is_deleted = false ORDER BY s.updated_at DESC;
+        //     `
+        // );
         const surveyList = await AppDataSource.getDataSource().query(
-            `SELECT s.*, u.image,u.name as username
+            `SELECT s.*, u.image, u.name as username
             FROM survey AS s
             JOIN user AS u ON u.id = s.user_id
-            WHERE u.email = '${userEmail}' AND s.is_deleted = false ORDER BY s.updated_at DESC;
+            WHERE u.organization_id = '${orgId}' AND s.is_deleted = false
+            ORDER BY s.updated_at DESC;
             `
         );
+        
         response.data = surveyList;
         return response;
     } catch (error) {
@@ -214,7 +224,7 @@ export const enableDisableSurvey = async (surveyId: string, enable: boolean): Pr
         }
 
         surveyObj.is_published = enable;
-        const result: boolean = await updateActiveSurveyLimit(enable, surveyObj.user_id);
+        const result: boolean = await updateActiveSurveyLimit(enable);
         if (result == false) {
             response.message = 'Active survey limit reached. Please disable some survey to activate this survey.';
             response.success = false;
@@ -237,10 +247,12 @@ export const enableDisableSurvey = async (surveyId: string, enable: boolean): Pr
     }
 }
 
-const updateActiveSurveyLimit = async (enable: boolean, userId: string): Promise<boolean> => {
+const updateActiveSurveyLimit = async (enable: boolean): Promise<boolean> => {
     const subscriptionRepo = AppDataSource.getDataSource().getRepository(Subscription);
     const subscriptionObj: Subscription = await subscriptionRepo.findOneBy({
-        user: { id: userId }
+        organization : {
+            id : AuthUserDetails.getInstance()?.getUserDetails()?.organization_id
+        }
     });
 
     const orgId = AuthUserDetails?.getInstance()?.getUserDetails()?.organization_id;
@@ -287,7 +299,7 @@ export const permDeleteSurvey = async (surveyId: string): Promise<responseRest> 
         const wasSurveyPublished = surveyObj.is_published;
         await surveyRepository.delete(surveyObj.id);
         if (wasSurveyPublished === true) {
-            await updateActiveSurveyLimit(false, surveyObj.user_id);
+            await updateActiveSurveyLimit(false);
         }
         return response;
     } catch (error) {
@@ -553,9 +565,9 @@ export const duplicateSurvey = async (surveyId: string): Promise<responseRest> =
 
         cloneSurvey.is_published = false;
         cloneSurvey.is_archived = false;
+        cloneSurvey.user_id = AuthUserDetails.getInstance().getUserDetails().id;
         cloneSurvey.is_deleted = false;
         cloneSurvey.name = newWorkflowName;
-        cloneSurvey.user_id = surveyObj.user_id;
         cloneSurvey.survey_design_json = surveyObj.survey_design_json;
         cloneSurvey.survey_type_id = surveyObj.survey_type_id;
         await surveyRepo.save(cloneSurvey);

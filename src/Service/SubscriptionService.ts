@@ -33,14 +33,14 @@ export const getSubScriptionDetailsHome = async (userEmail: string): Promise<res
     try {
         const response = getDefaultResponse('Subscription fetched.');
         let subscriptionObj: Subscription;
-
+        const orgId = AuthUserDetails.getInstance().getUserDetails().organization_id;
+        
         const subscriptionRepo = AppDataSource.getDataSource().getRepository(Subscription);
         const subscription = await subscriptionRepo
             .createQueryBuilder('subscription')
-            .innerJoin('subscription.user', 'user')
             .innerJoin('subscription.plan', 'plan')
-            .select(['subscription', 'plan.name','user.organization_id'])
-            .where('user.email = :userEmail', { userEmail })
+            .select(['subscription', 'plan.name'])
+            .where('subscription.organization.id = :orgId', { orgId })
             .getOne();
 
         if (subscription != null) {
@@ -51,7 +51,6 @@ export const getSubScriptionDetailsHome = async (userEmail: string): Promise<res
             return getCustomResponse([], 404, 'No subscription details found', false);
         }
         
-        const orgId = subscription.user.organization_id;
         if(orgId == null || orgId.length < 1){
             logger.error(`message - Org Id not found :: getSubScriptionDetailsHome()`);
             throw new Error('Critical error , please contact support');
