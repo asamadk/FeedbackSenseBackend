@@ -1,13 +1,14 @@
 import { AppDataSource } from "../Config/AppDataSource";
 import { logger } from "../Config/LoggerConfig";
 import { SURVEY_RESPONSE_CAPACITY } from "../Constants/CustomSettingsCont";
-import { Subscription } from "../Entity/SubscriptionEntity";
 import { SurveyConfig } from "../Entity/SurveyConfigEntity";
+import { Survey } from "../Entity/SurveyEntity";
 import { SurveyResponse } from "../Entity/SurveyResponse";
 import { LiveSurveyNodes, logicType } from "../Types/SurveyTypes";
 import { AuthUserDetails } from "./AuthHelper/AuthUserDetails";
 import { answerNotNeededSet } from "./Constants";
 import { CustomSettingsHelper } from "./CustomSettingHelper";
+import { SurveyLogHelper } from "./SurveyLogHelper";
 
 export const cleanSurveyFlowJSON = (surveyJSON: string): string => {
     if (surveyJSON == null || surveyJSON.length < 1) {
@@ -152,15 +153,6 @@ export const hasSurveyReachedResponseLimit = async (resLimit: number, surveyId: 
     return false;
 }
 
-const getSubscriptionLimit = (userSubscription: Subscription) => {
-    const subLimit = userSubscription.sub_limit;
-    if (subLimit == null || subLimit.length < 1) {
-        logger.error('User subscription has no sub_limit.');
-        throw new Error('User subscription has no sub_limit.');
-    }
-    return JSON.parse(subLimit);
-}
-
 export const getMaxResponseLimit = async () => {
     const userDetails = AuthUserDetails.getInstance().getUserDetails();
     const orgId = userDetails.organization_id;
@@ -181,8 +173,7 @@ export const createSurveyConfig = async (userId: string, surveyId: string) => {
         response_limit: parseInt(surveyResponseCapacity),
         time_limit: null,
         survey_id: surveyId,
-    })
-
+    });
 }
 
 export const validateSurveyFlowOnSave = (flow: any): string | null => {

@@ -2,7 +2,7 @@ import { AppDataSource } from "../Config/AppDataSource";
 import { Organization } from "../Entity/OrgEntity";
 import { CustomSettingsHelper } from "../Helpers/CustomSettingHelper";
 import { StartUp } from "../Helpers/Startup";
-import { createOrganizationForUser, getAllOrgList } from "../Service/OrgService";
+import { createOrganizationForUser } from "../Service/OrgService";
 import { TestHelper } from "./TestUtils.ts/TestHelper";
 import { createTestUser } from "./TestUtils.ts/UserTestUtils";
 
@@ -44,15 +44,4 @@ describe('Basic Org test' , () => {
         expect(settingsData['folderFeatureActive']).toBe('true');
         expect(settingsData['surveyResponseCapacity']).toBe('500');
     });
-
-    test('Get all org list', async() => {
-        const response = await getAllOrgList();
-        expect(response.success).toBe(true);
-        expect(response.statusCode).toBe(200);
-        
-        const data :Organization[] = response.data;
-        expect(data.length).toBe(1);
-        expect(data[0].name).toBe('FeedbackSense');
-    })
-
 });

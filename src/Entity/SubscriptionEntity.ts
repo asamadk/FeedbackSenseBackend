@@ -1,6 +1,7 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne } from "typeorm";
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn, OneToOne } from "typeorm";
 import { Plan } from "./PlanEntity";
 import { User } from "./UserEntity";
+import { Organization } from "./OrgEntity";
 
 @Entity()
 export class Subscription {
@@ -8,20 +9,24 @@ export class Subscription {
     @PrimaryGeneratedColumn("uuid")
     id: string;
 
-    @ManyToOne(() => User, user => user.subscriptions,{onDelete : 'CASCADE'})
-    user: User;
+    @ManyToOne(() => User, user => user.subscriptions, { onDelete: 'CASCADE',nullable : true })
+    user?: User;
 
-    @ManyToOne(() => Plan, plan => plan.subscriptions,{onDelete : 'CASCADE'})
+    @OneToOne(() => Organization, organization => organization.subscription)
+    @JoinColumn()
+    organization: Organization;
+
+    @ManyToOne(() => Plan, plan => plan.subscriptions, { onDelete: 'CASCADE' })
     plan: Plan;
 
     @Column()
-    sub_limit : string
+    sub_limit: string
 
     @Column()
-    billing_cycle : string
+    billing_cycle: string
 
-    @Column({nullable : true})
-    modify_billing_field : boolean
+    @Column({ nullable: true })
+    modify_billing_field: boolean
 
     @Column()
     start_date: Date;
