@@ -17,7 +17,7 @@ export const getAllUsersOfSameOrg = async (userEmail: string): Promise<responseR
         const response = getDefaultResponse('Retrieved users successfully');
         const userRepository = AppDataSource.getDataSource().getRepository(User);
         const user = await userRepository.findOne({
-            where: { email: userEmail , isDeleted : false }
+            where: { email: userEmail, isDeleted: false }
         });
         if (!user) {
             return getCustomResponse(null, 401, 'User not found', false);
@@ -25,7 +25,7 @@ export const getAllUsersOfSameOrg = async (userEmail: string): Promise<responseR
         const users = await userRepository.find({
             where: {
                 organization_id: user.organization_id,
-                isDeleted : false
+                isDeleted: false
             },
             order: {
                 created_at: "ASC"
@@ -88,7 +88,7 @@ export const handleInviteUsers = async (email: string, role: 'OWNER' | 'ADMIN' |
         await customSettingHelper.initialize();
 
         const teamMemberSeats = parseInt(customSettingHelper.getCustomSettings(TEAM_SEATS));
-        const currentOrgUsers = await userRepo.count({ where: { organization_id: userDetails.organization_id, isDeleted : false } });
+        const currentOrgUsers = await userRepo.count({ where: { organization_id: userDetails.organization_id, isDeleted: false } });
 
         const emailList = email.split(',');
 
@@ -96,28 +96,49 @@ export const handleInviteUsers = async (email: string, role: 'OWNER' | 'ADMIN' |
             throw new Error('Upgrade plan for more seats.Team member limit reached.');
         }
 
+        for(const email of emailList){
+            if(userDetails.email === email){
+                throw new Error('Permission Denied: You cannot invite yourself.');
+            }
+        }
 
-        emailList.forEach(async email => {
-            const inviteData : InviteData = {
+        const promises = emailList.map(async email => {
+            const inviteData: InviteData = {
                 role: role,
                 email: email,
                 invitedBy: userDetails.id,
-                date : new Date()
+                date: new Date()
+            };
+            const invitedUser = await userRepo.findOneBy({
+                email: email,
+                isDeleted: false,
+                organization_id: userDetails.organization_id
+            });
+
+            if (invitedUser != null) {
+                response.message = `Unable to invite ${email} as user already exists`;
+                response.statusCode = 409;
+                return null;
             }
+
             const encryptedData = EncryptionHelper.encryptData(JSON.stringify(inviteData));
-            // const url = `${process.env.SERVER_URL}auth/invite?${INVITE_QUERY_PARAM}=${encryptedData}`;
             const url = `${process.env.CLIENT_URL}invite?${INVITE_QUERY_PARAM}=${encryptedData}`;
-            console.log("🚀 ~ file: UserService.ts:109 ~ handleInviteUsers ~ url:", url);
+            console.log("url:", url);
+
             await MailHelper.sendMail(
                 {
                     html: generateInviteEmailHtml(url, userDetails.name),
                     subject: 'You are invited to FeedbackSense',
                     to: email,
                     from: process.env.MAIL_SENDER
-                }, 'customers'
+                },
+                'customers'
             );
-        });
 
+            return email;
+        });
+        await Promise.all(promises);
+        console.log("🚀 ~ file: UserService.ts:116 ~ handleInviteUsers ~ response:2", response)
         return response;
     } catch (error) {
         logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
