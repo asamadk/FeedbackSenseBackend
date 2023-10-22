@@ -4,6 +4,7 @@ import { SURVEY_RESPONSE_CAPACITY } from "../Constants/CustomSettingsCont";
 import { SurveyConfig } from "../Entity/SurveyConfigEntity";
 import { Survey } from "../Entity/SurveyEntity";
 import { SurveyResponse } from "../Entity/SurveyResponse";
+import { User } from "../Entity/UserEntity";
 import { LiveSurveyNodes, logicType } from "../Types/SurveyTypes";
 import { AuthUserDetails } from "./AuthHelper/AuthUserDetails";
 import { answerNotNeededSet } from "./Constants";
@@ -153,11 +154,39 @@ export const hasSurveyReachedResponseLimit = async (resLimit: number, surveyId: 
     return false;
 }
 
+export async function getCountOfSurveysForOrganizationByMonth(organizationId: string, surveyId: string) {
+    const surveyResponseRepo = AppDataSource.getDataSource().getRepository(SurveyResponse);
+
+    // Calculate the date range for the current month
+    const currentDate = new Date();
+    const firstDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+    const lastDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
+
+    try {
+        // Construct the query
+        const count = await surveyResponseRepo
+            .createQueryBuilder('response')
+            .innerJoin(Survey, 'survey', 'survey.id = response.survey_id')
+            .innerJoin(User, 'user', 'user.id = survey.user_id')
+            .where('response.created_at >= :firstDayOfMonth', { firstDayOfMonth })
+            .andWhere('response.created_at <= :lastDayOfMonth', { lastDayOfMonth })
+            .andWhere('user.organization_id = :organizationId', { organizationId })
+            .andWhere('survey.is_published = true')
+            .getCount();
+
+        return count;
+    } catch (error) {
+        // Handle any errors here
+        console.error('Error:', error);
+        return 0; // Return 0 or an appropriate error indicator
+    }
+}
+
 export const getMaxResponseLimit = async () => {
     const userDetails = AuthUserDetails.getInstance().getUserDetails();
     const orgId = userDetails.organization_id;
-    await CustomSettingsHelper.getInstance(orgId).initialize();
-    const surveyResponseCapacity = CustomSettingsHelper.getInstance(orgId).getCustomSettings(SURVEY_RESPONSE_CAPACITY);
+    await CustomSettingsHelper.getInstance().initialize(orgId);
+    const surveyResponseCapacity = CustomSettingsHelper.getInstance().getCustomSettings(SURVEY_RESPONSE_CAPACITY);
     return parseInt(surveyResponseCapacity);
 }
 
@@ -166,8 +195,8 @@ export const createSurveyConfig = async (userId: string, surveyId: string) => {
 
     const userDetails = AuthUserDetails.getInstance().getUserDetails();
     const orgId = userDetails.organization_id;
-    await CustomSettingsHelper.getInstance(orgId).initialize();
-    const surveyResponseCapacity = CustomSettingsHelper.getInstance(orgId).getCustomSettings(SURVEY_RESPONSE_CAPACITY);
+    await CustomSettingsHelper.getInstance().initialize(orgId);
+    const surveyResponseCapacity = CustomSettingsHelper.getInstance().getCustomSettings(SURVEY_RESPONSE_CAPACITY);
 
     await surveyConfigRepo.save({
         response_limit: parseInt(surveyResponseCapacity),

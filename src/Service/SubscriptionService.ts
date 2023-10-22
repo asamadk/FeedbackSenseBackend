@@ -33,7 +33,8 @@ export const getSubScriptionDetailsHome = async (userEmail: string): Promise<res
     try {
         const response = getDefaultResponse('Subscription fetched.');
         let subscriptionObj: Subscription;
-        const orgId = AuthUserDetails.getInstance().getUserDetails().organization_id;
+        const userDetail = AuthUserDetails.getInstance().getUserDetails();
+        const orgId = userDetail.organization_id;
         
         const subscriptionRepo = AppDataSource.getDataSource().getRepository(Subscription);
         const subscription = await subscriptionRepo
@@ -56,9 +57,9 @@ export const getSubScriptionDetailsHome = async (userEmail: string): Promise<res
             throw new Error('Critical error , please contact support');
         }
         
-        await CustomSettingsHelper.getInstance(orgId).initialize();
-        const surveyResponseCapacity = CustomSettingsHelper.getInstance(orgId).getCustomSettings(SURVEY_RESPONSE_CAPACITY);
-        const activeSurveyLimit = CustomSettingsHelper.getInstance(orgId).getCustomSettings(ACTIVE_SURVEY_LIMIT);
+        await CustomSettingsHelper.getInstance().initialize(orgId);
+        const surveyResponseCapacity = CustomSettingsHelper.getInstance().getCustomSettings(SURVEY_RESPONSE_CAPACITY);
+        const activeSurveyLimit = CustomSettingsHelper.getInstance().getCustomSettings(ACTIVE_SURVEY_LIMIT);
 
         const subLimit = subscriptionObj.sub_limit;
         let usedSurveyLimit = 0;

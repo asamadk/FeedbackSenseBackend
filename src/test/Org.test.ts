@@ -37,8 +37,8 @@ describe('Basic Org test' , () => {
         });
         expect(createdOrg != null).toBe(true);
         
-        await CustomSettingsHelper.getInstance(createdOrg.id).initialize();
-        const settingsData = CustomSettingsHelper.getInstance(createdOrg.id).settings;
+        await CustomSettingsHelper.getInstance().initialize(createdOrg.id);
+        const settingsData = CustomSettingsHelper.getInstance().settings;
         expect(settingsData['removeFeedbackLogo']).toBe('false');
         expect(settingsData['activeSurveyLimit']).toBe('1');
         expect(settingsData['folderFeatureActive']).toBe('true');
