@@ -1,11 +1,14 @@
 import { AppDataSource } from "../Config/AppDataSource";
 import { logger } from "../Config/LoggerConfig";
+import { SURVEY_RESPONSE_CAPACITY } from "../Constants/CustomSettingsCont";
 import { SurveyConfig } from "../Entity/SurveyConfigEntity";
 import { Survey } from "../Entity/SurveyEntity";
 import { SurveyResponse } from "../Entity/SurveyResponse";
+import { User } from "../Entity/UserEntity";
 import { Workflow } from "../Entity/WorkflowEntity";
+import { CustomSettingsHelper } from "../Helpers/CustomSettingHelper";
 import { getCustomResponse, getDefaultResponse } from "../Helpers/ServiceUtils";
-import { hasSurveyReachedResponseLimit, isSurveyEnded, sortSurveyFlowNodes } from "../Helpers/SurveyUtils";
+import { getCountOfSurveysForOrganizationByMonth, hasSurveyReachedResponseLimit, isSurveyEnded, sortSurveyFlowNodes } from "../Helpers/SurveyUtils";
 import { responseRest } from "../Types/ApiTypes";
 import { surveyFlowType, surveyTheme } from "../Types/SurveyTypes";
 import { MailHelper } from "../Utils/MailUtils/MailHelper";
@@ -17,7 +20,7 @@ export const getLiveSurveyNodes = async (surveyId: string): Promise<responseRest
         const surveyRepo = AppDataSource.getDataSource().getRepository(Survey);
         const surveyFlow = AppDataSource.getDataSource().getRepository(Workflow);
         const surveyConfigRepo = AppDataSource.getDataSource().getRepository(SurveyConfig);
-
+        const userRepo = AppDataSource.getDataSource().getRepository(User);
 
         const surveyConfig = await surveyConfigRepo.findOne({ where: { survey_id: surveyId } });
         if (surveyConfig != null) {
@@ -32,6 +35,16 @@ export const getLiveSurveyNodes = async (surveyId: string): Promise<responseRest
         const surveyObj = await surveyRepo.findOneBy({
             id: surveyId
         });
+
+        const surveyUser = await  userRepo.findOne({where : {id : surveyObj.user_id}});
+        const totalSurveyResponse = await getCountOfSurveysForOrganizationByMonth(surveyUser.organization_id,surveyId);
+
+        await CustomSettingsHelper.getInstance().initialize(surveyUser.organization_id);
+        const responseCapacity = CustomSettingsHelper.getInstance().getCustomSettings(SURVEY_RESPONSE_CAPACITY);
+
+        if(parseInt(responseCapacity) < totalSurveyResponse){
+            throw new Error('Sorry, but the survey limit for this survey has been reached. ');
+        }
 
         if (surveyObj == null) {
             return getCustomResponse({}, 410, 'Survey not found', false);
@@ -86,6 +99,7 @@ export const getLiveSurveyNodes = async (surveyId: string): Promise<responseRest
         return getCustomResponse(null, 500, error.message, false)
     }
 }
+  
 
 export const saveSurveyResponse = async (surveyId: string, responseData: any) => {
     try {

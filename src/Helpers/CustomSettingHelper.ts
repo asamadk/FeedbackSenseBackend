@@ -6,9 +6,9 @@ export class CustomSettingsHelper {
 
     static instance: CustomSettingsHelper;
 
-    static getInstance(orgId: string): CustomSettingsHelper {
+    static getInstance(): CustomSettingsHelper {
         if (this.instance == null) {
-            this.instance = new CustomSettingsHelper(orgId);
+            this.instance = new CustomSettingsHelper();
         }
         return this.instance;
     }
@@ -20,17 +20,18 @@ export class CustomSettingsHelper {
         value : string
     } | object = {};
 
-    constructor(orgId: string) {
-        this.orgId = orgId;
+    constructor() {
         this.customSettingsRepo = AppDataSource.getDataSource().getRepository(CustomSettings);
     }
 
-    async initialize(): Promise<void> {
+    async initialize(orgId : string): Promise<void> {
+        this.orgId = orgId;
         const orgCustomSettings = await this.customSettingsRepo.find({
             where: {
                 organizationId: this.orgId
             }
         });
+        this.settings = {};
         orgCustomSettings.forEach(set => {
             this.settings[set.fKey] = set.fValue;
         });

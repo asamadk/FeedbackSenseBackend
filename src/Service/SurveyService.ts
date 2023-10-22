@@ -148,33 +148,33 @@ export const moveSurveyToFolder = async (folderId: string, surveyId: string): Pr
             where: {
                 id: surveyId
             },
-            relations: ['folder']
+            // relations: ['folder']
         });
         if (surveyObj == null) {
             return getCustomResponse([], 404, ' Survey not found ', false);
         }
 
-        let prevFolderName = 'No folder';
-        if (surveyObj.folder_id != null) {
-            prevFolderName = surveyObj?.folder?.name;
-        }
+        // let prevFolderName = 'No previous folder';
+        // if (surveyObj.folder_id != null) {
+        //     prevFolderName = surveyObj?.folder?.name;
+        // }
 
         surveyObj.folder_id = folderId;
         await surveyRepository.save(surveyObj);
         response.data = surveyObj;
 
-        const folderRepo = AppDataSource.getDataSource().getRepository(Folder);
-        const newFolder = await folderRepo.findOne({ where: { id: folderId } })
+        // const folderRepo = AppDataSource.getDataSource().getRepository(Folder);
+        // const newFolder = await folderRepo.findOne({ where: { id: folderId } })
 
-        await SurveyLogHelper.createLogEntry({
-            survey: surveyObj,
-            user_id: AuthUserDetails.getInstance().getUserDetails().id,
-            action_type: SurveyLogHelper.UPDATE_ACTION,
-            description: `${AuthUserDetails.getInstance().getUserDetails().name} moved survey.`,
-            data_before: prevFolderName,
-            data_after: newFolder.name,
-            IP_address: ''
-        });
+        // await SurveyLogHelper.createLogEntry({
+        //     survey: surveyObj,
+        //     user_id: AuthUserDetails.getInstance().getUserDetails().id,
+        //     action_type: SurveyLogHelper.UPDATE_ACTION,
+        //     description: `${AuthUserDetails.getInstance().getUserDetails().name} moved survey.`,
+        //     data_before: prevFolderName,
+        //     data_after: newFolder.name,
+        //     IP_address: ''
+        // });
         return response;
     } catch (error) {
         logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
@@ -256,8 +256,8 @@ const updateActiveSurveyLimit = async (enable: boolean): Promise<boolean> => {
     });
 
     const orgId = AuthUserDetails?.getInstance()?.getUserDetails()?.organization_id;
-    await CustomSettingsHelper.getInstance(orgId).initialize();
-    const activeSurveyLimit = CustomSettingsHelper.getInstance(orgId).getCustomSettings(ACTIVE_SURVEY_LIMIT);
+    await CustomSettingsHelper.getInstance().initialize(orgId);
+    const activeSurveyLimit = CustomSettingsHelper.getInstance().getCustomSettings(ACTIVE_SURVEY_LIMIT);
 
     if (subscriptionObj != null) {
         const subLimitStr = subscriptionObj.sub_limit;
@@ -317,16 +317,10 @@ export const saveSurveyFlow = async (surveyId: string, surveyJSON: string, delet
         const surveyRepository = AppDataSource.getDataSource().getRepository(Survey);
         const surveyResponseRepo = AppDataSource.getDataSource().getRepository(SurveyResponse);
         const surveyData = await surveyRepository.findOneBy({ id: surveyId });
-        const surveyFlowId: string = surveyData.workflow_id;
-        surveyJSON = cleanSurveyFlowJSON(surveyJSON);
-        if (surveyFlowId == null || surveyFlowId === '') {
-            const flowObj: Workflow = await createSurveyFlow(surveyJSON, surveyId);
-            surveyData.workflow_id = flowObj.id;
-            await surveyRepository.save(surveyData);
-        } else {
-            await updateSurveyFlow(surveyJSON, surveyFlowId);
-        }
         if (deleteResponses === true) {
+            if(AuthUserDetails.getInstance().getUserDetails().role === 'USER'){
+                throw new Error('Unable to save changes. You are not authorized to delete existing survey responses.');
+            }
             await surveyResponseRepo.delete({
                 survey_id: surveyId
             });
@@ -339,6 +333,15 @@ export const saveSurveyFlow = async (surveyId: string, surveyJSON: string, delet
                 data_after: '',
                 IP_address: ''
             });
+        }    
+        const surveyFlowId: string = surveyData.workflow_id;
+        surveyJSON = cleanSurveyFlowJSON(surveyJSON);
+        if (surveyFlowId == null || surveyFlowId === '') {
+            const flowObj: Workflow = await createSurveyFlow(surveyJSON, surveyId);
+            surveyData.workflow_id = flowObj.id;
+            await surveyRepository.save(surveyData);
+        } else {
+            await updateSurveyFlow(surveyJSON, surveyFlowId);
         }
 
         const validated = validateSurveyFlowOnSave(JSON.parse(surveyJSON));
@@ -448,12 +451,13 @@ export const updateSurveyConfig = async (surveyId: string, configObj: any): Prom
             surveyConfigObj = new SurveyConfig();
         }
 
-        const maxResponseLimit = await getMaxResponseLimit();
-        if (maxResponseLimit !== 0 && configObj.stopCount > maxResponseLimit) {
+        // const maxResponseLimit = await getMaxResponseLimit();
+        const maxResponseLimit = 10001;
+        if (configObj.stopCount > maxResponseLimit) {
             return getCustomResponse(
                 [],
                 400,
-                `Your current subscription allows a maximum of ${maxResponseLimit} responses. Please upgrade your subscription to increase the allowed number of responses.`,
+                `Your current subscription allows a maximum of ${maxResponseLimit} responses.`,
                 false
             );
         }
@@ -597,12 +601,14 @@ export const duplicateSurvey = async (surveyId: string): Promise<responseRest> =
             }
         });
 
-        const cloneWorkflow = new Workflow();
-        cloneWorkflow.json = surveyWorkflow.json;
-        cloneWorkflow.surveyId = cloneSurvey.id;
-        await workflowRepo.save(cloneWorkflow);
-
-        cloneSurvey.workflow_id = cloneWorkflow.id;
+        if(surveyWorkflow != null){
+            const cloneWorkflow = new Workflow();
+            cloneWorkflow.json = surveyWorkflow?.json;
+            cloneWorkflow.surveyId = cloneSurvey.id;
+            await workflowRepo.save(cloneWorkflow);
+    
+            cloneSurvey.workflow_id = cloneWorkflow.id;
+        }
         await surveyRepo.save(cloneSurvey);
         return response;
     } catch (error) {
