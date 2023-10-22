@@ -21,8 +21,8 @@ describe('Initial custom settings tests', () => {
     test('Create default custom settings',async () => {
         const customSettingsRepo = AppDataSource.getDataSource().getRepository(CustomSettings);
         const user = await createCompleteUser('test@gmail.com');
-        let customSettingHelper = CustomSettingsHelper.getInstance(user.organization_id);
-        await customSettingHelper.initialize();
+        let customSettingHelper = CustomSettingsHelper.getInstance();
+        await customSettingHelper.initialize(user.organization_id);
         
         const activeSurveyLimit = customSettingHelper.getCustomSettings(ACTIVE_SURVEY_LIMIT);
         const folderFeatureActive = customSettingHelper.getCustomSettings(FOLDER_FEATURE_ACTIVE);
@@ -49,8 +49,8 @@ describe('Initial custom settings tests', () => {
 
         const user2 = await createCompleteUser('test2@gmail.com');
         CustomSettingsHelper.instance = null;
-        customSettingHelper = CustomSettingsHelper.getInstance(user2.organization_id);
-        await customSettingHelper.initialize();
+        customSettingHelper = CustomSettingsHelper.getInstance();
+        await customSettingHelper.initialize(user2.organization_id);
         expect(customSettingHelper.getCustomSettings(ACTIVE_SURVEY_LIMIT)).toBe('1');
 
         customSettingHelper.setCustomSettings(SURVEY_RESPONSE_CAPACITY,'2000');
@@ -66,15 +66,15 @@ describe('Initial custom settings tests', () => {
     });
 
     test('should return the same instance for the same organization ID', () => {
-        const instance1 = CustomSettingsHelper.getInstance('org1');
-        const instance2 = CustomSettingsHelper.getInstance('org1');
+        const instance1 = CustomSettingsHelper.getInstance();
+        const instance2 = CustomSettingsHelper.getInstance();
         expect(instance1).toEqual(instance2);
     });
 
     test('should initialize the custom settings correctly', async () => {
         const user = await createCompleteUser('test1@gmail.com');
-        const instance = CustomSettingsHelper.getInstance(user.organization_id);
-        await instance.initialize();
+        const instance = CustomSettingsHelper.getInstance();
+        await instance.initialize(user.organization_id);
         expect(instance.settings != null);
     });
 

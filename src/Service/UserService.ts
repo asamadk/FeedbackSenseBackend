@@ -59,7 +59,7 @@ export const removeUserFromOrg = async (toDeleteUserId: string): Promise<respons
 
 export const updateUserRole = async (userId: string, role: 'OWNER' | 'ADMIN' | 'USER' | 'GUEST'): Promise<responseRest> => {
     try {
-        const response = getDefaultResponse('User removed successfully.');
+        const response = getDefaultResponse('Role updated successfully.');
         const userDetails = AuthUserDetails.getInstance().getUserDetails();
 
         if (userDetails.id === userId) {
@@ -68,6 +68,9 @@ export const updateUserRole = async (userId: string, role: 'OWNER' | 'ADMIN' | '
 
         const userRepo = AppDataSource.getDataSource().getRepository(User);
         const toUpdateUser = await userRepo.findOneBy({ id: userId });
+        if(userDetails.role === 'ADMIN' && toUpdateUser.role === 'OWNER'){
+            throw new Error('Sorry, you cannot modify roles that are superior to your role.');
+        }
         toUpdateUser.role = role;
         userRepo.save(toUpdateUser);
         return response;
@@ -84,8 +87,8 @@ export const handleInviteUsers = async (email: string, role: 'OWNER' | 'ADMIN' |
         const userDetails = AuthUserDetails.getInstance().getUserDetails();
         const userRepo = AppDataSource.getDataSource().getRepository(User);
 
-        const customSettingHelper = CustomSettingsHelper.getInstance(userDetails.organization_id);
-        await customSettingHelper.initialize();
+        const customSettingHelper = CustomSettingsHelper.getInstance();
+        await customSettingHelper.initialize(userDetails.organization_id);
 
         const teamMemberSeats = parseInt(customSettingHelper.getCustomSettings(TEAM_SEATS));
         const currentOrgUsers = await userRepo.count({ where: { organization_id: userDetails.organization_id, isDeleted: false } });

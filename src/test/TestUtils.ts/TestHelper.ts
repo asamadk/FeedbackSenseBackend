@@ -61,7 +61,7 @@ export class TestHelper {
                 await this.dbConnect.query('DROP TABLE IF EXISTS organization');
                 await this.dbConnect.query('DROP TABLE IF EXISTS plan');
                 await this.dbConnect.query('DROP TABLE IF EXISTS user');
-                
+                await this.dbConnect.query('DROP TABLE IF EXISTS templates');
             } catch (error) {
                 logger.error(`Sub outer message - ${error.message}, stack trace - ${error.stack}`);
             }
