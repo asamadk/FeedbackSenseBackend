@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import cluster from 'cluster';
 import os from 'os';
+import cron from 'node-cron';
 import passport from "passport";
 import cookieSession from 'cookie-session';
 import dotenv from "dotenv";
@@ -18,8 +19,8 @@ import SurveyTypeController from './Controllers/SurveyTypeController';
 import SubscriptionController from './Controllers/SubscriptionController';
 import PlanController from './Controllers/PlanController';
 import LiveSurveyController from './Controllers/LiveSurveyController';
+import PaymentController from './Controllers/PaymentController';
 import AnalysisController from './Controllers/AnalysisController';
-import StripeController from './Controllers/StripeController';
 import WebhookController from './Controllers/WebhooksController';
 import TemplateController from './Controllers/TemplateController';
 
@@ -30,6 +31,7 @@ import { logger } from './Config/LoggerConfig';
 import { logRequest } from './MiddleWares/LogMiddleware';
 import { globalAPILimiter } from './Config/RateLimitConfig';
 import { User } from './Entity/UserEntity';
+import { PaymentHandlerJob } from './Integrations/PaymentIntegration/PaymentHandlerJob';
 
 dotenv.config();
 
@@ -104,6 +106,7 @@ app.use(express.json());
 //Open endpoints
 app.use('/auth', logRequest, AuthController)
 app.use('/live', logRequest, LiveSurveyController);
+app.use('/payment', logRequest, PaymentController);
 
 //authenticated endpoints
 app.use('/home', isLoggedIn, logRequest, HomeController);
@@ -115,14 +118,16 @@ app.use('/survey/type', isLoggedIn, logRequest, SurveyTypeController);
 app.use('/subscription', isLoggedIn, logRequest, SubscriptionController);
 app.use('/plan', isLoggedIn, logRequest, PlanController);
 app.use('/analysis', isLoggedIn, logRequest, AnalysisController);
-app.use('/stripe', isLoggedIn, logRequest, StripeController);
 app.use('/template', isLoggedIn, logRequest, TemplateController);
 
 
 const startServer = async () => {
   await initializeDataSource();
+  //remove this
+  // new PaymentHandlerJob();
   if (cluster.isPrimary && process.env.NODE_ENV === 'prod') {
     logger.info(`Primary process (master) with PID ${process.pid} is running`);
+    // cron.schedule('0 0 */3 * *', new PaymentHandlerJob());  // This runs the job every 3 days at 12:00 AM
     for (let i = 0; i < numCPUs; i++) {
       cluster.fork();
     }

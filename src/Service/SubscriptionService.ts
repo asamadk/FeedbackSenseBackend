@@ -1,10 +1,6 @@
-import Stripe from "stripe";
 import { AppDataSource } from "../Config/AppDataSource";
 import { logger } from "../Config/LoggerConfig";
-import { getStripe } from "../Config/StripeConfig";
-import { Organization } from "../Entity/OrgEntity";
 import { Subscription } from "../Entity/SubscriptionEntity";
-import { User } from "../Entity/UserEntity";
 import { getCustomResponse, getDefaultResponse } from "../Helpers/ServiceUtils";
 import { responseRest } from "../Types/ApiTypes";
 import { CustomSettingsHelper } from "../Helpers/CustomSettingHelper";
@@ -12,21 +8,85 @@ import { MailHelper } from "../Utils/MailUtils/MailHelper";
 import { ACTIVE_SURVEY_LIMIT, SURVEY_RESPONSE_CAPACITY } from "../Constants/CustomSettingsCont";
 import { generatePriceSelectionEmail } from "../Utils/MailUtils/MailMarkup/SubscriptionMarkup";
 import { AuthUserDetails } from "../Helpers/AuthHelper/AuthUserDetails";
+import Razorpay from "razorpay";
+import { Plans } from "razorpay/dist/types/plans";
+import { createUserSubscription, getRazorPaySubscription } from "../Integrations/PaymentIntegration/RazorPayHelper";
+import { Organization } from "../Entity/OrgEntity";
 
-export const informSupportUserPricing = async (body : any) => {
+export const informSupportUserPricing = async (body: any) => {
     try {
         const response = getDefaultResponse('Thank you for your interest! We\'ll reach out to you within the next 24 hours');
         await MailHelper.sendMail({
-            from : process.env.MAIL_SENDER,
-            html : generatePriceSelectionEmail(AuthUserDetails.getInstance().getUserDetails(),body.price,body.planId),
-            subject : 'FeedbackSense App : User selected a pricing plan',
-            to : process.env.SUPPORT_EMAIL
-        },'support');
+            from: process.env.MAIL_SENDER,
+            html: generatePriceSelectionEmail(AuthUserDetails.getInstance().getUserDetails(), body.price, body.planId),
+            subject: 'FeedbackSense App : User selected a pricing plan',
+            to: process.env.SUPPORT_EMAIL
+        }, 'support');
         return response;
     } catch (error) {
         logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
         return getCustomResponse(null, 500, error.message, false)
     }
+}
+
+export const initializePayment = async (body: any): Promise<responseRest> => {
+    type bodyType = {
+        price: number,
+        planId: string,
+        billing: 'year' | 'month'
+    }
+    const response = getDefaultResponse('Payment initialized.');
+
+    const reqBody: bodyType = body;
+    const razorPay = new Razorpay({
+        key_id: process.env.PAYMENT_KEY_ID,
+        key_secret: process.env.PAYMENT_KEY_SECRET
+    });
+
+    const planList = await razorPay.plans.all();
+    let selectedPlan: Plans.RazorPayPlans;
+    planList.items.forEach(pl => {
+        const planAmount = pl.item.amount;
+        const selectedPlanAmount = (reqBody.billing === 'month' ? reqBody.price + 200 : reqBody.price * 12) * 100;
+        if (planAmount === selectedPlanAmount) {
+            selectedPlan = pl;
+        }
+    });
+    if (selectedPlan == null) {
+        throw new Error('Plan not found.Please contact support');
+    }
+
+    const subsRepo = AppDataSource.getDataSource().getRepository(Subscription);
+    const userSubscription = await subsRepo.findOneBy({
+        organization: {
+            id: AuthUserDetails.getInstance().getUserDetails().organization_id
+        }
+    });
+    if (userSubscription == null) {
+        throw new Error('Fatal Error, Not Subscription found.Please contact support');
+    }
+
+    let razorPaySubscriptionId: string;
+    if (userSubscription.razorpay_subscription_id == null || userSubscription.razorpay_subscription_id.length < 1) {
+        razorPaySubscriptionId = await createUserSubscription(selectedPlan.id, reqBody.billing);
+    } else {
+        razorPaySubscriptionId = await createUserSubscription(selectedPlan.id, reqBody.billing);
+    }
+
+    if (razorPaySubscriptionId == null) {
+        throw new Error('Error in creating subscription');
+    }
+
+    const orgRepo = AppDataSource.getDataSource().getRepository(Organization);
+    const userOrg = await orgRepo.findOneBy({ id: AuthUserDetails.getInstance().getUserDetails().organization_id });
+    response.data = {
+        subId: razorPaySubscriptionId,
+        name: userOrg.name,
+        email: AuthUserDetails.getInstance().getUserDetails().email,
+        callbackURL: `${process.env.SERVER_URL}payment/success?subId=${userSubscription.id}`,
+        key: process.env.PAYMENT_KEY_ID
+    }
+    return response;
 }
 
 export const getSubScriptionDetailsHome = async (userEmail: string): Promise<responseRest> => {
@@ -35,7 +95,7 @@ export const getSubScriptionDetailsHome = async (userEmail: string): Promise<res
         let subscriptionObj: Subscription;
         const userDetail = AuthUserDetails.getInstance().getUserDetails();
         const orgId = userDetail.organization_id;
-        
+
         const subscriptionRepo = AppDataSource.getDataSource().getRepository(Subscription);
         const subscription = await subscriptionRepo
             .createQueryBuilder('subscription')
@@ -47,16 +107,16 @@ export const getSubScriptionDetailsHome = async (userEmail: string): Promise<res
         if (subscription != null) {
             subscriptionObj = subscription;
         }
-        
+
         if (subscriptionObj == null) {
             return getCustomResponse([], 404, 'No subscription details found', false);
         }
-        
-        if(orgId == null || orgId.length < 1){
+
+        if (orgId == null || orgId.length < 1) {
             logger.error(`message - Org Id not found :: getSubScriptionDetailsHome()`);
             throw new Error('Critical error , please contact support');
         }
-        
+
         await CustomSettingsHelper.getInstance().initialize(orgId);
         const surveyResponseCapacity = CustomSettingsHelper.getInstance().getCustomSettings(SURVEY_RESPONSE_CAPACITY);
         const activeSurveyLimit = CustomSettingsHelper.getInstance().getCustomSettings(ACTIVE_SURVEY_LIMIT);
@@ -78,45 +138,13 @@ export const getSubScriptionDetailsHome = async (userEmail: string): Promise<res
             responseCapacity: parseInt(surveyResponseCapacity)
         }
 
-        const subscriptionData = await getUserStripeSubscriptionDetails(userEmail);
-        const subscriptionDetails = subscriptionData?.data;
-
-        if (subscriptionDetails != null && subscriptionDetails?.length > 0) {
-            const subscriptionObj: Stripe.Subscription = subscriptionDetails[0];
-            responseData.billingCycle = subscriptionObj?.items?.data[0]?.price?.recurring?.interval + 'ly'
-            responseData.endDate = new Date(subscriptionObj.current_period_end * 1000).toLocaleDateString();
-            if (subscriptionObj.cancel_at != null) {
-                responseData.status = `Cancels - ${new Date(subscriptionObj.cancel_at * 1000)}`
-            } else {
-                responseData.status = 'Active';
-            }
-        } else {
-            responseData.status = 'No subscription found.';
-        }
-
+        const razorPaySubscription = await getRazorPaySubscription(subscriptionObj.razorpay_subscription_id);
+        responseData.status = razorPaySubscription.status;
+        responseData.nextInvoice = razorPaySubscription.current_end;
         response.data = responseData;
         return response;
     } catch (error) {
         logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
         return getCustomResponse(null, 500, error.message, false)
     }
-}
-
-const getUserStripeSubscriptionDetails = async (email: string) => {
-    const orgRepo = AppDataSource.getDataSource().getRepository(Organization);
-    const userRepo = AppDataSource.getDataSource().getRepository(User);
-
-    const user = await userRepo.findOneBy({
-        email: email
-    });
-
-    const organization = await orgRepo.findOneBy({ id: user.organization_id })
-
-    const stripe = getStripe();
-    if (organization.payment_customerId == null) {
-        return null;
-    }
-    return await stripe.subscriptions.list({
-        customer: organization.payment_customerId,
-    })
 }

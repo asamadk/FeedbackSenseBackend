@@ -10,7 +10,7 @@ router.post('/create', async (req: any, res) => {
         const reqBody = req.body;
         const response = await createOrganizationForUser(req.user, reqBody);
         res.statusCode = response.statusCode;
-        req.logout();
+        // req.logout();
         res.json(response);
     } catch (error) {
         logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
