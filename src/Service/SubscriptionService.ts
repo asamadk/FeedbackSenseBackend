@@ -138,9 +138,15 @@ export const getSubScriptionDetailsHome = async (userEmail: string): Promise<res
             responseCapacity: parseInt(surveyResponseCapacity)
         }
 
-        const razorPaySubscription = await getRazorPaySubscription(subscriptionObj.razorpay_subscription_id);
-        responseData.status = razorPaySubscription.status;
-        responseData.nextInvoice = razorPaySubscription.current_end;
+        try {
+            const razorPaySubscription = await getRazorPaySubscription(subscriptionObj.razorpay_subscription_id);
+            responseData.status = razorPaySubscription.status;
+            responseData.nextInvoice = razorPaySubscription.current_end;    
+        } catch (error) {
+            logger.error(`message - ${error}`);
+            responseData.status = 'Active';
+            responseData.nextInvoice = '';
+        }
         response.data = responseData;
         return response;
     } catch (error) {
