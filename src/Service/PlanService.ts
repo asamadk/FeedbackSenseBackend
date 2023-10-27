@@ -10,10 +10,17 @@ export const getAllPlans = async() : Promise<responseRest> => {
         const planRepo = AppDataSource.getDataSource().getRepository(Plan);
          const planList = await planRepo.find({
             order : {
-                price_cents : "DESC"
+                price_cents : "ASC"
             }
          });
-        response.data = planList;
+        
+        const resData = [];
+        planList.forEach(pl => {
+            if(pl.price_cents > 0){
+                resData.push(pl);
+            }
+        });
+        response.data = resData;
         return response;        
     } catch (error) {
         logger.error(`message - ${error.message}, stack trace - ${error.stack}`);

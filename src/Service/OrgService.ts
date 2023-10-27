@@ -5,12 +5,13 @@ import { User } from "../Entity/UserEntity";
 import { getCustomResponse, getDefaultResponse } from "../Helpers/ServiceUtils";
 import { getUnAuthorizedResponse } from "../MiddleWares/AuthMiddleware";
 import { responseRest } from "../Types/ApiTypes";
-import { createCustomer } from "./StripeService";
 import { createCustomSettings } from "./CustomSettingsService";
 import { Plan } from "../Entity/PlanEntity";
 import { FREE_PLAN, MONTHLY_BILLING } from "../Helpers/Constants";
 import { Subscription } from "../Entity/SubscriptionEntity";
 import { getFreeSubscriptionLimit } from "./AuthService";
+import Razorpay from "razorpay";
+import { createPaymentCustomer } from "../Integrations/PaymentIntegration/RazorPayHelper";
 
 export const createOrganizationForUser = async (user: User, reqBody: any): Promise<responseRest> => {
     try {
@@ -42,8 +43,8 @@ export const createOrganizationForUser = async (user: User, reqBody: any): Promi
 
         const orgObj = new Organization();
         if (process.env.NODE_ENV !== 'test') {
-            const stripeCustomer = await createCustomer(validUser);
-            orgObj.payment_customerId = stripeCustomer.id;
+            // const customerId = await createPaymentCustomer(orgName,validUser);
+            // orgObj.payment_customerId = customerId;
         }
         orgObj.name = orgName;
         await orgRepo.save(orgObj);

@@ -28,6 +28,9 @@ export class Subscription {
     @Column({ nullable: true })
     modify_billing_field: boolean
 
+    @Column({ nullable: true })
+    razorpay_subscription_id: string;
+
     @Column()
     start_date: Date;
 

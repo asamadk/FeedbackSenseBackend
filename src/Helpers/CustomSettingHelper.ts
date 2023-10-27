@@ -43,6 +43,9 @@ export class CustomSettingsHelper {
 
     //Does not saves in database
     setCustomSettings(key : string, value : string){
+        if(this.settings == null){
+            this.settings = {};
+        }
         this.settings[key] = value;
     }
 
