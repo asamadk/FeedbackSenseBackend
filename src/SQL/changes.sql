@@ -23,8 +23,6 @@ CREATE TABLE custom_settings (
     FOREIGN KEY (organizationId) REFERENCES organization (id) ON DELETE CASCADE
 );
 
--- present till here
-
 CREATE TABLE templates (
     id VARCHAR(36) PRIMARY KEY,
     category VARCHAR(255) NOT NULL,
@@ -65,3 +63,10 @@ ALTER TABLE Subscription ADD organization_id VARCHAR(255) NULL;
 ALTER TABLE Subscription ADD CONSTRAINT fk_subscription_organization
 FOREIGN KEY (organization_id) REFERENCES Organization(id)
 ON DELETE CASCADE;
+
+-- present till here
+
+ALTER TABLE plan
+ADD price_cents_monthly INT NOT NULL;
+
+ALTER TABLE Subscription ADD razorpay_subscription_id VARCHAR(255) NULL;

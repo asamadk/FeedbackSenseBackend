@@ -1,129 +1,140 @@
-import Stripe from "stripe";
-import { logger } from "../Config/LoggerConfig";
-import { getStripe } from "../Config/StripeConfig";
+import { Plans } from "razorpay/dist/types/plans";
 import { AppDataSource } from "../Config/AppDataSource";
-import { Invoice } from "../Entity/InvoiceEntity";
-import { Subscription } from "../Entity/SubscriptionEntity";
 import { Plan } from "../Entity/PlanEntity";
+import { Subscription } from "../Entity/SubscriptionEntity";
+import { PaymentSuccessBody } from "../Types/ApiTypes";
+import { CustomSettingsHelper } from "./CustomSettingHelper";
+import { FREE_PLAN, PLUS_PLAN, STARTER_PLAN, ULTIMATE_PLAN } from "./Constants";
+import { ACTIVE_SURVEY_LIMIT, FOLDER_FEATURE_ACTIVE, REMOVE_FEEDBACK_SENSE_LOGO, SKIP_LOGIC_FEATURE, SURVEY_RESPONSE_CAPACITY, TEAM_SEATS } from "../Constants/CustomSettingsCont";
+import Razorpay from "razorpay";
+import { User } from "../Entity/UserEntity";
 import { Survey } from "../Entity/SurveyEntity";
+import { In } from "typeorm";
+import { logger } from "../Config/LoggerConfig";
 
 export class SubscriptionHelper {
 
-    private stripe = getStripe();
-    private freePlan: Plan;
-    private notificationList = [];
+    static razorPayInstance = new Razorpay({
+        key_id: process.env.PAYMENT_KEY_ID,
+        key_secret: process.env.PAYMENT_KEY_SECRET
+    });
 
-    init = async () => {
-        try {
-            logger.info('Initializing SubscriptionHelper....')
-            this.freePlan = await this.populateFreePlan();
-            logger.info('Free plan is fetched.');
-            const subscriptions = await this.checkUsersSubscription();
-            logger.info('Customers subscriptions fetched.');
-            this.processSubscriptions(subscriptions);
-            this.sendAllNotifications();
-        } catch (error) {
-            logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
-        }
-    }
+    static async unpublishAllSurveys(userSubscription : Subscription){
+        logger.info(`Downgrading org :: ${userSubscription.organization.id}`);
+        logger.info(`Deactivating all active surveys org :: ${userSubscription.organization.id}`);
+        const subRepo = AppDataSource.getDataSource().getRepository(Subscription);
+        const userRepo = AppDataSource.getDataSource().getRepository(User);
+        const users = await userRepo.findBy({organization_id : userSubscription.organization.id});
+        const userIds = users.map(user => user.id);
 
-    private checkUsersSubscription = async (): Promise<Stripe.Subscription[]> => {
-        try {
-            logger.info('Fetching subscription...');
-            const subscriptionList = await this.stripe.subscriptions.list({ status: 'all' });
-            const returnList: Stripe.Subscription[] = [];
-            subscriptionList.data.forEach(subscription => {
-                if (subscription.status != 'active') {
-                    returnList.push(subscription);
-                }
-            });
-            return returnList;
-        } catch (error) {
-            logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
-        }
-    }
-
-    private processSubscriptions = (subscriptions: Stripe.Subscription[]) => {
-        subscriptions.forEach(async subscription => {
-            if (subscription.status === 'canceled') {
-                logger.info('Cancelled plan found');
-                await this.convertPlanToFreePlan(subscription);
-            } else if (subscription.status === 'past_due') {
-                const currentTimestamp = Math.floor(Date.now() / 1000); // Current timestamp in seconds
-                const subscriptionEnded = subscription.current_period_end;
-                const secondsPastDue = currentTimestamp - subscriptionEnded;
-                const daysPastDue = Math.floor(secondsPastDue / (24 * 60 * 60)); // Convert seconds to days
-                if (daysPastDue === 5) {
-                    await this.convertPlanToFreePlan(subscription);
-                } else if (daysPastDue < 5) {
-                    await this.populateDueNotificationList(subscription);
-                }
+        const surveyRepo = AppDataSource.getDataSource().getRepository(Survey);
+        const surveys = await surveyRepo.find({
+            where : {
+                user_id : In(userIds)
             }
         });
-    }
-
-    convertPlanToFreePlan = async (subscription: Stripe.Subscription) => {
-        try {
-            logger.info('Converting cancelled plan to free plan....');
-            const invoiceRepo = AppDataSource.getDataSource().getRepository(Invoice);
-            const subscriptionRepo = AppDataSource.getDataSource().getRepository(Subscription);
-
-            const stripeInvoice = await invoiceRepo
-                .createQueryBuilder("invoice")
-                .leftJoinAndSelect("invoice.subscription", "subscription")
-                .where("invoice.stripeSubscriptionId = :stripeSubscriptionId", { stripeSubscriptionId: subscription.id })
-                .getOne();
-
-            if (stripeInvoice == null) { return; }
-
-            const localSubscription = await subscriptionRepo
-                .createQueryBuilder('subscription')
-                .leftJoinAndSelect('subscription.plan', 'plan')
-                .leftJoinAndSelect('subscription.user', 'user')
-                .where('subscription.id = :id', { id: stripeInvoice.subscription.id })
-                .getOne();
-
-
-            if (localSubscription.plan.id !== this.freePlan.id) {
-                localSubscription.plan = this.freePlan;
-                const subLimitObj = JSON.parse(localSubscription.sub_limit);
-                subLimitObj.usedSurveyLimit = 0;
-                localSubscription.sub_limit = JSON.stringify(subLimitObj);
-                subscriptionRepo.save(localSubscription);
-            }
-            await this.unPublishAllSurveys(localSubscription.user.id);
-            this.populateCancelNotificationList(subscription);
-        } catch (error) {
-            logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
-        }
-    }
-
-    unPublishAllSurveys = async (userId: string) => {
-        const surveyRepo = AppDataSource.getDataSource().getRepository(Survey);
-        const surveyList = await surveyRepo.findBy({ user_id: userId });
-        surveyList.forEach(survey => {
+        surveys.forEach(survey => {
             survey.is_published = false;
         });
-        await surveyRepo.save(surveyList);
+
+        await surveyRepo.save(surveys);
+
+        const subscriptionObj = await subRepo.findOneBy({id : userSubscription.id});
+        const subLimitStr = subscriptionObj.sub_limit;
+        const subLimitObj = JSON.parse(subLimitStr);
+        subLimitObj.usedSurveyLimit = 0;
+        subscriptionObj.sub_limit = JSON.stringify(subLimitObj);
+        await subRepo.save(subscriptionObj);
     }
 
-    populateCancelNotificationList = async (subscription: Stripe.Subscription) => {
-        //notify user about their plan being cancelled.
-    }
-
-    populateDueNotificationList = async (subscription: Stripe.Subscription) => {
-        //notify user that their payment is due
-    }
-
-    sendAllNotifications = () => {
-        //send all the collected notification    
-    }
-
-    populateFreePlan = async () => {
-        const planRepo = AppDataSource.getDataSource().getRepository(Plan);
-        return await planRepo.findOneBy({
-            price_cents: 0
+    static async updateCustomSettingsByPlan(plan: Plan, subId: string) {
+        const subRepo = AppDataSource.getDataSource().getRepository(Subscription);
+        const userSubscription = await subRepo.findOne({
+            where: {
+                id: subId
+            },
+            relations: ['organization','plan']
         });
+
+        const currentPlan = userSubscription.plan;
+        if(currentPlan.price_cents > plan.price_cents){
+            this.unpublishAllSurveys(userSubscription);
+        }
+
+        const customSettingHelper = CustomSettingsHelper.getInstance();
+        await customSettingHelper.initialize(userSubscription.organization.id);
+        if (plan.name === STARTER_PLAN) {
+            customSettingHelper.setCustomSettings(ACTIVE_SURVEY_LIMIT, '3');
+            customSettingHelper.setCustomSettings(FOLDER_FEATURE_ACTIVE, 'false');
+            customSettingHelper.setCustomSettings(REMOVE_FEEDBACK_SENSE_LOGO, 'false');
+            customSettingHelper.setCustomSettings(SKIP_LOGIC_FEATURE, 'true');
+            customSettingHelper.setCustomSettings(SURVEY_RESPONSE_CAPACITY, '100');
+            customSettingHelper.setCustomSettings(TEAM_SEATS, '1');
+        } else if (plan.name === PLUS_PLAN) {
+            customSettingHelper.setCustomSettings(ACTIVE_SURVEY_LIMIT, '5');
+            customSettingHelper.setCustomSettings(FOLDER_FEATURE_ACTIVE, 'false');
+            customSettingHelper.setCustomSettings(REMOVE_FEEDBACK_SENSE_LOGO, 'false');
+            customSettingHelper.setCustomSettings(SKIP_LOGIC_FEATURE, 'true');
+            customSettingHelper.setCustomSettings(SURVEY_RESPONSE_CAPACITY, '2000');
+            customSettingHelper.setCustomSettings(TEAM_SEATS, '3');
+        } else if (plan.name === ULTIMATE_PLAN) {
+            customSettingHelper.setCustomSettings(ACTIVE_SURVEY_LIMIT, '10');
+            customSettingHelper.setCustomSettings(FOLDER_FEATURE_ACTIVE, 'true');
+            customSettingHelper.setCustomSettings(REMOVE_FEEDBACK_SENSE_LOGO, 'true');
+            customSettingHelper.setCustomSettings(SKIP_LOGIC_FEATURE, 'true');
+            customSettingHelper.setCustomSettings(SURVEY_RESPONSE_CAPACITY, '10000');
+            customSettingHelper.setCustomSettings(TEAM_SEATS, '10');
+        } else if (plan.name === FREE_PLAN) {
+            customSettingHelper.setCustomSettings(ACTIVE_SURVEY_LIMIT, '1');
+            customSettingHelper.setCustomSettings(FOLDER_FEATURE_ACTIVE, 'false');
+            customSettingHelper.setCustomSettings(REMOVE_FEEDBACK_SENSE_LOGO, 'false');
+            customSettingHelper.setCustomSettings(SKIP_LOGIC_FEATURE, 'true');
+            customSettingHelper.setCustomSettings(SURVEY_RESPONSE_CAPACITY, '50');
+            customSettingHelper.setCustomSettings(TEAM_SEATS, '1');
+        }
+        await customSettingHelper.saveCustomSettings();
+    }
+
+    static async updateSubscription(
+        subId: string,
+        reqBody: PaymentSuccessBody,
+        razorPayPlan: Plans.RazorPayPlans,
+        selectedPlan: Plan
+    ) {
+        const subRepo = AppDataSource.getDataSource().getRepository(Subscription);
+        const userSubscription = await subRepo.findOneBy({ id: subId });
+        if (userSubscription.razorpay_subscription_id != null) {
+            await this.razorPayInstance.subscriptions.cancel(userSubscription.razorpay_subscription_id, false);
+        }
+        userSubscription.razorpay_subscription_id = reqBody.razorpay_subscription_id;
+        userSubscription.billing_cycle = razorPayPlan.period;
+        userSubscription.plan = selectedPlan;
+        await subRepo.save(userSubscription);
+    }
+
+    static async updateSubscription2(
+        subId: string,
+        selectedPlan: Plan
+    ){
+        const subRepo = AppDataSource.getDataSource().getRepository(Subscription);
+        const userSubscription = await subRepo.findOneBy({ id: subId });
+        userSubscription.plan = selectedPlan;
+        await subRepo.save(userSubscription);
+    }
+
+    static async getLocalPlanFromRazorPayPlan(razorPayPlan: Plans.RazorPayPlans) {
+        const planRepo = AppDataSource.getDataSource().getRepository(Plan);
+        const planSearchObj = {};
+        if (razorPayPlan.period === 'monthly') {
+            const tempAmount: number = razorPayPlan.item.amount as number
+            planSearchObj['price_cents_monthly'] = tempAmount / 100;
+        } else {
+            const tempAmount: number = razorPayPlan.item.amount as number
+            planSearchObj['price_cents'] = (tempAmount / 12) / 100;
+        }
+
+        const selectedPlan = await planRepo.findOneBy(planSearchObj);
+        return selectedPlan;
     }
 
 }

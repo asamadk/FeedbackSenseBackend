@@ -14,6 +14,9 @@ export class Plan {
   @Column({ type: 'int', nullable: false })
   price_cents: number;
 
+  @Column({ type: 'int', nullable: false }) // Add this field
+  price_cents_monthly: number; // New field
+
   @Column()
   sub_limit : string
 
