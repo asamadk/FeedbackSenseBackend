@@ -43,8 +43,8 @@ export const createOrganizationForUser = async (user: User, reqBody: any): Promi
 
         const orgObj = new Organization();
         if (process.env.NODE_ENV !== 'test') {
-            // const customerId = await createPaymentCustomer(orgName,validUser);
-            // orgObj.payment_customerId = customerId;
+            const customerId = await createPaymentCustomer(orgName,validUser);
+            orgObj.payment_customerId = customerId;
         }
         orgObj.name = orgName;
         await orgRepo.save(orgObj);

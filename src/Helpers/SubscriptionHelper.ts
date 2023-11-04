@@ -4,7 +4,7 @@ import { Plan } from "../Entity/PlanEntity";
 import { Subscription } from "../Entity/SubscriptionEntity";
 import { PaymentSuccessBody } from "../Types/ApiTypes";
 import { CustomSettingsHelper } from "./CustomSettingHelper";
-import { FREE_PLAN, PLUS_PLAN, STARTER_PLAN, ULTIMATE_PLAN } from "./Constants";
+import { FREE_PLAN, MONTHLY_BILLING, PLUS_PLAN, STARTER_PLAN, ULTIMATE_PLAN } from "./Constants";
 import { ACTIVE_SURVEY_LIMIT, FOLDER_FEATURE_ACTIVE, REMOVE_FEEDBACK_SENSE_LOGO, SKIP_LOGIC_FEATURE, SURVEY_RESPONSE_CAPACITY, TEAM_SEATS } from "../Constants/CustomSettingsCont";
 import Razorpay from "razorpay";
 import { User } from "../Entity/UserEntity";
@@ -20,7 +20,6 @@ export class SubscriptionHelper {
     });
 
     static async unpublishAllSurveys(userSubscription : Subscription){
-        logger.info(`Downgrading org :: ${userSubscription.organization.id}`);
         logger.info(`Deactivating all active surveys org :: ${userSubscription.organization.id}`);
         const subRepo = AppDataSource.getDataSource().getRepository(Subscription);
         const userRepo = AppDataSource.getDataSource().getRepository(User);
@@ -47,18 +46,29 @@ export class SubscriptionHelper {
         await subRepo.save(subscriptionObj);
     }
 
-    static async updateCustomSettingsByPlan(plan: Plan, subId: string) {
+    static async updateCustomSettingsByPlan(plan: Plan, subId: string, type : 'local' | 'razorpay') {
         const subRepo = AppDataSource.getDataSource().getRepository(Subscription);
+        const searchObj = {};
+        if(type === 'local'){
+            searchObj['id'] = subId
+        }else{
+            searchObj['razorpay_subscription_id'] = subId
+        }
         const userSubscription = await subRepo.findOne({
-            where: {
-                id: subId
-            },
+            where: searchObj,
             relations: ['organization','plan']
         });
 
+        if(userSubscription == null){
+            return;
+        }
         const currentPlan = userSubscription.plan;
         if(currentPlan.price_cents > plan.price_cents){
             this.unpublishAllSurveys(userSubscription);
+        }
+
+        if(plan?.id === currentPlan?.id){
+            return;
         }
 
         const customSettingHelper = CustomSettingsHelper.getInstance();
@@ -85,6 +95,7 @@ export class SubscriptionHelper {
             customSettingHelper.setCustomSettings(SURVEY_RESPONSE_CAPACITY, '10000');
             customSettingHelper.setCustomSettings(TEAM_SEATS, '10');
         } else if (plan.name === FREE_PLAN) {
+            logger.info(`Transferring org to Free Plan`);
             customSettingHelper.setCustomSettings(ACTIVE_SURVEY_LIMIT, '1');
             customSettingHelper.setCustomSettings(FOLDER_FEATURE_ACTIVE, 'false');
             customSettingHelper.setCustomSettings(REMOVE_FEEDBACK_SENSE_LOGO, 'false');
@@ -104,7 +115,11 @@ export class SubscriptionHelper {
         const subRepo = AppDataSource.getDataSource().getRepository(Subscription);
         const userSubscription = await subRepo.findOneBy({ id: subId });
         if (userSubscription.razorpay_subscription_id != null) {
-            await this.razorPayInstance.subscriptions.cancel(userSubscription.razorpay_subscription_id, false);
+            try {
+                await this.razorPayInstance.subscriptions.cancel(userSubscription.razorpay_subscription_id, false);
+            } catch (error) {
+                logger.error(`SubscriptionHelper :: updateSubscription :: Payment Error ${error?.error?.description}`);
+            }
         }
         userSubscription.razorpay_subscription_id = reqBody.razorpay_subscription_id;
         userSubscription.billing_cycle = razorPayPlan.period;
@@ -116,10 +131,23 @@ export class SubscriptionHelper {
         subId: string,
         selectedPlan: Plan
     ){
-        const subRepo = AppDataSource.getDataSource().getRepository(Subscription);
-        const userSubscription = await subRepo.findOneBy({ id: subId });
-        userSubscription.plan = selectedPlan;
-        await subRepo.save(userSubscription);
+        try {
+            const subRepo = AppDataSource.getDataSource().getRepository(Subscription);
+            const userSubscription = await subRepo.findOneBy({ razorpay_subscription_id: subId });
+            if(userSubscription == null){return;}
+    
+            const userSubscriptionWithPlan = await subRepo.findOne({
+                where: {id : userSubscription.id},
+                relations: ['organization','plan']
+            });
+    
+            if(selectedPlan.id === userSubscriptionWithPlan?.plan?.id){return;}
+            userSubscription.plan = selectedPlan;
+            await subRepo.save(userSubscription);
+            logger.info(`Downgrading org :: ${userSubscriptionWithPlan.organization.id}`);
+        } catch (error) {
+            logger.error(`SubscriptionHelper :: updateSubscription2 :: ${error}`);
+        }
     }
 
     static async getLocalPlanFromRazorPayPlan(razorPayPlan: Plans.RazorPayPlans) {
@@ -135,6 +163,20 @@ export class SubscriptionHelper {
 
         const selectedPlan = await planRepo.findOneBy(planSearchObj);
         return selectedPlan;
+    }
+
+    static isUserPayingForSamePlan = (
+        planId: string,
+        currentPlanId : string,
+        currentBillingCycle : string,
+        newBillingCycle : 'year' | 'month'
+    ) : boolean=> {
+        if(currentBillingCycle === MONTHLY_BILLING){
+            currentBillingCycle = 'month';
+        }else{
+            currentBillingCycle = 'year';
+        }
+        return planId === currentPlanId && currentBillingCycle === newBillingCycle;
     }
 
 }
