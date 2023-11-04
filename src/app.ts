@@ -127,7 +127,7 @@ const startServer = async () => {
   // new PaymentHandlerJob();
   if (cluster.isPrimary && process.env.NODE_ENV === 'prod') {
     logger.info(`Primary process (master) with PID ${process.pid} is running`);
-    // cron.schedule('0 0 */3 * *', new PaymentHandlerJob());  // This runs the job every 3 days at 12:00 AM
+    cron.schedule('0 0 */3 * *', new PaymentHandlerJob());  // This runs the job every 3 days at 12:00 AM
     for (let i = 0; i < numCPUs; i++) {
       cluster.fork();
     }

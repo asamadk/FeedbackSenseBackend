@@ -69,4 +69,4 @@ ON DELETE CASCADE;
 ALTER TABLE plan
 ADD price_cents_monthly INT NOT NULL;
 
-ALTER TABLE Subscription ADD razorpay_subscription_id VARCHAR(255) NULL;
+ALTER TABLE subscription ADD razorpay_subscription_id VARCHAR(255) NULL;
