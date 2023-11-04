@@ -12,6 +12,7 @@ import Razorpay from "razorpay";
 import { Plans } from "razorpay/dist/types/plans";
 import { createUserSubscription, getRazorPaySubscription } from "../Integrations/PaymentIntegration/RazorPayHelper";
 import { Organization } from "../Entity/OrgEntity";
+import { SubscriptionHelper } from "../Helpers/SubscriptionHelper";
 
 export const informSupportUserPricing = async (body: any) => {
     try {
@@ -43,6 +44,30 @@ export const initializePayment = async (body: any): Promise<responseRest> => {
         key_secret: process.env.PAYMENT_KEY_SECRET
     });
 
+    const subsRepo = AppDataSource.getDataSource().getRepository(Subscription);
+    const userSubscription = await subsRepo.findOne({
+        where: {
+            organization: {
+                id: AuthUserDetails.getInstance().getUserDetails().organization_id
+            }
+        },
+        relations: ['plan']
+    });
+    if (userSubscription == null) {
+        throw new Error('Fatal Error, Not Subscription found.Please contact support');
+    }
+
+    const isSamePlan = SubscriptionHelper.isUserPayingForSamePlan(
+        reqBody.planId,
+        userSubscription.plan.id,
+        userSubscription.billing_cycle,
+        reqBody.billing
+    );
+
+    if (isSamePlan === true) {
+        throw new Error('Oops! It looks like you\'ve already subscribed to this plan');
+    }
+
     const planList = await razorPay.plans.all();
     let selectedPlan: Plans.RazorPayPlans;
     planList.items.forEach(pl => {
@@ -54,16 +79,6 @@ export const initializePayment = async (body: any): Promise<responseRest> => {
     });
     if (selectedPlan == null) {
         throw new Error('Plan not found.Please contact support');
-    }
-
-    const subsRepo = AppDataSource.getDataSource().getRepository(Subscription);
-    const userSubscription = await subsRepo.findOneBy({
-        organization: {
-            id: AuthUserDetails.getInstance().getUserDetails().organization_id
-        }
-    });
-    if (userSubscription == null) {
-        throw new Error('Fatal Error, Not Subscription found.Please contact support');
     }
 
     let razorPaySubscriptionId: string;
@@ -141,13 +156,56 @@ export const getSubScriptionDetailsHome = async (userEmail: string): Promise<res
         try {
             const razorPaySubscription = await getRazorPaySubscription(subscriptionObj.razorpay_subscription_id);
             responseData.status = razorPaySubscription.status;
-            responseData.nextInvoice = razorPaySubscription.current_end;    
+            responseData.nextInvoice = razorPaySubscription.current_end;
         } catch (error) {
             logger.error(`message - ${error}`);
             responseData.status = 'Active';
             responseData.nextInvoice = '';
         }
         response.data = responseData;
+        return response;
+    } catch (error) {
+        logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
+        return getCustomResponse(null, 500, error.message, false)
+    }
+}
+
+export const getSubscriptionPaymentHistory = async (): Promise<responseRest> => {
+    try {
+        const response = getDefaultResponse('Payment history fetched.');
+        const subscriptionRepo = AppDataSource.getDataSource().getRepository(Subscription);
+
+        const userSubs = await subscriptionRepo.findOneBy({
+            organization: {
+                id: AuthUserDetails.getInstance().getUserDetails().organization_id
+            }
+        });
+        if (userSubs == null) {
+            throw new Error('Subscription not found.');
+        }
+        const razorPaySubID = userSubs.razorpay_subscription_id;
+        const razorPayInstance = new Razorpay({
+            key_id: process.env.PAYMENT_KEY_ID,
+            key_secret: process.env.PAYMENT_KEY_SECRET
+        });
+        const paymentHistory = await razorPayInstance.invoices.all({
+            'subscription_id': razorPaySubID
+        });
+
+        const rows = [];
+        paymentHistory.items.forEach(item => {
+            rows.push({
+                id: item.id,
+                email: item.customer_details.email,
+                orderId: item.order_id,
+                amount: `${item.currency_symbol}${parseInt(item.amount as string) / 100}`,
+                status: item.status,
+                action : item.short_url
+            })
+        });
+        response.data = {
+            rows: rows
+        };
         return response;
     } catch (error) {
         logger.error(`message - ${error.message}, stack trace - ${error.stack}`);

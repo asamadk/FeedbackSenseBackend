@@ -12,11 +12,16 @@ const instance = new Razorpay({
 });
 
 export const createPaymentCustomer = async (orgName: string, user: User): Promise<string> => {
-    const createdCustomer = await instance.customers.create({
-        name: orgName,
-        email: user.email,
-    })
-    return createdCustomer.id;
+    try {
+        const createdCustomer = await instance.customers.create({
+            name: orgName,
+            email: user.email,
+        })
+        return createdCustomer.id;    
+    } catch (error) {
+        logger.error(`RazorpayHelper :: createPaymentCustomer :: Payment Error ${error?.error?.description}`);
+        return null;
+    }
 }
 
 export const createUserSubscription = async (razorPayPlanId: string,billing: 'year' | 'month'): Promise<string> => {
@@ -29,7 +34,7 @@ export const createUserSubscription = async (razorPayPlanId: string,billing: 'ye
         });
         return createdSub.id;    
     } catch (error) {
-        logger.error(error);
+        logger.error(`RazorpayHelper :: createUserSubscription :: Payment Error ${error?.error?.description}`);
         return null;
     }
 }
