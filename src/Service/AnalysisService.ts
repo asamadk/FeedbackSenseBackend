@@ -2,6 +2,7 @@ import { AppDataSource } from "../Config/AppDataSource";
 import { logger } from "../Config/LoggerConfig";
 import { SurveyResponse } from "../Entity/SurveyResponse";
 import { Workflow } from "../Entity/WorkflowEntity";
+import { ExportHelper } from "../Helpers/ExportHelper";
 import { processCombinedComponents } from "../Helpers/OverAllComponentHelper";
 import { getCustomResponse, getDefaultResponse } from "../Helpers/ServiceUtils";
 import { getPercentage } from "../Helpers/SurveyUtils";
@@ -144,14 +145,19 @@ export const getOverAllComponentsData = async (surveyId: string): Promise<respon
             survey_id: surveyId
         });
         const componentResponses: any[] = [];
+        
         surveyResponses.forEach(res => {
             const compResArrStr = res.response;
             if (compResArrStr == null || compResArrStr.length < 0) {
                 return;
             }
-            const tempArr = JSON.parse(compResArrStr);
+            const tempArr :any[]= JSON.parse(compResArrStr);
+            tempArr.forEach(tmp => {
+                tmp.createdDate = res.created_at
+            });
             componentResponses.push(...tempArr);
         });
+        
         //This map will hold component id as key and all components as value
         const combinedComponentMap = new Map<number, any[]>();
         const combinedComponentUIMap = new Map<string, any[]>();
@@ -177,6 +183,42 @@ export const getOverAllComponentsData = async (surveyId: string): Promise<respon
                 processCombinedComponents(combinedComponentUIMap, uiIdVsIdMap)
             ),
             idMap: Object.fromEntries(uiIdVsIdMap)
+        }
+        return response;
+    } catch (error) {
+        logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
+        return getCustomResponse(null, 500, error.message, false)
+    }
+}
+
+export const exportSurveyDataToCSV = async (surveyId: string): Promise<responseRest> => {
+    try {
+        const response = getDefaultResponse('CSV Fetched.');
+        const surveyResponseRepo = AppDataSource.getDataSource().getRepository(SurveyResponse);
+        const surveyList = await surveyResponseRepo.findBy({ survey_id: surveyId });
+        const exportHelper = new ExportHelper();
+        const csvData = exportHelper.getIndividualResponseCSV(surveyList);
+        response.data = {
+            name : `survey-response-${new Date().toDateString()}.csv`, //file name,
+            result : csvData //csv file
+        }
+        return response;
+    } catch (error) {
+        logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
+        return getCustomResponse(null, 500, error.message, false)
+    }
+}
+
+export const exportSurveyDataToJSON = async (surveyId: string): Promise<responseRest> => {
+    try {
+        const response = getDefaultResponse('JSON Fetched.');
+        const surveyResponseRepo = AppDataSource.getDataSource().getRepository(SurveyResponse);
+        const surveyList = await surveyResponseRepo.findBy({ survey_id: surveyId });
+        const exportHelper = new ExportHelper();
+        const jsonData = exportHelper.getIndividualResponseJSON(surveyList);
+        response.data = {
+            name : `survey-response-${new Date().toDateString()}.json`, //file name,
+            result : jsonData //csv file
         }
         return response;
     } catch (error) {

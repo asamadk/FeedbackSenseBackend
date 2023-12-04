@@ -1,5 +1,5 @@
 import express from 'express';
-import { createSurvey, enableDisableSurvey, getAllSurveys, getDetailedSurvey, moveSurveyToFolder, saveSurveyFlow, permDeleteSurvey, saveSurveyDesign, updateSurveyConfig, getSurveyConfigData, updateSurveyName, checkIfSurveyHasResponse, duplicateSurvey } from '../Service/SurveyService';
+import { createSurvey, enableDisableSurvey, getAllSurveys, getDetailedSurvey, moveSurveyToFolder, saveSurveyFlow, permDeleteSurvey, saveSurveyDesign, updateSurveyConfig, getSurveyConfigData, updateSurveyName, checkIfSurveyHasResponse, duplicateSurvey, handleUploadLogo, getLogo, deleteLogo } from '../Service/SurveyService';
 import { responseRest } from '../Types/ApiTypes';
 import { getCustomResponse } from '../Helpers/ServiceUtils';
 import { getUserEmailFromRequest } from '../Helpers/RestUtils';
@@ -186,6 +186,40 @@ router.post('/duplicate/:surveyId', roleMiddleware('ADMIN', 'OWNER', 'USER'), as
         logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
         res.status(500).json(getCustomResponse(null, 500, error.message, false));
     }
-})
+});
+
+router.post('/upload', roleMiddleware('ADMIN', 'OWNER'), async (req, res) => {
+    try {
+        const { logoData } = req.body;
+        const response = await handleUploadLogo(logoData as string);
+        res.statusCode = response.statusCode;
+        res.json(response);
+    } catch (error) {
+        logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
+        res.status(500).json(getCustomResponse(null, 500, error.message, false));
+    }
+});
+
+router.get('/logo', async (req, res) => {
+    try {
+        const response = await getLogo();
+        res.statusCode = response.statusCode;
+        res.json(response);
+    } catch (error) {
+        logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
+        res.status(500).json(getCustomResponse(null, 500, error.message, false));
+    }
+});
+
+router.delete('/logo',async(req,res) => {
+    try {
+        const response = await deleteLogo();
+        res.statusCode = response.statusCode;
+        res.json(response);
+    } catch (error) {
+        logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
+        res.status(500).json(getCustomResponse(null, 500, error.message, false));
+    }
+});
 
 export default router

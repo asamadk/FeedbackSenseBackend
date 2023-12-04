@@ -1,9 +1,12 @@
+import FrequencyAnalyzer from "../Core/AIUtilities/FrequencyAnalyzer";
+import SentimentAnalyser, { AnalysisText } from "../Core/AIUtilities/SentimentAnalyser";
+import { TopicModeler } from "../Core/AIUtilities/TopicAnalyser";
 import { getPercentage } from "./SurveyUtils";
 
-export const processCombinedComponents = (combinedComponentMap: Map<string, any[]>,uiIdVsIdMap : Map<string,number>): Map<string, any> => {
+export const processCombinedComponents = (combinedComponentMap: Map<string, any[]>, uiIdVsIdMap: Map<string, number>): Map<string, any> => {
     const returnMap = new Map<string, any>();
     for (const [key, value] of combinedComponentMap) {
-        const compId :number = uiIdVsIdMap.get(key);
+        const compId: number = uiIdVsIdMap.get(key);
         returnMap.set(
             key,
             processBulkResult(compId, value)
@@ -62,7 +65,7 @@ export const processSingleSelectionComp = (data: any[]): any => {
     let question: string;
     data?.forEach(d => {
         const selectedVal = d?.data?.selectedVal;
-        if(selectedVal == null){
+        if (selectedVal == null) {
             return;
         }
         let val = answerFreq.get(selectedVal);
@@ -126,18 +129,95 @@ export const processTextAnswerComp = (data: any[]): any => {
         return {};
     }
     const rtn = [];
+    const sentimentData = [
+        { name: AnalysisText.POSITIVE, value: 0 },
+        { name: AnalysisText.NEUTRAL, value: 0 },
+        { name: AnalysisText.NEGATIVE, value: 0 },
+    ];
     let question: string;
+    const frequencyAnalyzer = new FrequencyAnalyzer();
+    const sentimentAnalyser = new SentimentAnalyser();
+    const frequencyMaps: Map<string, number>[] = [];
     data?.forEach(d => {
         const answer: string = d?.data?.answer;
+        const sentimentScore = sentimentAnalyser.analyzeSentiment(question, answer);
+
+        const sentimentScoreConst = SentimentAnalyser.getAnalysisScore();
+
+        if (sentimentScore >= sentimentScoreConst[AnalysisText.POSITIVE]) {
+            sentimentData.find(category => category.name === AnalysisText.POSITIVE).value++;
+        } else if (sentimentScore > sentimentScoreConst[AnalysisText.NEUTRAL]) {
+            sentimentData.find(category => category.name === AnalysisText.NEUTRAL).value++;
+        } else {
+            sentimentData.find(category => category.name === AnalysisText.NEGATIVE).value++;
+        }
+
+        const frequencyMap = frequencyAnalyzer.analyzeFrequency(answer);
+        frequencyMaps.push(frequencyMap);
         question = d?.compData?.question
         rtn.push(answer);
     });
 
+    const combinedFrequencyMaps = frequencyAnalyzer.combineFrequencyMaps(frequencyMaps);
+
+    const modeler = new TopicModeler(10);
+    const finalTopics = modeler.execute(rtn);
+
+    const sentimentOverTime = transformSentimentOverTime(data);
+    console.log("🚀 ~ file: OverAllComponentHelper.ts:167 ~ processTextAnswerComp ~ sentimentOverTime:", sentimentOverTime)
+
     return {
         question: question,
-        statsArr: rtn
+        statsArr: rtn,
+        sentimentData: sentimentData,
+        wordCloud: combinedFrequencyMaps,
+        topicModel: finalTopics,
+        overTimeSentiment: sentimentOverTime
     }
 }
+
+const transformSentimentOverTime = (responses: any[]) => {
+    const sentimentCountsByPeriod = {};
+    const sentimentAnalyser = new SentimentAnalyser();
+
+    responses.forEach(response => {
+        const question = response?.compData?.question;
+        const date = new Date(response.createdDate);
+        
+        // Calculate the period based on every 5 days
+        const periodStart = new Date(date.getFullYear(), date.getMonth(), date.getDate() - date.getDate() % 5);
+        const periodEnd = new Date(periodStart);
+        periodEnd.setDate(periodStart.getDate() + 4);
+        const periodLabel = `${periodStart.toLocaleDateString()} - ${periodEnd.toLocaleDateString()}`;
+
+        const sentimentScore = sentimentAnalyser.analyzeSentiment(question, response.data.answer);
+        const sentiment = SentimentAnalyser.getSentimentByScore(sentimentScore);
+
+        if (!sentimentCountsByPeriod[periodLabel]) {
+            const tmp = {};
+            tmp[AnalysisText.POSITIVE] = 0;
+            tmp[AnalysisText.NEGATIVE] = 0;
+            tmp[AnalysisText.NEUTRAL] = 0;
+            sentimentCountsByPeriod[periodLabel] = tmp;
+        }
+
+        sentimentCountsByPeriod[periodLabel][sentiment]++;
+    });
+
+    // Sort the periods by start date
+    const sortedPeriods = Object.keys(sentimentCountsByPeriod).sort((a, b) => {
+        const startDateA = new Date(a.split(' - ')[0]).getTime();
+        const startDateB = new Date(b.split(' - ')[0]).getTime();
+        return startDateA - startDateB;
+    });
+
+    return sortedPeriods.map(periodLabel => ({
+        name: periodLabel,
+        ...sentimentCountsByPeriod[periodLabel]
+    }));
+};
+
+
 
 export const processSmileyComp = (data: any[]): any => {
     if (data == null) {
@@ -212,7 +292,7 @@ export const processRatingComp = (data: any[]): any => {
             maxRange = tempRange;
         }
         range = tempRange;
-        if(selectedValue == null || selectedValue === 0){
+        if (selectedValue == null || selectedValue === 0) {
             return;
         }
         let freq = freqMap.get(selectedValue);

@@ -6,7 +6,7 @@ import { AppDataSource } from '../../Config/AppDataSource';
 dotenv.config();
 
 export type MailDataType = {
-    from ?: string
+    from?: string
     to: string,
     subject: string,
     html: string
@@ -24,9 +24,20 @@ export class MailHelper {
 
     static async sendMail(data: MailDataType, receivers: 'customers' | 'support' | 'both') {
         //Don't send mails if in test mode
-        const runningMode :string = process.env.NODE_ENV;
-        if(runningMode.toLowerCase() === 'test' || runningMode.toLowerCase() === 'dev'){
-            return;
+        const runningMode: string = process.env.NODE_ENV;
+        if (runningMode.toLowerCase() === 'test' || runningMode.toLowerCase() === 'dev') {
+            if (runningMode.toLowerCase() === 'dev') {
+                this.transporter = nodemailer.createTransport({
+                    host: "sandbox.smtp.mailtrap.io",
+                    port: 2525,
+                    auth: {
+                        user: process.env.MAIL_SENDER,
+                        pass: process.env.MAIL_SENDER_PASSWORD
+                    }
+                });
+            }else{
+                return;
+            }
         }
         data.from = process.env.MAIL_SENDER
         if (receivers === 'support') {
@@ -53,6 +64,7 @@ export class MailHelper {
     }
 
     static async sendMailToSupport(data: MailDataType) {
+        logger.info('Sending mail...');
         data.to = process.env.SUPPORT_EMAIL
         try {
             const info = await this.transporter.sendMail(data)

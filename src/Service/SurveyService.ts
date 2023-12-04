@@ -13,10 +13,11 @@ import { SurveyResponse } from "../Entity/SurveyResponse";
 import { In, Not } from "typeorm";
 import { CustomSettingsHelper } from "../Helpers/CustomSettingHelper";
 import { AuthUserDetails } from "../Helpers/AuthHelper/AuthUserDetails";
-import { ACTIVE_SURVEY_LIMIT } from "../Constants/CustomSettingsCont";
+import { ACTIVE_SURVEY_LIMIT, LOGO_DATA } from "../Constants/CustomSettingsCont";
 import { SurveyLog } from "../Entity/SurveyLogEntity";
 import { SurveyLogHelper } from "../Helpers/SurveyLogHelper";
 import { Folder } from "../Entity/FolderEntity";
+import { CustomSettings } from "../Entity/CustomSettingsEntity";
 
 
 export const getDetailedSurvey = async (surveyId: string): Promise<responseRest> => {
@@ -614,5 +615,68 @@ export const duplicateSurvey = async (surveyId: string): Promise<responseRest> =
     } catch (error) {
         logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
         return getCustomResponse(null, 500, error.message, false)
+    }
+}
+
+export const handleUploadLogo = async (logoData : string) :Promise<responseRest> => {
+    try {
+        const response = getDefaultResponse('Logo uploaded.');
+        if(logoData == null || logoData.length < 1){
+            throw new Error('Logo data payload incorrect.');
+        }
+        const customSettingsRepo = AppDataSource.getDataSource().getRepository(CustomSettings);
+        let logoCustomSetting = await customSettingsRepo.findOneBy({
+            organizationId : AuthUserDetails.getInstance().getUserDetails().organization_id,
+            fKey : LOGO_DATA
+        });
+        if(logoCustomSetting != null){
+            logoCustomSetting.fValue = logoData;
+        }else{
+            logoCustomSetting = new CustomSettings();
+            logoCustomSetting.fKey = LOGO_DATA;
+            logoCustomSetting.fValue = logoData;
+            logoCustomSetting.organizationId = AuthUserDetails.getInstance().getUserDetails().organization_id;
+        }
+        await customSettingsRepo.save(logoCustomSetting);
+        return response;
+    } catch (error) {
+        logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
+        return getCustomResponse(null, 500, error.message, false) 
+    }
+}
+
+export const getLogo = async () :Promise<responseRest> => {
+    try {
+        const response = getDefaultResponse('Logo uploaded.');
+        const customSettingsRepo = AppDataSource.getDataSource().getRepository(CustomSettings);
+        const logoCustomSetting = await customSettingsRepo.findOneBy({
+            organizationId : AuthUserDetails.getInstance().getUserDetails().organization_id,
+            fKey : LOGO_DATA
+        });
+        const logoData = logoCustomSetting?.fValue || '';
+        response.data = {
+            logoData : logoData
+        }
+        return response;
+    } catch (error) {
+        logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
+        return getCustomResponse(null, 500, error.message, false) 
+    }
+}
+
+export const deleteLogo = async () :Promise<responseRest> => {
+    try {
+        const response = getDefaultResponse('Logo removed.');
+        const customSettingsRepo = AppDataSource.getDataSource().getRepository(CustomSettings);
+        const logoCustomSetting = await customSettingsRepo.findOneBy({
+            organizationId : AuthUserDetails.getInstance().getUserDetails().organization_id,
+            fKey : LOGO_DATA
+        });
+        logoCustomSetting.fValue = '';
+        await customSettingsRepo.save(logoCustomSetting);
+        return response;
+    } catch (error) {
+        logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
+        return getCustomResponse(null, 500, error.message, false) 
     }
 }
