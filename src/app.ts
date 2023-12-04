@@ -1,12 +1,11 @@
 import express from 'express';
 import cors from 'cors';
-import cluster from 'cluster';
-import os from 'os';
-import cron from 'node-cron';
 import passport from "passport";
 import cookieSession from 'cookie-session';
 import dotenv from "dotenv";
 import { Strategy } from 'passport-google-oauth20';
+// import { OIDCStrategy } from 'passport-azure-ad';
+import { Strategy as MicrosoftStrategy } from 'passport-microsoft';
 import cookieParser from 'cookie-parser';
 
 import OrgController from './Controllers/OrgController';
@@ -23,21 +22,19 @@ import PaymentController from './Controllers/PaymentController';
 import AnalysisController from './Controllers/AnalysisController';
 import WebhookController from './Controllers/WebhooksController';
 import TemplateController from './Controllers/TemplateController';
+import CustomSettingsController from './Controllers/CustomSettingsController';
 
-import { AppDataSource, initializeDataSource } from './Config/AppDataSource';
+import { AppDataSource } from './Config/AppDataSource';
 import { handleSuccessfulLogin } from './Service/AuthService';
 import { isLoggedIn } from './MiddleWares/AuthMiddleware';
-import { logger } from './Config/LoggerConfig';
 import { logRequest } from './MiddleWares/LogMiddleware';
 import { globalAPILimiter } from './Config/RateLimitConfig';
 import { User } from './Entity/UserEntity';
-import { PaymentHandlerJob } from './Integrations/PaymentIntegration/PaymentHandlerJob';
+import { MasterScheduler } from './Core/MasterScheduler';
 
 dotenv.config();
 
 const app = express();
-const numCPUs = os.cpus().length;
-const port = process.env.PORT;
 
 app.use(cors({
   origin: [
@@ -65,6 +62,31 @@ app.use(globalAPILimiter);
 app.use(express.urlencoded({ extended: false }))
 
 //authentication handler
+
+passport.use(new MicrosoftStrategy({
+  clientID: process.env.MICROSOFT_CLIENT_ID,
+  clientSecret: process.env.MICROSOFT_CLIENT_SECRET_VALUE,
+  identityMetadata: `https://login.microsoftonline.com/common/v2.0/.well-known/openid-configuration`,
+  redirectUrl: process.env.MICROSOFT_CALLBACK_URL,
+  allowHttpForRedirectUrl: true, // Set to false in production
+  scope: ['user.read'],
+  prompt: 'select_account',
+},
+  async function (accessToken : string, refreshToken : string, profile : any, done : any) {
+    await handleSuccessfulLogin(null,profile,'microsoft');
+      const currentUser = await AppDataSource.getDataSource().getRepository(User).findOneOrFail({
+        where: {
+          email: profile._json.mail
+        }
+      });
+      if (currentUser == null) {
+        throw new Error('Unable to create user.Please contact support.');
+      }
+    done(null,currentUser);
+  }
+));
+
+
 passport.use(
   new Strategy(
     {
@@ -73,8 +95,8 @@ passport.use(
       callbackURL: process.env.GOOGLE_CALLBACK_URL,
       scope: ["profile", "email"],
     },
-    async function (accessToken, refreshToken, profile, callback) {
-      await handleSuccessfulLogin(profile);
+    async function (accessToken : string, refreshToken : string, profile :any, callback : any) {
+      await handleSuccessfulLogin(profile,null,'google');
       const currentUser = await AppDataSource.getDataSource().getRepository(User).findOne({
         where: {
           email: profile?._json?.email
@@ -89,11 +111,11 @@ passport.use(
 );
 
 //auth user serialization & deserialization
-passport.serializeUser((user, done) => {
+passport.serializeUser((user: any, done: any) => {
   done(null, user);
 });
 
-passport.deserializeUser((user, done) => {
+passport.deserializeUser((user: any, done: any) => {
   done(null, user);
 });
 
@@ -101,7 +123,7 @@ passport.deserializeUser((user, done) => {
 app.use('/webhook', express.raw({ type: 'application/json' }), logRequest, WebhookController);
 
 //these endpoint use JSON
-app.use(express.json());
+app.use(express.json({ limit: '2mb' }));
 
 //Open endpoints
 app.use('/auth', logRequest, AuthController)
@@ -119,37 +141,8 @@ app.use('/subscription', isLoggedIn, logRequest, SubscriptionController);
 app.use('/plan', isLoggedIn, logRequest, PlanController);
 app.use('/analysis', isLoggedIn, logRequest, AnalysisController);
 app.use('/template', isLoggedIn, logRequest, TemplateController);
+app.use('/settings', isLoggedIn, logRequest, CustomSettingsController);
 
+new MasterScheduler().init();
 
-const startServer = async () => {
-  await initializeDataSource();
-  //remove this
-  // new PaymentHandlerJob();
-  if (cluster.isPrimary && process.env.NODE_ENV === 'prod') {
-    logger.info(`Primary process (master) with PID ${process.pid} is running`);
-    cron.schedule('0 0 */3 * *', new PaymentHandlerJob());  // This runs the job every 3 days at 12:00 AM
-    for (let i = 0; i < numCPUs; i++) {
-      cluster.fork();
-    }
-    cluster.on('exit', (worker) => {
-      logger.info(`Worker ${worker.process.pid} died`);
-      cluster.fork();
-    });
-  } else {
-    app.listen(port, async () => {
-      logger.info(`Server started.`)
-      logger.info(`Express is listening at ${process.env.SERVER_URL}`);
-    });
-  }
-}
-
-startServer();
-
-process
-  .on('unhandledRejection', (reason, p) => {
-    logger.error(`Unhandled Rejection at Promise : Reason - ${reason}, Promise - ${p}`);
-  })
-  .on('uncaughtException', error => {
-    logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
-  });
 export default app;

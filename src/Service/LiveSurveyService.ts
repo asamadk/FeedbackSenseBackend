@@ -1,6 +1,7 @@
 import { AppDataSource } from "../Config/AppDataSource";
 import { logger } from "../Config/LoggerConfig";
-import { SURVEY_RESPONSE_CAPACITY } from "../Constants/CustomSettingsCont";
+import { LOGO_DATA, SURVEY_RESPONSE_CAPACITY } from "../Constants/CustomSettingsCont";
+import { CustomSettings } from "../Entity/CustomSettingsEntity";
 import { SurveyConfig } from "../Entity/SurveyConfigEntity";
 import { Survey } from "../Entity/SurveyEntity";
 import { SurveyResponse } from "../Entity/SurveyResponse";
@@ -36,13 +37,13 @@ export const getLiveSurveyNodes = async (surveyId: string): Promise<responseRest
             id: surveyId
         });
 
-        const surveyUser = await  userRepo.findOne({where : {id : surveyObj.user_id}});
-        const totalSurveyResponse = await getCountOfSurveysForOrganizationByMonth(surveyUser.organization_id,surveyId);
+        const surveyUser = await userRepo.findOne({ where: { id: surveyObj.user_id } });
+        const totalSurveyResponse = await getCountOfSurveysForOrganizationByMonth(surveyUser.organization_id, surveyId);
 
         await CustomSettingsHelper.getInstance().initialize(surveyUser.organization_id);
         const responseCapacity = CustomSettingsHelper.getInstance().getCustomSettings(SURVEY_RESPONSE_CAPACITY);
 
-        if(parseInt(responseCapacity) < totalSurveyResponse){
+        if (parseInt(responseCapacity) < totalSurveyResponse) {
             throw new Error('Sorry, but the survey limit for this survey has been reached. ');
         }
 
@@ -99,7 +100,7 @@ export const getLiveSurveyNodes = async (surveyId: string): Promise<responseRest
         return getCustomResponse(null, 500, error.message, false)
     }
 }
-  
+
 
 export const saveSurveyResponse = async (surveyId: string, responseData: any) => {
     try {
@@ -158,5 +159,25 @@ const sendSurveyEmailToAdmin = async (surveyId: string, responseId: string) => {
             from: process.env.MAIL_SENDER
         }, 'customers');
     })
+}
 
+export const getSurveyLogo = async (surveyId: string): Promise<responseRest> => {
+    try {
+        const response = getDefaultResponse('Logo retrieved');
+        const surveyRepo = AppDataSource.getDataSource().getRepository(Survey);
+        const userRepo = AppDataSource.getDataSource().getRepository(User);
+        const customSettingsRepo = AppDataSource.getDataSource().getRepository(CustomSettings);
+
+        const survey = await surveyRepo.findOneBy({ id: surveyId });
+        const surveyUser = await userRepo.findOneBy({ id: survey.user_id });
+        const logoCustomSetting = await customSettingsRepo.findOneBy({
+            organizationId: surveyUser.organization_id,
+            fKey: LOGO_DATA
+        });
+        response.data = logoCustomSetting.fValue;
+        return response;
+    } catch (error) {
+        logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
+        return getCustomResponse(null, 500, error.message, false)
+    }
 }

@@ -1,5 +1,5 @@
 import express from 'express';
-import { getLiveSurveyNodes, saveSurveyResponse } from '../Service/LiveSurveyService';
+import { getLiveSurveyNodes, getSurveyLogo, saveSurveyResponse } from '../Service/LiveSurveyService';
 import { responseRest } from '../Types/ApiTypes';
 import { logger } from '../Config/LoggerConfig';
 import { getCustomResponse } from '../Helpers/ServiceUtils';
@@ -37,6 +37,17 @@ router.post('/survey/response/:surveyId',async(req,res) => {
         logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
         res.status(500).json(getCustomResponse(null,500,error.message,false));
     }
-})
+});
+
+router.get('/survey/logo/:surveyId',async(req,res) => {
+    try {
+        const surveyId = req.params.surveyId
+        const response = await getSurveyLogo(surveyId);
+        res.status(200).json(response);
+    } catch (error) {
+        logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
+        res.status(500).json(getCustomResponse(null,500,error.message,false));
+    }
+});
 
 export default router;

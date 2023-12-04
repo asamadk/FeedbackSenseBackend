@@ -10,11 +10,26 @@ import { UserProfile } from '../Types/AuthTypes'
 import { AuthHelper } from "../Helpers/AuthHelper/AuthHelper";
 
 //Being called from app.ts after successful authentication
-export const handleSuccessfulLogin = async (user: UserProfile): Promise<void> => {
+export const handleSuccessfulLogin = async (user: UserProfile, microsoftUser: any, type: 'google' | 'microsoft'): Promise<void> => {
     try {
+        let normalizedProfile: { email: string, name: string, image: string };
+        if (type === 'google') {
+            normalizedProfile = {
+                email: user._json.email,
+                name: user.displayName,
+                image: user._json.picture
+            }
+        } else {
+            normalizedProfile = {
+                email: microsoftUser._json.mail,
+                name: microsoftUser._json.displayName,
+                image: ''
+            }
+        }
+        
         const userRepository = AppDataSource.getDataSource().getRepository(User);
         let userEntity = new User();
-        const userEmail: string = user._json.email;
+        const userEmail: string = normalizedProfile.email;
 
         if (userEmail == null || userEmail === '') {
             return;
@@ -26,11 +41,11 @@ export const handleSuccessfulLogin = async (user: UserProfile): Promise<void> =>
         if (savedUser != null && savedUser.emailVerified === false) {
             userEntity = savedUser;
         }
-        userEntity.name = user.displayName;
-        userEntity.email = user?._json.email;
-        userEntity.image = user?._json.picture
+        userEntity.name = normalizedProfile.name;
+        userEntity.email = normalizedProfile.email;
+        userEntity.image = normalizedProfile.image;
         userEntity.emailVerified = true;
-        userEntity.oauth_provider = 'GOOGLE';
+        userEntity.oauth_provider = type.toUpperCase();
         userEntity = await userRepository.save(userEntity);
 
         await MailHelper.sendMail(

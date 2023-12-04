@@ -41,7 +41,7 @@ describe('User test', () => {
             photos: [],
             provider: '',
             _raw: ''
-        });
+        },null,'google');
 
         const response = await getUserAfterLogin({
             _json: {
@@ -99,7 +99,7 @@ describe('handleSuccessfulLogin', () => {
         const userRepository = AppDataSource.getDataSource().getRepository(User);
         const planRepo = AppDataSource.getDataSource().getRepository(Plan);
 
-        await handleSuccessfulLogin(user);
+        await handleSuccessfulLogin(user,null,'google');
         const userObj = await userRepository.findOneBy({
             email: 'test@example.com'
         });
@@ -116,7 +116,7 @@ describe('handleSuccessfulLogin', () => {
         const userRepository = AppDataSource.getDataSource().getRepository(User);
         const planRepo = AppDataSource.getDataSource().getRepository(Plan);
 
-        await handleSuccessfulLogin(user);
+        await handleSuccessfulLogin(user,null,'google');
         const userObj = await userRepository.findOneBy({
             email: 'test@example.com'
         });
@@ -163,7 +163,7 @@ describe('handleSuccessfulLogin', () => {
             photos: [],
             provider: '',
             _raw: ''
-        });
+        },null,'google');
 
         expect(userRepository.findOneBy).not.toHaveBeenCalled();
         expect(userRepository.save).not.toHaveBeenCalled();
