@@ -31,7 +31,7 @@ describe('Initial custom settings tests', () => {
 
         expect(activeSurveyLimit).toBe('1');
         expect(folderFeatureActive).toBe('true');
-        expect(surveyResponseCapacity).toBe('500');
+        expect(surveyResponseCapacity).toBe('50');
         expect(removeFeedbackLogo).toBe('false');
 
         customSettingHelper.setCustomSettings(ACTIVE_SURVEY_LIMIT,'10');

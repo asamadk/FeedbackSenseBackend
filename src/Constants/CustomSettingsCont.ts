@@ -5,4 +5,5 @@ export const REMOVE_FEEDBACK_SENSE_LOGO = 'removeFeedbackLogo';
 export const SKIP_LOGIC_FEATURE = 'skipLogicFeature';
 export const TEAM_SEATS = 'teamMemberSeats';
 export const LOGO_DATA = 'logoData';
-export const EXPORT_FEATURE = 'export-feature'
+export const EXPORT_FEATURE = 'export-feature';
+export const AI_TEXT_ANALYSIS = 'AI_TEXT_ANALYSIS';

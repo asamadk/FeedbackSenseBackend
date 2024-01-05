@@ -130,9 +130,9 @@ export const processTextAnswerComp = (data: any[]): any => {
     }
     const rtn = [];
     const sentimentData = [
-        { name: AnalysisText.POSITIVE, value: 0 },
-        { name: AnalysisText.NEUTRAL, value: 0 },
-        { name: AnalysisText.NEGATIVE, value: 0 },
+        { name: AnalysisText.POSITIVE, value: 0,label :  AnalysisText.POSITIVE},
+        { name: AnalysisText.NEUTRAL, value: 0,label : AnalysisText.NEUTRAL },
+        { name: AnalysisText.NEGATIVE, value: 0,label : AnalysisText.NEGATIVE },
     ];
     let question: string;
     const frequencyAnalyzer = new FrequencyAnalyzer();
@@ -160,18 +160,17 @@ export const processTextAnswerComp = (data: any[]): any => {
 
     const combinedFrequencyMaps = frequencyAnalyzer.combineFrequencyMaps(frequencyMaps);
 
-    const modeler = new TopicModeler(10);
-    const finalTopics = modeler.execute(rtn);
+    // const modeler = new TopicModeler(5);
+    // const finalTopics = modeler.execute(rtn);
 
     const sentimentOverTime = transformSentimentOverTime(data);
-    console.log("🚀 ~ file: OverAllComponentHelper.ts:167 ~ processTextAnswerComp ~ sentimentOverTime:", sentimentOverTime)
 
     return {
         question: question,
         statsArr: rtn,
         sentimentData: sentimentData,
         wordCloud: combinedFrequencyMaps,
-        topicModel: finalTopics,
+        // topicModel: finalTopics,
         overTimeSentiment: sentimentOverTime
     }
 }
@@ -395,6 +394,7 @@ export const contactInfoComp = (data: any[]): any => {
     let count = 0;
     data?.forEach(d => {
         const contactInfo: object = d?.data;
+        delete contactInfo['surveyCompleted'];
         if (count === 0) {
             columnArr = [...Object.keys(contactInfo)];
         }

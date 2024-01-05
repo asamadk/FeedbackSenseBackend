@@ -69,7 +69,7 @@ describe('StartUp Plan Creation', () => {
         // Add your expectations here, such as checking the content of startUp.toCreatePlanList
         const planRepo = AppDataSource.getDataSource().getRepository(Plan);
         const planCount = await planRepo.count();
-        expect(planCount).toBe(3);
+        expect(planCount).toBe(4);
     });
 });
 

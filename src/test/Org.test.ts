@@ -42,6 +42,6 @@ describe('Basic Org test' , () => {
         expect(settingsData['removeFeedbackLogo']).toBe('false');
         expect(settingsData['activeSurveyLimit']).toBe('1');
         expect(settingsData['folderFeatureActive']).toBe('true');
-        expect(settingsData['surveyResponseCapacity']).toBe('500');
+        expect(settingsData['surveyResponseCapacity']).toBe('50');
     });
 });

@@ -49,13 +49,6 @@ export const getAllSurveys = async (userEmail: string): Promise<responseRest> =>
     try {
         const orgId = AuthUserDetails.getInstance().getUserDetails().organization_id;
         const response = getDefaultResponse('Survey retrieved successfully');
-        // const surveyList = await AppDataSource.getDataSource().query(
-        //     `SELECT s.*, u.image,u.name as username
-        //     FROM survey AS s
-        //     JOIN user AS u ON u.id = s.user_id
-        //     WHERE u.email = '${userEmail}' AND s.is_deleted = false ORDER BY s.updated_at DESC;
-        //     `
-        // );
         const surveyList = await AppDataSource.getDataSource().query(
             `SELECT s.*, u.image, u.name as username
             FROM survey AS s

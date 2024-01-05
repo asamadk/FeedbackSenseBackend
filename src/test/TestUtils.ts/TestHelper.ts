@@ -51,6 +51,7 @@ export class TestHelper {
                 await this.dbConnect.query('DROP TABLE IF EXISTS survey_config');
                 await this.dbConnect.query('DROP TABLE IF EXISTS workflow');
                 await this.dbConnect.query('DROP TABLE IF EXISTS survey_response');
+                await this.dbConnect.query('DROP TABLE IF EXISTS survey_log');
                 await this.dbConnect.query('DROP TABLE IF EXISTS survey');
                 await this.dbConnect.query('DROP TABLE IF EXISTS survey_type');
                 await this.dbConnect.query('DROP TABLE IF EXISTS invoice');

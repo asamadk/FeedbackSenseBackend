@@ -32,3 +32,22 @@ export interface LiveSurveyNodes {
     paths: Condition[];
     isStartingNode : boolean
 }
+
+export type filterResponse = {
+    questionId: string;
+    questionText: string;
+    questionType: 'choice' | 'choice' | 'smiley' | 'rating';
+    operators: FilterOperator[];
+    answers: any[];
+}
+
+export type FilterPayloadType = {
+    id: string,
+    questionId: string,
+    question: string,
+    operator: FilterOperator,
+    value: string,
+    logicOperator: 'and' | 'or'
+}
+
+export type FilterOperator = 'equals' | 'does not equals' | 'is' | 'is not' | 'is between';
