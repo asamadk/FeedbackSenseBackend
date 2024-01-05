@@ -17,3 +17,8 @@ export type PaymentSuccessBody = {
     razorpay_subscription_id: string,
     razorpay_signature: string
 }
+
+export type durationType = {
+    startDate: string, 
+    endDate: string
+}

@@ -6,6 +6,7 @@ import { STARTER_PLAN } from "../Helpers/Constants";
 import { StartUp } from "../Helpers/Startup";
 import { TestHelper } from "./TestUtils.ts/TestHelper";
 import { AppDataSource } from "../Config/AppDataSource";
+import { createOrganizationForUser } from '../Service/OrgService';
 
 
 beforeAll(async () => {
@@ -42,6 +43,15 @@ describe('User test', () => {
             provider: '',
             _raw: ''
         },null,'google');
+
+        const userRepo = AppDataSource.getDataSource().getRepository(User);
+        const user = await userRepo.findOneBy({email : 'abdul@pr.io'});
+        await createOrganizationForUser(user,{
+            address : 'ADDRESS',
+            country : 'COUNTRY',
+            orgName : 'ORG_NAME',
+            pinCode : 'PIN'
+        })
 
         const response = await getUserAfterLogin({
             _json: {
@@ -170,42 +180,5 @@ describe('handleSuccessfulLogin', () => {
         expect(planRepo.findOneBy).not.toHaveBeenCalled();
         expect(subscriptionRepo.save).not.toHaveBeenCalled();
     });
-
-    // test('creates new subscription if user already exists', async () => {
-    //     const userRepository = AppDataSource.getDataSource().getRepository(User);
-    //     const planRepo = AppDataSource.getDataSource().getRepository(Plan);
-    //     const subscriptionRepository = AppDataSource.getDataSource().getRepository(Subscription);
-
-    //     const user = new User();
-    //     user.name = 'Jane Smith';
-    //     user.email = 'janesmith@example.com';
-    //     user.emailVerified = true;
-    //     user.oauth_provider = 'GOOGLE';
-    //     await userRepository.save(user);
-
-    //     const plan = new Plan();
-    //     plan.name = 'Pro';
-    //     plan.price_cents = 45;
-    //     await planRepo.save(plan);
-
-    //     await handleSuccessfulLogin({
-    //         _json: {
-    //             email: user.email,
-    //             email_verified: true,
-    //         },
-    //         provider: 'google',
-    //     });
-
-    //     const users = await userRepository.find({
-    //         where: {
-    //             email: 'janesmith@example.com'
-    //         }
-    //     });
-    //     const subs = await subscriptionRepository.find();
-    //     expect(users).toHaveLength(1);
-    //     expect(subs).toHaveLength(1);
-    //     expect(subs[0].end_date).toBeInstanceOf(Date);
-    //     expect(subs[0].sub_limit).toBe(getFreeSubscriptionLimit());
-    // });
 
 });

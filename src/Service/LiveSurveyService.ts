@@ -37,6 +37,10 @@ export const getLiveSurveyNodes = async (surveyId: string): Promise<responseRest
             id: surveyId
         });
 
+        if (surveyObj == null) {
+            return getCustomResponse({}, 410, 'Survey not found', false);
+        }
+
         const surveyUser = await userRepo.findOne({ where: { id: surveyObj.user_id } });
         const totalSurveyResponse = await getCountOfSurveysForOrganizationByMonth(surveyUser.organization_id, surveyId);
 
@@ -45,10 +49,6 @@ export const getLiveSurveyNodes = async (surveyId: string): Promise<responseRest
 
         if (parseInt(responseCapacity) < totalSurveyResponse) {
             throw new Error('Sorry, but the survey limit for this survey has been reached. ');
-        }
-
-        if (surveyObj == null) {
-            return getCustomResponse({}, 410, 'Survey not found', false);
         }
 
         if (surveyObj.is_published === false) {
