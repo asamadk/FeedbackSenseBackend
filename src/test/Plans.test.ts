@@ -24,14 +24,14 @@ describe('Basic Plan Test', () => {
 
         const data :Plan[] = planList.data;
         expect(data.length).toBe(3);
-        expect(data[0].name).toBe('Growth');
-        expect(data[0].price_cents).toBe(49);
+        expect(data[0].name).toBe('Starter');
+        expect(data[0].price_cents).toBe(499);
 
-        expect(data[1].name).toBe('Starter');
-        expect(data[1].price_cents).toBe(25);
+        expect(data[1].name).toBe('Plus');
+        expect(data[1].price_cents).toBe(999);
 
-        expect(data[2].name).toBe('Free');
-        expect(data[2].price_cents).toBe(0);
+        expect(data[2].name).toBe('Ultimate');
+        expect(data[2].price_cents).toBe(1799);
     });
 
 });

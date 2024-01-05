@@ -5,7 +5,7 @@ import { Subscription } from "../Entity/SubscriptionEntity";
 import { PaymentSuccessBody } from "../Types/ApiTypes";
 import { CustomSettingsHelper } from "./CustomSettingHelper";
 import { FREE_PLAN, MONTHLY_BILLING, PLUS_PLAN, STARTER_PLAN, ULTIMATE_PLAN } from "./Constants";
-import { ACTIVE_SURVEY_LIMIT, FOLDER_FEATURE_ACTIVE, REMOVE_FEEDBACK_SENSE_LOGO, SKIP_LOGIC_FEATURE, SURVEY_RESPONSE_CAPACITY, TEAM_SEATS } from "../Constants/CustomSettingsCont";
+import { ACTIVE_SURVEY_LIMIT, FOLDER_FEATURE_ACTIVE, LOGO_DATA, REMOVE_FEEDBACK_SENSE_LOGO, SKIP_LOGIC_FEATURE, SURVEY_RESPONSE_CAPACITY, TEAM_SEATS } from "../Constants/CustomSettingsCont";
 import Razorpay from "razorpay";
 import { User } from "../Entity/UserEntity";
 import { Survey } from "../Entity/SurveyEntity";
@@ -19,17 +19,17 @@ export class SubscriptionHelper {
         key_secret: process.env.PAYMENT_KEY_SECRET
     });
 
-    static async unpublishAllSurveys(userSubscription : Subscription){
+    static async unpublishAllSurveys(userSubscription: Subscription) {
         logger.info(`Deactivating all active surveys org :: ${userSubscription.organization.id}`);
         const subRepo = AppDataSource.getDataSource().getRepository(Subscription);
         const userRepo = AppDataSource.getDataSource().getRepository(User);
-        const users = await userRepo.findBy({organization_id : userSubscription.organization.id});
+        const users = await userRepo.findBy({ organization_id: userSubscription.organization.id });
         const userIds = users.map(user => user.id);
 
         const surveyRepo = AppDataSource.getDataSource().getRepository(Survey);
         const surveys = await surveyRepo.find({
-            where : {
-                user_id : In(userIds)
+            where: {
+                user_id: In(userIds)
             }
         });
         surveys.forEach(survey => {
@@ -38,7 +38,7 @@ export class SubscriptionHelper {
 
         await surveyRepo.save(surveys);
 
-        const subscriptionObj = await subRepo.findOneBy({id : userSubscription.id});
+        const subscriptionObj = await subRepo.findOneBy({ id: userSubscription.id });
         const subLimitStr = subscriptionObj.sub_limit;
         const subLimitObj = JSON.parse(subLimitStr);
         subLimitObj.usedSurveyLimit = 0;
@@ -46,28 +46,28 @@ export class SubscriptionHelper {
         await subRepo.save(subscriptionObj);
     }
 
-    static async updateCustomSettingsByPlan(plan: Plan, subId: string, type : 'local' | 'razorpay') {
+    static async updateCustomSettingsByPlan(plan: Plan, subId: string, type: 'local' | 'razorpay') {
         const subRepo = AppDataSource.getDataSource().getRepository(Subscription);
         const searchObj = {};
-        if(type === 'local'){
+        if (type === 'local') {
             searchObj['id'] = subId
-        }else{
+        } else {
             searchObj['razorpay_subscription_id'] = subId
         }
         const userSubscription = await subRepo.findOne({
             where: searchObj,
-            relations: ['organization','plan']
+            relations: ['organization', 'plan']
         });
 
-        if(userSubscription == null){
+        if (userSubscription == null) {
             return;
         }
         const currentPlan = userSubscription.plan;
-        if(currentPlan.price_cents > plan.price_cents){
+        if (currentPlan.price_cents > plan.price_cents) {
             this.unpublishAllSurveys(userSubscription);
         }
 
-        if(plan?.id === currentPlan?.id){
+        if (plan?.id === currentPlan?.id) {
             return;
         }
 
@@ -80,6 +80,7 @@ export class SubscriptionHelper {
             customSettingHelper.setCustomSettings(SKIP_LOGIC_FEATURE, 'true');
             customSettingHelper.setCustomSettings(SURVEY_RESPONSE_CAPACITY, '100');
             customSettingHelper.setCustomSettings(TEAM_SEATS, '1');
+            customSettingHelper.setCustomSettings(LOGO_DATA, '');
         } else if (plan.name === PLUS_PLAN) {
             customSettingHelper.setCustomSettings(ACTIVE_SURVEY_LIMIT, '5');
             customSettingHelper.setCustomSettings(FOLDER_FEATURE_ACTIVE, 'false');
@@ -87,6 +88,7 @@ export class SubscriptionHelper {
             customSettingHelper.setCustomSettings(SKIP_LOGIC_FEATURE, 'true');
             customSettingHelper.setCustomSettings(SURVEY_RESPONSE_CAPACITY, '2000');
             customSettingHelper.setCustomSettings(TEAM_SEATS, '3');
+            customSettingHelper.setCustomSettings(LOGO_DATA, '');
         } else if (plan.name === ULTIMATE_PLAN) {
             customSettingHelper.setCustomSettings(ACTIVE_SURVEY_LIMIT, '10');
             customSettingHelper.setCustomSettings(FOLDER_FEATURE_ACTIVE, 'true');
@@ -102,6 +104,7 @@ export class SubscriptionHelper {
             customSettingHelper.setCustomSettings(SKIP_LOGIC_FEATURE, 'true');
             customSettingHelper.setCustomSettings(SURVEY_RESPONSE_CAPACITY, '50');
             customSettingHelper.setCustomSettings(TEAM_SEATS, '1');
+            customSettingHelper.setCustomSettings(LOGO_DATA, '');
         }
         await customSettingHelper.saveCustomSettings();
     }
@@ -130,18 +133,18 @@ export class SubscriptionHelper {
     static async updateSubscription2(
         subId: string,
         selectedPlan: Plan
-    ){
+    ) {
         try {
             const subRepo = AppDataSource.getDataSource().getRepository(Subscription);
             const userSubscription = await subRepo.findOneBy({ razorpay_subscription_id: subId });
-            if(userSubscription == null){return;}
-    
+            if (userSubscription == null) { return; }
+
             const userSubscriptionWithPlan = await subRepo.findOne({
-                where: {id : userSubscription.id},
-                relations: ['organization','plan']
+                where: { id: userSubscription.id },
+                relations: ['organization', 'plan']
             });
-    
-            if(selectedPlan.id === userSubscriptionWithPlan?.plan?.id){return;}
+
+            if (selectedPlan.id === userSubscriptionWithPlan?.plan?.id) { return; }
             userSubscription.plan = selectedPlan;
             await subRepo.save(userSubscription);
             logger.info(`Downgrading org :: ${userSubscriptionWithPlan.organization.id}`);
@@ -167,13 +170,13 @@ export class SubscriptionHelper {
 
     static isUserPayingForSamePlan = (
         planId: string,
-        currentPlanId : string,
-        currentBillingCycle : string,
-        newBillingCycle : 'year' | 'month'
-    ) : boolean=> {
-        if(currentBillingCycle === MONTHLY_BILLING){
+        currentPlanId: string,
+        currentBillingCycle: string,
+        newBillingCycle: 'year' | 'month'
+    ): boolean => {
+        if (currentBillingCycle === MONTHLY_BILLING) {
             currentBillingCycle = 'month';
-        }else{
+        } else {
             currentBillingCycle = 'year';
         }
         return planId === currentPlanId && currentBillingCycle === newBillingCycle;

@@ -1,5 +1,4 @@
 import { AppDataSource } from "../Config/AppDataSource";
-import { logger } from "../Config/LoggerConfig";
 import { SURVEY_RESPONSE_CAPACITY } from "../Constants/CustomSettingsCont";
 import { SurveyConfig } from "../Entity/SurveyConfigEntity";
 import { Survey } from "../Entity/SurveyEntity";
@@ -9,61 +8,26 @@ import { LiveSurveyNodes, logicType } from "../Types/SurveyTypes";
 import { AuthUserDetails } from "./AuthHelper/AuthUserDetails";
 import { answerNotNeededSet } from "./Constants";
 import { CustomSettingsHelper } from "./CustomSettingHelper";
-import { SurveyLogHelper } from "./SurveyLogHelper";
 
 export const cleanSurveyFlowJSON = (surveyJSON: string): string => {
     if (surveyJSON == null || surveyJSON.length < 1) {
         return surveyJSON;
     }
-    const suveyFlowData = JSON.parse(surveyJSON);
+    const surveyFlowData = JSON.parse(surveyJSON);
     const surveyComponentIds = new Set<string>();
-    suveyFlowData?.nodes?.forEach((node: any) => {
+    surveyFlowData?.nodes?.forEach((node: any) => {
         surveyComponentIds.add(node.id);
     });
     const newFlowEdges = [];
-    const currentEdges: any[] = suveyFlowData?.edges;
+    const currentEdges: any[] = surveyFlowData?.edges;
     currentEdges.forEach(edge => {
         if (surveyComponentIds.has(edge.source) || surveyComponentIds.has(edge.target)) {
             newFlowEdges.push(edge);
         }
     });
-    suveyFlowData.edges = newFlowEdges;
-    return JSON.stringify(suveyFlowData);
+    surveyFlowData.edges = newFlowEdges;
+    return JSON.stringify(surveyFlowData);
 }
-
-// export const sortSurveyFlowNodes = (nodes: any[], edges: any[]): LiveSurveyNodes[] => {
-
-//     // Helper function to check if a node is a starting node
-//     const isStartingNode = (nodeId: string) => {
-//         return !edges.some(edge => edge.target === nodeId);
-//     };
-
-//     return nodes.map(node => {
-//         const compConfig = JSON.parse(node.data.compConfig);
-//         const logic : any[] = compConfig.logic || [];
-//         const connectedEdges = edges.filter(edge => edge.source === node.id);
-//         let paths = [];
-//         if (logic.length > 0) {
-//             paths = connectedEdges.map(edge => ({
-//                 condition: (logic.find((logItem: any) => logItem.path === edge.label) || {}).operator || "default",
-//                 value: (logic.find((logItem: any) => logItem.path === edge.label) || {}).value || "",
-//                 uId: edge.target
-//             }));
-//         } else if (connectedEdges.length > 0) {
-//             paths.push({
-//                 condition: "default",
-//                 uId: connectedEdges[0].target
-//             });
-//         }
-
-//         return {
-//             uId: node.id,
-//             data: node.data,
-//             paths: paths,
-//             isStartingNode: isStartingNode(node.id)
-//         };
-//     });
-// };
 
 export const sortSurveyFlowNodes = (nodes: any[], edges: any[]): LiveSurveyNodes[] => {
 

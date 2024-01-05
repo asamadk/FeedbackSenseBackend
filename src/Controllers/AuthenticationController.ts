@@ -12,14 +12,14 @@ import { INVITE_QUERY_PARAM } from "../Helpers/Constants";
 
 const router = express.Router();
 
-router.get('/login/success', async (req:any , res) => {
+router.get('/login/success', async (req: any, res) => {
     try {
         const response = await getUserAfterLogin(req.user);
         res.statusCode = response.statusCode;
-        res.json(response);    
+        res.json(response);
     } catch (error) {
         logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
-        res.status(500).json(getCustomResponse(null,500,error.message,false));
+        res.status(500).json(getCustomResponse(null, 500, error.message, false));
     }
 });
 
@@ -32,7 +32,7 @@ router.get("/login/failed", (req, res) => {
         });
     } catch (error) {
         logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
-        res.status(500).json(getCustomResponse(null,500,error.message,false));
+        res.status(500).json(getCustomResponse(null, 500, error.message, false));
     }
 });
 
@@ -41,47 +41,58 @@ router.get(
     passport.authenticate("google", {
         successRedirect: clienT_URL,
         failureRedirect: "/auth/login/failed",
-        prompt : 'select_account'
+        prompt: 'select_account'
     })
 );
 
 router.get(
-    "/google", 
+    "/google",
     passport.authenticate(
-        "google", 
+        "google",
         ["profile", "email"],
     )
 );
 
 
-router.get("/logout", (req : any , res) => {
+router.get("/logout", (req: any, res) => {
     try {
         req.logout();
-        res.redirect(process.env.CLIENT_URL);       
+        res.redirect(process.env.CLIENT_URL);
     } catch (error) {
         logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
-        res.status(500).json(getCustomResponse(null,500,error.message,false));
+        res.status(500).json(getCustomResponse(null, 500, error.message, false));
     }
 });
 
-router.get('/invite',async (req,res) => {
+router.get('/invite', async (req, res) => {
     try {
-        const response = await  handleInviteUser(req.query[INVITE_QUERY_PARAM] as string)
+        const response = await handleInviteUser(req.query[INVITE_QUERY_PARAM] as string)
         res.status(response.statusCode).json(response);
     } catch (error) {
         logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
-        res.status(500).json(getCustomResponse(null,500,error.message,false));
+        res.status(500).json(getCustomResponse(null, 500, error.message, false));
     }
 });
 
-router.post('/process/clean/invite',async(req,res) => {
+router.post('/process/clean/invite', async (req, res) => {
     try {
-        const deleteUser : boolean = req.body.deleteUser
-        const response = await  handleCleanInvite(req.query[INVITE_QUERY_PARAM] as string,deleteUser);
+        const deleteUser: boolean = req.body.deleteUser
+        const response = await handleCleanInvite(req.query[INVITE_QUERY_PARAM] as string, deleteUser);
         res.status(response.statusCode).json(response);
     } catch (error) {
         logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
-        res.status(500).json(getCustomResponse(null,500,error.message,false));
+        res.status(500).json(getCustomResponse(null, 500, error.message, false));
     }
 });
+
+router.get('/microsoft',
+    passport.authenticate('microsoft', { failureRedirect: '/auth/login/failed',prompt: 'select_account' }));
+
+router.get('/microsoft/oauth2/redirect',
+    passport.authenticate('microsoft', { failureRedirect: '/auth/login/failed',prompt: 'select_account' }),
+    function (req, res) {
+        res.redirect(clienT_URL);
+    });
+
+
 export default router;

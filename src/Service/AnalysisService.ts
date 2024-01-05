@@ -1,11 +1,17 @@
+import { Between } from "typeorm";
 import { AppDataSource } from "../Config/AppDataSource";
 import { logger } from "../Config/LoggerConfig";
 import { SurveyResponse } from "../Entity/SurveyResponse";
 import { Workflow } from "../Entity/WorkflowEntity";
+import { ExportHelper } from "../Helpers/ExportHelper";
 import { processCombinedComponents } from "../Helpers/OverAllComponentHelper";
 import { getCustomResponse, getDefaultResponse } from "../Helpers/ServiceUtils";
 import { getPercentage } from "../Helpers/SurveyUtils";
-import { responseRest } from "../Types/ApiTypes";
+import { durationType, responseRest } from "../Types/ApiTypes";
+import { getDateFromDuration } from "../Helpers/DateTimeHelper";
+import { Survey } from "../Entity/SurveyEntity";
+import { FilterHelper } from "../Helpers/FilterHelper";
+import { FilterPayloadType } from "../Types/SurveyTypes";
 
 export const getFeedbackResponseList = async (surveyId: string): Promise<responseRest> => {
     try {
@@ -40,14 +46,22 @@ export const deleteFeedbackResponse = async (surveyResponseId: string): Promise<
     }
 }
 
-export const getOverallResponse = async (surveyId: string): Promise<responseRest> => {
+export const getOverallResponse = async (surveyId: string, duration: durationType): Promise<responseRest> => {
     try {
         const response = getDefaultResponse('Overall survey response fetched');
-        //TODO handle limit
+
+        if (duration == null || duration.startDate == null || duration.endDate == null) {
+            return response;
+        }
+
+        const startDate = getDateFromDuration(duration.startDate, 'start');
+        const endDate = getDateFromDuration(duration.endDate, 'end');
+
         const surveyResponseRepo = AppDataSource.getDataSource().getRepository(SurveyResponse);
         const surveyResponse = await surveyResponseRepo.createQueryBuilder('survey_response')
-            .select('COUNT(survey_response.created_at) as Response,CAST(survey_response.created_at AS DATE) as date')
+            .select('COUNT(survey_response.created_at) as Response, CAST(survey_response.created_at AS DATE) as date')
             .where('survey_response.survey_id = :surId', { surId: surveyId })
+            .andWhere('survey_response.created_at BETWEEN :startDate AND :endDate', { startDate, endDate })
             .groupBy('CAST(survey_response.created_at AS DATE)')
             .orderBy('date', 'ASC')
             .getRawMany();
@@ -65,19 +79,30 @@ export const getOverallResponse = async (surveyId: string): Promise<responseRest
     }
 }
 
-export const getSubDataResponse = async (surveyId: string): Promise<responseRest> => {
+export const getSubDataResponse = async (surveyId: string, duration: durationType): Promise<responseRest> => {
     try {
         const response = getDefaultResponse('Sub-data fetched.');
         const surveyResponseRepo = AppDataSource.getDataSource().getRepository(SurveyResponse);
         const surveyFlowRepo = AppDataSource.getDataSource().getRepository(Workflow);
+
+        const startDate = getDateFromDuration(duration.startDate, 'start');
+        const endDate = getDateFromDuration(duration.endDate, 'end');
+
+        const queryFilter = {
+            survey_id: surveyId,
+            created_at: Between(startDate, endDate)
+        }
+
         const surveyResponse = await surveyResponseRepo.find({
-            where: {
-                survey_id: surveyId
-            },
+            where: queryFilter,
             order: {
                 created_at: 'DESC'
             }
         });
+        if (surveyResponse == null || surveyResponse.length < 1) {
+            response.data = null;
+            return response;
+        }
 
         const surveyWorkflow = await surveyFlowRepo.findOneBy({
             surveyId: surveyId
@@ -136,22 +161,46 @@ export const getSubDataResponse = async (surveyId: string): Promise<responseRest
     }
 }
 
-export const getOverAllComponentsData = async (surveyId: string): Promise<responseRest> => {
+export const getOverAllComponentsData = async (
+    surveyId: string,
+    duration: durationType,
+    filterPayload: FilterPayloadType[]
+): Promise<responseRest> => {
     try {
         const response = getDefaultResponse('OverAll component data fetched.');
         const surveyResponseRepo = AppDataSource.getDataSource().getRepository(SurveyResponse);
+        const startDate = getDateFromDuration(duration.startDate, 'start');
+        const endDate = getDateFromDuration(duration.endDate, 'end');
+
         const surveyResponses = await surveyResponseRepo.findBy({
-            survey_id: surveyId
+            survey_id: surveyId,
+            created_at: Between(startDate, endDate)
         });
+
+        if (surveyResponses == null || surveyResponses.length < 1) {
+            return response;
+        }
+
         const componentResponses: any[] = [];
+        
         surveyResponses.forEach(res => {
             const compResArrStr = res.response;
             if (compResArrStr == null || compResArrStr.length < 0) {
                 return;
             }
-            const tempArr = JSON.parse(compResArrStr);
+            const tempArr: any[] = JSON.parse(compResArrStr);
+            //TODO write unit test from main controller as how data is filtered and returned.
+            //Filtering out responses that do not satisfy filter data
+            const conditionMatched = FilterHelper.doesResponseSatisfiesCondition(tempArr, filterPayload);
+            if (conditionMatched === false) {
+                return;
+            }
+            tempArr.forEach(tmp => {
+                tmp.createdDate = res.created_at
+            });
             componentResponses.push(...tempArr);
         });
+
         //This map will hold component id as key and all components as value
         const combinedComponentMap = new Map<number, any[]>();
         const combinedComponentUIMap = new Map<string, any[]>();
@@ -177,6 +226,67 @@ export const getOverAllComponentsData = async (surveyId: string): Promise<respon
                 processCombinedComponents(combinedComponentUIMap, uiIdVsIdMap)
             ),
             idMap: Object.fromEntries(uiIdVsIdMap)
+        }
+        return response;
+    } catch (error) {
+        logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
+        return getCustomResponse(null, 500, error.message, false)
+    }
+}
+
+export const getSurveyFilterData = async (surveyId: string): Promise<responseRest> => {
+    try {
+        const response = getDefaultResponse('Filters fetched');
+        const surveyRepository = AppDataSource.getDataSource().getRepository(Survey);
+        const surveyData = await surveyRepository.find({
+            where: {
+                id: surveyId
+            },
+            relations: {
+                workflows: true
+            }
+        });
+        if (surveyData == null || surveyData.length < 1 || surveyData[0].workflows == null || surveyData[0].workflows.length < 1) {
+            throw new Error('The selected survey is empty.');
+        }
+        const surveyWorkflow = surveyData[0].workflows[0];
+        const flowJSON = surveyWorkflow.json;
+        response.data = FilterHelper.getFilterDataFromSurvey(flowJSON);
+        return response;
+    } catch (error) {
+        logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
+        return getCustomResponse(null, 500, error.message, false)
+    }
+}
+
+export const exportSurveyDataToCSV = async (surveyId: string): Promise<responseRest> => {
+    try {
+        const response = getDefaultResponse('CSV Fetched.');
+        const surveyResponseRepo = AppDataSource.getDataSource().getRepository(SurveyResponse);
+        const surveyList = await surveyResponseRepo.findBy({ survey_id: surveyId });
+        const exportHelper = new ExportHelper();
+        const csvData = exportHelper.getIndividualResponseCSV(surveyList);
+        response.data = {
+            name: `survey-response-${new Date().toDateString()}.csv`, //file name,
+            result: csvData //csv file
+        }
+        return response;
+    } catch (error) {
+        logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
+        return getCustomResponse(null, 500, error.message, false)
+    }
+}
+
+export const exportSurveyDataToJSON = async (surveyId: string): Promise<responseRest> => {
+    try {
+        const response = getDefaultResponse('JSON Fetched.');
+        const surveyResponseRepo = AppDataSource.getDataSource().getRepository(SurveyResponse);
+        const surveyList = await surveyResponseRepo.findBy({ survey_id: surveyId });
+        const exportHelper = new ExportHelper();
+        const jsonData = exportHelper.getIndividualResponseJSON(surveyList);
+        response.data = {
+            name: `survey-response-${new Date().toDateString()}.json`, //file name,
+            result: jsonData //csv file
         }
         return response;
     } catch (error) {

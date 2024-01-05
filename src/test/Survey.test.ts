@@ -2,6 +2,7 @@ import { AppDataSource } from "../Config/AppDataSource";
 import { ACTIVE_SURVEY_LIMIT } from "../Constants/CustomSettingsCont";
 import { Subscription } from "../Entity/SubscriptionEntity";
 import { Survey } from "../Entity/SurveyEntity";
+import { User } from "../Entity/UserEntity";
 import { AuthUserDetails } from "../Helpers/AuthHelper/AuthUserDetails";
 import { CustomSettingsHelper } from "../Helpers/CustomSettingHelper";
 import { StartUp } from "../Helpers/Startup";
@@ -76,7 +77,7 @@ describe('Test Survey creation',() => {
         expect(response1.data.length).toBe(1);
 
         const response2 = await getAllSurveys('test@user.com');
-        expect(response2.data.length).toBe(2);
+        expect(response2.data.length).toBe(1);
     });
 
     test('Test invalid user creates survey', async () => {

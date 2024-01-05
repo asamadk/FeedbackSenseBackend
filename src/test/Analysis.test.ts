@@ -6,6 +6,7 @@ import { generateAnswerComponentDataset, generateMultipleAnswerDataset, generate
 import { contactInfoComp, dateComp, processMultipleSelectionComp, processNPSComp, processRatingComp, processSingleSelectionComp, processSmileyComp, processTextAnswerComp, processWelcomeMessageComp } from "../Helpers/OverAllComponentHelper";
 import { TestHelper } from "./TestUtils.ts/TestHelper";
 import { AppDataSource } from "../Config/AppDataSource";
+import { getTodaysDate, getTwelveMonthAgoDate } from "../Helpers/DateTimeHelper";
 
 beforeAll(async () => {
     await TestHelper.instance.setupTestDB();
@@ -35,7 +36,7 @@ describe('OverAllAnalysis Test', () => {
         const surveyEntity = await createTestSurvey(AppDataSource.getDataSource());
         const surveyResponseRepo = AppDataSource.getDataSource().getRepository(SurveyResponse);
 
-        const overAllResponse = await getOverallResponse(surveyEntity.id);
+        const overAllResponse = await getOverallResponse(surveyEntity.id,{startDate : getTwelveMonthAgoDate(),endDate : getTodaysDate()});
         expect(overAllResponse.success === true);
         expect(overAllResponse.statusCode === 200);
         expect(overAllResponse.data == null);
@@ -50,12 +51,12 @@ describe('OverAllAnalysis Test', () => {
         surveyResponses.push(surveyResponse1);
         await surveyResponseRepo.save(surveyResponses);
 
-        const overAllResponse1 = await getOverallResponse(surveyEntity.id);
+        const overAllResponse1 = await getOverallResponse(surveyEntity.id,{startDate : getTwelveMonthAgoDate(),endDate : getTodaysDate()});
         expect(overAllResponse1.success === true);
         expect(overAllResponse1.statusCode === 200);
         expect(overAllResponse1.data == null);
 
-        const overAllSubResponse = await getSubDataResponse(surveyEntity.id);
+        const overAllSubResponse = await getSubDataResponse(surveyEntity.id,{startDate : getTwelveMonthAgoDate(),endDate : getTodaysDate()});
         expect(overAllSubResponse.success === false);
         expect(overAllSubResponse.data == null);
         expect(overAllSubResponse.statusCode === 404);
@@ -65,7 +66,7 @@ describe('OverAllAnalysis Test', () => {
 
     test('Test OverAll Response', async () => {
         const surveyId = await populateSurveyResponse(AppDataSource.getDataSource());
-        const overAllResponse = await getOverallResponse(surveyId);
+        const overAllResponse = await getOverallResponse(surveyId,{startDate : getTwelveMonthAgoDate(),endDate : getTodaysDate()});
         expect(overAllResponse.success === true);
         expect(overAllResponse.data?.Response === 3);
         expect(overAllResponse.data?.date === '5/4/2023');
@@ -74,7 +75,7 @@ describe('OverAllAnalysis Test', () => {
     test('Test sub-data overall response', async () => {
         const surveyId = await populateSurveyResponse(AppDataSource.getDataSource());
         await createSurveyFlow(AppDataSource.getDataSource(), surveyId);
-        const overAllResponse = await getSubDataResponse(surveyId);
+        const overAllResponse = await getSubDataResponse(surveyId,{startDate : getTwelveMonthAgoDate(),endDate : getTodaysDate()});
         expect(overAllResponse.success === true);
         expect(overAllResponse.data?.totalViews === 3);
         expect(overAllResponse.data?.completionRate === '100%');
@@ -83,7 +84,7 @@ describe('OverAllAnalysis Test', () => {
 
     test('Test sub-data without survey flow', async () => {
         const surveyId = await populateSurveyResponse(AppDataSource.getDataSource());
-        const overAllResponse = await getSubDataResponse(surveyId);
+        const overAllResponse = await getSubDataResponse(surveyId,{startDate : getTwelveMonthAgoDate(),endDate : getTodaysDate()});
         expect(overAllResponse.success === false);
         expect(overAllResponse.data == null);
         expect(overAllResponse.statusCode === 404);
@@ -93,7 +94,7 @@ describe('OverAllAnalysis Test', () => {
     test('Test overall components', async () => {
         const surveyId = await populateSurveyResponse(AppDataSource.getDataSource());
         await createSurveyFlow(AppDataSource.getDataSource(), surveyId);
-        const overAllResponse = await getOverAllComponentsData(surveyId);
+        const overAllResponse = await getOverAllComponentsData(surveyId,{startDate : getTwelveMonthAgoDate(),endDate : getTodaysDate()},[] as any);
 
         const chartData: { [k: string]: any } = overAllResponse?.data?.info;
         const idMap: { [k: string]: number } = overAllResponse?.data?.idMap;
@@ -127,7 +128,7 @@ describe('OverAllAnalysis Test', () => {
 
     test('Test overall component with no response', async () => {
         const surveyEntity = await createTestSurvey(AppDataSource.getDataSource());
-        const overAllResponse = await getOverAllComponentsData(surveyEntity.id);
+        const overAllResponse = await getOverAllComponentsData(surveyEntity.id,{startDate : getTwelveMonthAgoDate(),endDate : getTodaysDate()},[] as any);
         expect(overAllResponse.statusCode === 200);
         expect(overAllResponse.success === true);
     })
