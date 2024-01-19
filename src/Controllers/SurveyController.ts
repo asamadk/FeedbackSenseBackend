@@ -1,5 +1,5 @@
 import express from 'express';
-import { createSurvey, enableDisableSurvey, getAllSurveys, getDetailedSurvey, moveSurveyToFolder, saveSurveyFlow, permDeleteSurvey, saveSurveyDesign, updateSurveyConfig, getSurveyConfigData, updateSurveyName, checkIfSurveyHasResponse, duplicateSurvey, handleUploadLogo, getLogo, deleteLogo } from '../Service/SurveyService';
+import { createSurvey, enableDisableSurvey, getAllSurveys, getDetailedSurvey, moveSurveyToFolder, saveSurveyFlow, permDeleteSurvey, saveSurveyDesign, updateSurveyConfig, getSurveyConfigData, updateSurveyName, checkIfSurveyHasResponse, duplicateSurvey, handleUploadLogo, getLogo, deleteLogo, handleUpdateSurveyEmbedConfig } from '../Service/SurveyService';
 import { responseRest } from '../Types/ApiTypes';
 import { getCustomResponse } from '../Helpers/ServiceUtils';
 import { getUserEmailFromRequest } from '../Helpers/RestUtils';
@@ -211,7 +211,7 @@ router.get('/logo', async (req, res) => {
     }
 });
 
-router.delete('/logo',async(req,res) => {
+router.delete('/logo', async (req, res) => {
     try {
         const response = await deleteLogo();
         res.statusCode = response.statusCode;
@@ -221,5 +221,16 @@ router.delete('/logo',async(req,res) => {
         res.status(500).json(getCustomResponse(null, 500, error.message, false));
     }
 });
+
+router.post('/config/embed', async (req, res) => {
+    try {
+        const configData: any = req.body;
+        const response = await handleUpdateSurveyEmbedConfig(configData);
+        res.status(response.statusCode).json(response);
+    } catch (error) {
+        logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
+        res.status(500).json(getCustomResponse(null, 500, error.message, false));
+    }
+})
 
 export default router

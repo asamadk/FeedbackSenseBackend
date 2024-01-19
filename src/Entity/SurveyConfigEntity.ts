@@ -18,9 +18,19 @@ export class SurveyConfig {
   @Column()
   response_limit!: number;
 
+  @Column()
+  widget_position!: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right'
+
+  @Column()
+  button_color !: string
+
+  @Column()
+  button_text_color !: string
+
   @ManyToOne(() => Survey, survey => survey.surveyConfigs,{
     onDelete : 'CASCADE'
   })
+
   @JoinColumn({ name: 'survey_id' })
   survey!: Survey;
 }
