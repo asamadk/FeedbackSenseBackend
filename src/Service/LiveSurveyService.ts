@@ -181,3 +181,161 @@ export const getSurveyLogo = async (surveyId: string): Promise<responseRest> => 
         return getCustomResponse(null, 500, error.message, false)
     }
 }
+
+export const getWebSurveyScript = async (surveyId: string): Promise<string> => {
+    const surveyConfigRepo = AppDataSource.getDataSource().getRepository(SurveyConfig);
+    const surveyConfig = await surveyConfigRepo.findOneByOrFail({ survey_id: surveyId });
+
+    let positionCSS = ``;
+    if (surveyConfig.widget_position === 'bottom-right') {
+        positionCSS = `
+            transform-origin : top right;
+            right: 0;
+            top: 80%;
+        `;
+    } else if (surveyConfig.widget_position === 'top-right') {
+        positionCSS = `
+            transform-origin : top right;
+            right: 0;
+            top: 30%;
+        `;
+    } else if (surveyConfig.widget_position === 'top-left') {
+        positionCSS = `
+            transform-origin : left bottom;
+            left: 0;
+            top: 30%;
+        `;
+    } else if (surveyConfig.widget_position === 'bottom-left') {
+        positionCSS = `
+            transform-origin : left bottom;
+            left: 0;
+            top: 80%;
+        `;
+    }
+
+    const surveyURL = `${process.env.CLIENT_URL}share/survey/${surveyId}?embed=true`;
+
+    return `
+    // Create the button
+    var feedbackButton = document.createElement('button');
+    feedbackButton.id = 'feedback-button';
+    feedbackButton.textContent = 'Feedback';
+    document.body.appendChild(feedbackButton);
+
+    // Create the modal
+    var feedbackModal = document.createElement('div');
+    feedbackModal.id = 'feedback-modal';
+    //<div class="close-modal">X</div>
+    feedbackModal.innerHTML = '<div><iframe style="width : 100%;min-height : 400px;" src="${surveyURL}" ></iframe></div>';
+    document.body.appendChild(feedbackModal);
+
+    // Create the modal background
+    var modalBackground = document.createElement('div');
+    modalBackground.id = 'modal-background';
+    document.body.appendChild(modalBackground);
+
+    // Add styles
+    var styles = \`
+        #feedback-button {
+            position: fixed;
+            padding: 5px;
+            background-color: ${surveyConfig.button_color || '#006dff'};
+            color: ${surveyConfig.button_text_color || '#ffffff'};
+            cursor: pointer;
+            border: none;
+            border-radius: 3px;
+            transform: translateY(-50%) rotate(90deg);
+            transition: 'all 0.5s ease 0s';
+            z-index: 1000;
+            ${positionCSS}
+        }
+
+        #feedback-modal {
+            display: none;
+            position: fixed;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            background-color: white;
+            border: 1px solid #ccc;
+            box-shadow: 1px 1px 10px rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            width : 50%;
+            border-radius : 5px;
+        }
+
+        #modal-background {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 999;
+        }
+
+        .close-modal {
+            float: right;
+            cursor: pointer;
+            width: 100%;
+            padding: 5px 10px;
+            text-align: right;
+            color: ${surveyConfig.button_text_color || '#ffffff'};
+            background: ${surveyConfig.button_color || '#006dff'};
+        }
+
+        @media screen and (max-width: 800px) {
+            #feedback-modal {
+                display: none;
+                position: fixed;
+                left: 50%;
+                top: 50%;
+                transform: translate(-50%, -50%);
+                background-color: white;
+                border: 1px solid #ccc;
+                box-shadow: 1px 1px 10px rgba(0, 0, 0, 0.5);
+                z-index: 1000;
+                width : 95%;
+                border-radius : 5px;
+            }
+        }
+
+    \`;
+
+    var styleSheet = document.createElement('style');
+    styleSheet.type = 'text/css';
+    styleSheet.innerText = styles;
+    document.head.appendChild(styleSheet);
+
+    let isOpen = false;
+    // Show the modal when the feedback button is clicked
+    feedbackButton.onclick = function() {
+        if(isOpen === false){
+            feedbackModal.style.display = 'block';
+            modalBackground.style.display = 'block';
+            isOpen = true;
+        }else{
+            feedbackModal.style.display = 'none';
+            modalBackground.style.display = 'none';
+            isOpen = false;
+        }
+    };
+
+    // Close modal when the close button or background is clicked
+    document.querySelector('.close-modal').onclick = 
+    modalBackground.onclick = function() {
+        feedbackModal.style.display = 'none';
+        modalBackground.style.display = 'none';
+        isOpen = false;
+    };
+
+    // Close modal on ESC key
+    window.onkeydown = function(event) {
+        if (event.key === 'Escape') {
+            feedbackModal.style.display = 'none';
+            modalBackground.style.display = 'none';
+        }
+    };
+    `;
+}

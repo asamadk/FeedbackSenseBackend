@@ -673,3 +673,23 @@ export const deleteLogo = async () :Promise<responseRest> => {
         return getCustomResponse(null, 500, error.message, false) 
     }
 }
+
+export const handleUpdateSurveyEmbedConfig = async(configData : any):Promise<responseRest> => {
+    try {
+        const response = getDefaultResponse('Config Updated.');
+        if(configData?.surveyId == null || configData?.surveyId.length < 1){
+            throw new Error('Survey Id not provided.');
+        }
+        const surveyConfigRepo = AppDataSource.getDataSource().getRepository(SurveyConfig);
+        const surveyConfig = await surveyConfigRepo.findOneByOrFail({survey_id : configData?.surveyId});
+        surveyConfig.widget_position = configData.position || 'top-left';
+        surveyConfig.button_color = configData.buttonColor || '#006dff';
+        surveyConfig.button_text_color = configData.textColor || '#ffffff';
+        await surveyConfigRepo.save(surveyConfig);
+        response.data = surveyConfig;
+        return response;
+    } catch (error) {
+        logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
+        return getCustomResponse(null, 500, error.message, false) 
+    }
+}

@@ -70,3 +70,8 @@ ALTER TABLE plan
 ADD price_cents_monthly INT NOT NULL;
 
 ALTER TABLE subscription ADD razorpay_subscription_id VARCHAR(255) NULL;
+
+ALTER TABLE `survey_config`
+ADD COLUMN `widget_position` ENUM('top-left', 'top-right', 'bottom-left', 'bottom-right') NULL,
+ADD COLUMN `button_color` VARCHAR(255) NOT NULL,
+ADD COLUMN `button_text_color` VARCHAR(255) NOT NULL;
