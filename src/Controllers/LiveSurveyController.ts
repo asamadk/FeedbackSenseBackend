@@ -1,5 +1,5 @@
 import express from 'express';
-import { getLiveSurveyNodes, getSurveyLogo, saveSurveyResponse } from '../Service/LiveSurveyService';
+import { getLiveSurveyNodes, getSurveyLogo, getWebSurveyScript, saveSurveyResponse } from '../Service/LiveSurveyService';
 import { responseRest } from '../Types/ApiTypes';
 import { logger } from '../Config/LoggerConfig';
 import { getCustomResponse } from '../Helpers/ServiceUtils';
@@ -44,6 +44,18 @@ router.get('/survey/logo/:surveyId',async(req,res) => {
         const surveyId = req.params.surveyId
         const response = await getSurveyLogo(surveyId);
         res.status(200).json(response);
+    } catch (error) {
+        logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
+        res.status(500).json(getCustomResponse(null,500,error.message,false));
+    }
+});
+
+router.get('/web-surveys/:surveyId',async (req,res) => {
+    try {
+        const surveyId = req.params.surveyId
+        const jsContent = await getWebSurveyScript(surveyId);
+        res.setHeader('Content-Type', 'application/javascript');
+        res.send(jsContent);
     } catch (error) {
         logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
         res.status(500).json(getCustomResponse(null,500,error.message,false));
