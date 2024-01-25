@@ -18,13 +18,13 @@ export class SurveyConfig {
   @Column()
   response_limit!: number;
 
-  @Column()
+  @Column({default : 'top-left'})
   widget_position!: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right'
 
-  @Column()
+  @Column({default : '#006dff'})
   button_color !: string
 
-  @Column()
+  @Column({default : '#ffffff'})
   button_text_color !: string
 
   @ManyToOne(() => Survey, survey => survey.surveyConfigs,{
