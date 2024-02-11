@@ -122,6 +122,10 @@ export const handleInviteUser = async (payload: string): Promise<responseRest> =
             throw new Error('Invitation link is invalid.');
         }
         const inviteeUser = await userRepo.findOneBy({ email: decryptedPayload.email });
+        if(inviteeUser.organization_id === invitedByUser.organization_id){
+            throw new Error('The invite you are trying to use has already been accepted.');
+        }
+        
         if (inviteeUser != null) {
             return getCustomResponse(null, 409, 'Removing resources', false);
         }

@@ -28,9 +28,9 @@ class SentimentAnalyser {
 
     public static getAnalysisScore() {
         const rtn = {};
-        rtn[AnalysisText.POSITIVE] = 0.15; // Adjust for Positive to capture moderately positive sentiments
+        rtn[AnalysisText.POSITIVE] = 0.6; // Adjust for Positive to capture moderately positive sentiments
         rtn[AnalysisText.NEUTRAL] = 0; // Neutral can be set at zero to be the midpoint
-        rtn[AnalysisText.NEGATIVE] = -0.15; // Negative for moderately negative sentiments
+        rtn[AnalysisText.NEGATIVE] = -0.1; // Negative for moderately negative sentiments
         return rtn;
     }
 
@@ -39,10 +39,10 @@ class SentimentAnalyser {
 
         if (sentimentScore >= sentimentScoreConst[AnalysisText.POSITIVE]) {
             return AnalysisText.POSITIVE;
-        } else if (sentimentScore > sentimentScoreConst[AnalysisText.NEGATIVE]) {
-            return AnalysisText.NEUTRAL;
-        } else {
+        } else if (sentimentScore <= sentimentScoreConst[AnalysisText.NEGATIVE]) {
             return AnalysisText.NEGATIVE;
+        } else {
+            return AnalysisText.NEUTRAL;
         }
     }
 
