@@ -25,7 +25,7 @@ export class AuthHelper {
     }
 
     static async deleteUser(userId: string) {
-        const userRepo = AppDataSource.getDataSource().getRepository(User);
+        // const userRepo = AppDataSource.getDataSource().getRepository(User);
         const surveyRepo = AppDataSource.getDataSource().getRepository(Survey);
 
         const surveyList = await surveyRepo.findBy({ user_id: userId });
@@ -33,8 +33,20 @@ export class AuthHelper {
         surveyList.forEach(sur => {
             surveyIds.push(sur.id)
         });
-        await surveyRepo.delete(surveyIds);
-        await userRepo.delete(userId);
+
+        if(surveyIds != null && surveyIds.length > 0){
+            await AppDataSource.getDataSource().createQueryBuilder()
+                .delete()
+                .from(Survey)
+                .where("id IN (:...ids)", { ids: surveyIds })
+                .execute();
+        }
+
+        await AppDataSource.getDataSource().createQueryBuilder()
+            .delete()
+            .from(User)
+            .where("id = :id", { id: userId })
+            .execute();
     }
 
     static async createInviteUser(data: InviteData) {

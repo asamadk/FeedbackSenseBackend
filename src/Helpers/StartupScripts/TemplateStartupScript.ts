@@ -37,14 +37,73 @@ export class TemplateStartupScript {
     }
 
     async saveTemplates() {
-        const finalSaveList: Templates[] = [];
+        let finalSaveList: Templates[] = [];
         this.toInsertTemplateList.forEach(template => {
             if (template.name !== this.DELETE_KEY) {
                 finalSaveList.push(template);
             }
         });
-        //TODO : save finalSaveList here.
+        
+        finalSaveList =  this.updateTemplatesStyle(finalSaveList);
         await this.templateRepo.save(finalSaveList);
+    }
+
+    updateTemplatesStyle(temps : Templates[]):Templates[]{
+        const tmpList :Templates[]= [];
+        temps.forEach(tmp => {
+            const data = tmp.data;
+            const obj = JSON.parse(data);
+            obj.nodes.forEach((o:any) => {
+                const id :number = o.data.compId;
+                o.style = {
+                    "color": this.getColor(id),
+                    "width": "300px",
+                    "height": "120px",
+                    "borderRadius": "3px",
+                    "padding": "10px",
+                    "boxShadow": "0px 0px 20px 3px rgba(0,0,0,0.20)",
+                    "background": "#ffffff"
+                }
+            });
+
+            obj.edges.forEach((e : any) => {
+                if(e.labelStyle == null){return;}
+                console.log("🚀 ~ TemplateStartupScript ~ obj.edges.forEach ~ e:", e)
+                e.labelStyle.color = '#ffffff';
+                e.labelStyle.fill = '#ffffff';
+                e.labelBgStyle.fill = '#8039DF';
+                e.labelBgStyle.background = '#8039DF';
+                e.style.stroke = '#3D0A74';
+                e.markerEnd.color = '#3D0A74';
+            });
+            tmp.data = JSON.stringify(obj);
+            tmpList.push(tmp);
+        });
+        return tmpList;
+    }
+
+    getColor(id : number):string{
+        if(id === 1){
+            return '#527853';
+        }else if(id === 3){
+            return '#0802A3';
+        }else if(id === 4){
+            return '#7B2869';
+        }else if(id === 5){
+            return '#0A81AB';
+        }else if(id === 6){
+            return '#FFB84C';
+        }else if(id === 7){
+            return '#FAD800';
+        }else if(id === 8){
+            return '#43658B';
+        }else if(id === 11){
+            return '#6E2142';
+        }else if(id === 13){
+            return '#5F4444';
+        }else if(id === 14){
+            return '#808080';
+        }
     }
 
     async getAllExistingTemplates() {
