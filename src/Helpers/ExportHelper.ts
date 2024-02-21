@@ -135,7 +135,11 @@ export class ExportHelper {
     processContactInfoComp(data: any): TransformedDataType {
         const transformed: any = {};
         transformed['contact-question'] = data?.compData?.question;
-        transformed['contact-result'] = JSON.stringify(data?.data != null ? data?.data : '');
+        const contactData = data?.data;
+        for(const key in contactData){
+            if(key == null || key == 'surveyCompleted'){continue;}
+            transformed[key] = contactData[key];
+        }
         return transformed;
     }
 

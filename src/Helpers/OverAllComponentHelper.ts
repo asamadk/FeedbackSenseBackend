@@ -80,8 +80,9 @@ export const processSingleSelectionComp = (data: any[]): any => {
     const rtnArr = [];
     for (const [key, value] of answerFreq) {
         rtnArr.push({
-            name: key,
-            Frequency: getPercentage(value, data?.length)
+            name: `${key.substring(0,10)}${key.length > 11 ? '...' : ''}`,
+            Frequency: getPercentage(value, data?.length),
+            fullName : key
         })
     }
 

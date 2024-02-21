@@ -243,6 +243,8 @@ export const validateIsNodeDisconnected = (flow: any): boolean => {
     const uniqueNodeIds = new Set<string>();
     const edges: any[] = flow.edges;
     const nodes: any[] = flow.nodes;
+    
+    if(nodes != null && nodes.length === 1){return false;}
 
     if ((edges === null || edges.length < 1) && (nodes != null && nodes.length > 0)) {
         return true;
