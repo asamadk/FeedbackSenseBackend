@@ -1,6 +1,6 @@
 import { AppDataSource } from "../Config/AppDataSource";
 import { logger } from "../Config/LoggerConfig";
-import { LOGO_DATA, SURVEY_RESPONSE_CAPACITY } from "../Constants/CustomSettingsCont";
+import { LOGO_DATA, REMOVE_FEEDBACK_SENSE_LOGO, SURVEY_RESPONSE_CAPACITY } from "../Constants/CustomSettingsCont";
 import { CustomSettings } from "../Entity/CustomSettingsEntity";
 import { SurveyConfig } from "../Entity/SurveyConfigEntity";
 import { Survey } from "../Entity/SurveyEntity";
@@ -174,7 +174,16 @@ export const getSurveyLogo = async (surveyId: string): Promise<responseRest> => 
             organizationId: surveyUser.organization_id,
             fKey: LOGO_DATA
         });
-        response.data = logoCustomSetting.fValue;
+
+        const showLogoSetting = await customSettingsRepo.findOneBy({
+            organizationId: surveyUser.organization_id,
+            fKey: REMOVE_FEEDBACK_SENSE_LOGO
+        });
+
+        response.data = {
+            img : logoCustomSetting.fValue,
+            removeLogo : showLogoSetting.fValue === 'true'
+        }
         return response;
     } catch (error) {
         logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
