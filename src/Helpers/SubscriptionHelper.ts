@@ -4,8 +4,8 @@ import { Plan } from "../Entity/PlanEntity";
 import { Subscription } from "../Entity/SubscriptionEntity";
 import { PaymentSuccessBody } from "../Types/ApiTypes";
 import { CustomSettingsHelper } from "./CustomSettingHelper";
-import { FREE_PLAN, MONTHLY_BILLING, PLUS_PLAN, STARTER_PLAN, ULTIMATE_PLAN } from "./Constants";
-import { ACTIVE_SURVEY_LIMIT, FOLDER_FEATURE_ACTIVE, LOGO_DATA, REMOVE_FEEDBACK_SENSE_LOGO, SKIP_LOGIC_FEATURE, SURVEY_RESPONSE_CAPACITY, TEAM_SEATS } from "../Constants/CustomSettingsCont";
+import { BASIC_PLAN, FREE_PLAN, MONTHLY_BILLING, PLUS_PLAN, PRO_PLAN } from "./Constants";
+import { ACTIVE_SURVEY_LIMIT, ADD_CUSTOM_LOGO, AI_TEXT_ANALYSIS, EXPORT_FEATURE, FOLDER_FEATURE_ACTIVE, LOGO_DATA, REMOVE_FEEDBACK_SENSE_LOGO, SKIP_LOGIC_FEATURE, SURVEY_RESPONSE_CAPACITY, TEAM_ROLES, TEAM_SEATS, WORD_CLOUD } from "../Constants/CustomSettingsCont";
 import Razorpay from "razorpay";
 import { User } from "../Entity/UserEntity";
 import { Survey } from "../Entity/SurveyEntity";
@@ -63,7 +63,7 @@ export class SubscriptionHelper {
             return;
         }
         const currentPlan = userSubscription.plan;
-        if (currentPlan.price_cents > plan.price_cents) {
+        if (plan.price_cents === 0) {
             this.unpublishAllSurveys(userSubscription);
         }
 
@@ -73,38 +73,58 @@ export class SubscriptionHelper {
 
         const customSettingHelper = CustomSettingsHelper.getInstance();
         await customSettingHelper.initialize(userSubscription.organization.id);
-        if (plan.name === STARTER_PLAN) {
-            customSettingHelper.setCustomSettings(ACTIVE_SURVEY_LIMIT, '3');
+        if (plan.name === BASIC_PLAN) {
+            customSettingHelper.setCustomSettings(ACTIVE_SURVEY_LIMIT, '300');
             customSettingHelper.setCustomSettings(FOLDER_FEATURE_ACTIVE, 'false');
             customSettingHelper.setCustomSettings(REMOVE_FEEDBACK_SENSE_LOGO, 'false');
             customSettingHelper.setCustomSettings(SKIP_LOGIC_FEATURE, 'true');
             customSettingHelper.setCustomSettings(SURVEY_RESPONSE_CAPACITY, '100');
             customSettingHelper.setCustomSettings(TEAM_SEATS, '1');
             customSettingHelper.setCustomSettings(LOGO_DATA, '');
+            customSettingHelper.setCustomSettings(EXPORT_FEATURE, 'true');
+            customSettingHelper.setCustomSettings(AI_TEXT_ANALYSIS, 'false');
+            customSettingHelper.setCustomSettings(ADD_CUSTOM_LOGO, 'false');
+            customSettingHelper.setCustomSettings(WORD_CLOUD, 'false');
+            customSettingHelper.setCustomSettings(TEAM_ROLES, 'false');
         } else if (plan.name === PLUS_PLAN) {
-            customSettingHelper.setCustomSettings(ACTIVE_SURVEY_LIMIT, '5');
-            customSettingHelper.setCustomSettings(FOLDER_FEATURE_ACTIVE, 'false');
-            customSettingHelper.setCustomSettings(REMOVE_FEEDBACK_SENSE_LOGO, 'false');
+            customSettingHelper.setCustomSettings(ACTIVE_SURVEY_LIMIT, '300');
+            customSettingHelper.setCustomSettings(FOLDER_FEATURE_ACTIVE, 'true');
+            customSettingHelper.setCustomSettings(REMOVE_FEEDBACK_SENSE_LOGO, 'true');
             customSettingHelper.setCustomSettings(SKIP_LOGIC_FEATURE, 'true');
-            customSettingHelper.setCustomSettings(SURVEY_RESPONSE_CAPACITY, '2000');
+            customSettingHelper.setCustomSettings(SURVEY_RESPONSE_CAPACITY, '1000');
             customSettingHelper.setCustomSettings(TEAM_SEATS, '3');
             customSettingHelper.setCustomSettings(LOGO_DATA, '');
-        } else if (plan.name === ULTIMATE_PLAN) {
-            customSettingHelper.setCustomSettings(ACTIVE_SURVEY_LIMIT, '10');
+            customSettingHelper.setCustomSettings(EXPORT_FEATURE, 'true');
+            customSettingHelper.setCustomSettings(AI_TEXT_ANALYSIS, 'true');
+            customSettingHelper.setCustomSettings(ADD_CUSTOM_LOGO, 'false');
+            customSettingHelper.setCustomSettings(WORD_CLOUD, 'false');
+            customSettingHelper.setCustomSettings(TEAM_ROLES, 'false');
+        } else if (plan.name === PRO_PLAN) {
+            customSettingHelper.setCustomSettings(ACTIVE_SURVEY_LIMIT, '300');
             customSettingHelper.setCustomSettings(FOLDER_FEATURE_ACTIVE, 'true');
             customSettingHelper.setCustomSettings(REMOVE_FEEDBACK_SENSE_LOGO, 'true');
             customSettingHelper.setCustomSettings(SKIP_LOGIC_FEATURE, 'true');
             customSettingHelper.setCustomSettings(SURVEY_RESPONSE_CAPACITY, '10000');
             customSettingHelper.setCustomSettings(TEAM_SEATS, '10');
+            customSettingHelper.setCustomSettings(EXPORT_FEATURE, 'true');
+            customSettingHelper.setCustomSettings(AI_TEXT_ANALYSIS, 'true');
+            customSettingHelper.setCustomSettings(ADD_CUSTOM_LOGO, 'true');
+            customSettingHelper.setCustomSettings(WORD_CLOUD, 'true');
+            customSettingHelper.setCustomSettings(TEAM_ROLES, 'true');
         } else if (plan.name === FREE_PLAN) {
             logger.info(`Transferring org to Free Plan`);
-            customSettingHelper.setCustomSettings(ACTIVE_SURVEY_LIMIT, '1');
+            customSettingHelper.setCustomSettings(ACTIVE_SURVEY_LIMIT, '5');
             customSettingHelper.setCustomSettings(FOLDER_FEATURE_ACTIVE, 'false');
             customSettingHelper.setCustomSettings(REMOVE_FEEDBACK_SENSE_LOGO, 'false');
             customSettingHelper.setCustomSettings(SKIP_LOGIC_FEATURE, 'true');
             customSettingHelper.setCustomSettings(SURVEY_RESPONSE_CAPACITY, '50');
             customSettingHelper.setCustomSettings(TEAM_SEATS, '1');
             customSettingHelper.setCustomSettings(LOGO_DATA, '');
+            customSettingHelper.setCustomSettings(EXPORT_FEATURE, 'true');
+            customSettingHelper.setCustomSettings(AI_TEXT_ANALYSIS, 'false');
+            customSettingHelper.setCustomSettings(ADD_CUSTOM_LOGO, 'false');
+            customSettingHelper.setCustomSettings(WORD_CLOUD, 'false');
+            customSettingHelper.setCustomSettings(TEAM_ROLES, 'false');
         }
         await customSettingHelper.saveCustomSettings();
     }

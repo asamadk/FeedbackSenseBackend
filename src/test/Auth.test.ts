@@ -2,11 +2,11 @@ import { getFreeSubscriptionLimit, getUserAfterLogin, handleSuccessfulLogin } fr
 import { User } from "../Entity/UserEntity";
 import { Plan } from "../Entity/PlanEntity";
 import { Subscription } from "../Entity/SubscriptionEntity";
-import { STARTER_PLAN } from "../Helpers/Constants";
 import { StartUp } from "../Helpers/Startup";
 import { TestHelper } from "./TestUtils.ts/TestHelper";
 import { AppDataSource } from "../Config/AppDataSource";
 import { createOrganizationForUser } from '../Service/OrgService';
+import { BASIC_PLAN } from '../Helpers/Constants';
 
 
 beforeAll(async () => {
@@ -115,11 +115,11 @@ describe('handleSuccessfulLogin', () => {
         });
 
         const planObj = await planRepo.findOneBy({
-            name: STARTER_PLAN
+            name: BASIC_PLAN
         })
 
         expect(userObj.email).toBe('test@example.com');
-        expect(planObj.name).toBe(STARTER_PLAN);
+        expect(planObj.name).toBe(BASIC_PLAN);
     });
 
     it('should not create a new user if already saved', async () => {
@@ -132,11 +132,11 @@ describe('handleSuccessfulLogin', () => {
         });
 
         const planObj = await planRepo.findOneBy({
-            name: STARTER_PLAN
+            name: BASIC_PLAN
         })
 
         expect(userObj.email).toBe('test@example.com');
-        expect(planObj.name).toBe(STARTER_PLAN);
+        expect(planObj.name).toBe(BASIC_PLAN);
     });
 
     it('should not create a new user if email is missing', async () => {
