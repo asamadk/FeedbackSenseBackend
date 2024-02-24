@@ -68,7 +68,6 @@ export class TemplateStartupScript {
 
             obj.edges.forEach((e : any) => {
                 if(e.labelStyle == null){return;}
-                console.log("🚀 ~ TemplateStartupScript ~ obj.edges.forEach ~ e:", e)
                 e.labelStyle.color = '#ffffff';
                 e.labelStyle.fill = '#ffffff';
                 e.labelBgStyle.fill = '#8039DF';

@@ -2,7 +2,7 @@ import { Repository } from "typeorm";
 import { AppDataSource } from "../Config/AppDataSource"
 import { Plan } from "../Entity/PlanEntity";
 import { SurveyType } from "../Entity/SurveyTypeEntity";
-import { FREE_PLAN, PLUS_PLAN, STARTER_PLAN, ULTIMATE_PLAN } from "./Constants";
+import { BASIC_PLAN, FREE_PLAN, PLUS_PLAN, PRO_PLAN } from "./Constants";
 import { logger } from "../Config/LoggerConfig";
 import { TemplateStartupScript } from "./StartupScripts/TemplateStartupScript";
 import { CustomSettings } from "../Entity/CustomSettingsEntity";
@@ -53,22 +53,22 @@ export class StartUp {
         this.planLimits.set(FREE_PLAN, JSON.stringify(
             {}
         ));
-        this.planLimits.set(STARTER_PLAN, JSON.stringify(
+        this.planLimits.set(BASIC_PLAN, JSON.stringify(
             {}
         ));
         this.planLimits.set(PLUS_PLAN, JSON.stringify(
             {}
         ));
-        this.planLimits.set(ULTIMATE_PLAN, JSON.stringify(
+        this.planLimits.set(PRO_PLAN, JSON.stringify(
             {}
         ));
     }
 
     populatePlanAmount() {
         this.planNamePrice.set(FREE_PLAN, 0);
-        this.planNamePrice.set(STARTER_PLAN, 499);
-        this.planNamePrice.set(PLUS_PLAN, 999);
-        this.planNamePrice.set(ULTIMATE_PLAN,1799);
+        this.planNamePrice.set(BASIC_PLAN, 20);
+        this.planNamePrice.set(PLUS_PLAN, 45);
+        this.planNamePrice.set(PRO_PLAN,75);
         logger.info('Plan prices populated');
     }
 
@@ -83,10 +83,10 @@ export class StartUp {
                 'FeedbackSense will always have a free plan'
             ]
         }));
-        this.planNameDescription.set(STARTER_PLAN, JSON.stringify({
+        this.planNameDescription.set(BASIC_PLAN, JSON.stringify({
             description: `Empower your company with a comprehensive solution to streamline customer feedback automation from a single source.`,
             features: [
-                '3 Active Surveys',
+                'Unlimited Active Surveys',
                 '100 Response / month',
                 '1 User',
                 'Basic analysis',
@@ -97,18 +97,18 @@ export class StartUp {
         this.planNameDescription.set(PLUS_PLAN, JSON.stringify({
             description: `Ideal for businesses seeking advanced research capabilities with robust and sophisticated features.`,
             features: [
-                '5 Active Surveys',
-                '2000 Response / month',
+                'Unlimited Active Surveys',
+                '1000 Response / month',
                 '3 Users',
                 'Detailed analysis',
-                `All from ${STARTER_PLAN} plan, plus`,
+                `All from ${BASIC_PLAN} plan, plus`,
             ]
         }));
 
-        this.planNameDescription.set(ULTIMATE_PLAN, JSON.stringify({
+        this.planNameDescription.set(PRO_PLAN, JSON.stringify({
             description: `Ideal for big businesses seeking looking for ultimate solution.`,
             features: [
-                '10 Active Surveys',
+                'Unlimited Active Surveys',
                 '10000 Response / month',
                 '10 Users',
                 'User Role Management',
@@ -123,9 +123,9 @@ export class StartUp {
         try {
             const planNames: string[] = [
                 FREE_PLAN,
-                STARTER_PLAN,
+                BASIC_PLAN,
                 PLUS_PLAN,
-                ULTIMATE_PLAN,
+                PRO_PLAN,
             ];
 
             const planList = await AppDataSource.getDataSource().createQueryBuilder(Plan, 'plan')
@@ -161,13 +161,13 @@ export class StartUp {
             planObj.name = name;
             planObj.price_cents = this.planNamePrice.get(name);
             if(planObj.price_cents !== 0){
-                planObj.price_cents_monthly = this.planNamePrice.get(name) + 200;
+                planObj.price_cents_monthly = this.planNamePrice.get(name) + 6;
             }else{
                 planObj.price_cents_monthly = 0;
             }
             planObj.description = this.planNameDescription.get(name);
             planObj.sub_limit = this.planLimits.get(name);
-            planObj.currency = 'INR';
+            planObj.currency = 'USD';
             this.toCreatePlanList.push(planObj);
         } catch (error) {
             logger.error(`message - ${error.message}, stack trace - ${error.stack}`);

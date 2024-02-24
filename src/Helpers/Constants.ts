@@ -1,7 +1,7 @@
 export const FREE_PLAN = 'Free'
-export const STARTER_PLAN = 'Starter';
+export const BASIC_PLAN = 'Basic';
 export const PLUS_PLAN = 'Plus';
-export const ULTIMATE_PLAN = 'Ultimate';
+export const PRO_PLAN = 'Pro';
 
 export const MONTHLY_BILLING = 'monthly';
 
