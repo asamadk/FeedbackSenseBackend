@@ -1,8 +1,12 @@
-import { Column, CreateDateColumn, Entity, JoinColumn, ManyToMany, ManyToOne, OneToOne, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
+import { Column, CreateDateColumn, Entity, JoinColumn, JoinTable, ManyToMany, ManyToOne, OneToMany, OneToOne, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
 import { Organization } from "./OrgEntity";
 import { User } from "./UserEntity";
 import { CustomSubscription } from "./CustomSubscriptionEntity";
 import { CompanyTag } from "./CompanyTagEntity";
+import { Task } from "./TaskEntity";
+import { SurveyResponse } from "./SurveyResponse";
+import { UsageEvent } from "./UsageEvent";
+import { UsageSession } from "./UsageSession";
 
 enum CustomerLifecycleStage {
     Onboarding = "Onboarding",
@@ -112,7 +116,24 @@ export class Company {
     @ManyToOne(() => Organization, organization => organization.companies)
     organization: Organization;
 
-    @ManyToMany(() => CompanyTag, tag => tag.companies)
+    @ManyToMany(() => CompanyTag, tag => tag.companies,{onDelete : 'CASCADE'})
     tags!: CompanyTag[];
+
+    @ManyToMany(() => Task,task => task.company,{onDelete : 'CASCADE'})
+    @JoinTable({
+        name: "company_task", // Name of the join table
+        joinColumn: { name: "taskId", referencedColumnName: "id" },
+        inverseJoinColumn: { name: "companyId", referencedColumnName: "id" }
+    })
+    tasks!: Task[];
+
+    @OneToMany(() => SurveyResponse, surveyResponse => surveyResponse.company)
+    surveyResponses!: SurveyResponse[];
+
+    @OneToMany(() => UsageEvent, usageEvent => usageEvent.company)
+    events!: UsageEvent[];
+
+    @OneToMany(() => UsageSession, usageSession => usageSession.company)
+    sessions!: UsageSession[];
 
 }

@@ -1,29 +1,18 @@
 import express from 'express';
 import { logger } from '../Config/LoggerConfig';
 import { getCustomResponse } from '../Helpers/ServiceUtils';
-import { createPerson, deletePeople, getPersonList } from '../Service/PeopleService';
+import { createCSMNote, deleteCSMNote, getCSMNotes } from '../Service/NotesService';
 
 const router = express.Router();
 
-router.post('/create/individual',async (req,res) => {
-    try {
-        const reqBody = req.body;
-        const response = await createPerson(reqBody);
-        res.statusCode = response.statusCode;
-        res.json(response);
-    } catch (error) {
-        logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
-        res.status(500).json(getCustomResponse(null, 500, error.message, false));
-    }
-})
 
-router.get('/get/list',async (req,res) => {
+router.get('/get', async (req, res) => {
     try {
         const page = parseInt(req.query.page as string) || 0; // Current page number
         const limit = parseInt(req.query.limit as string) || 20; // Number of records per page
-        const searchStr = req.query.search as string || '';
-
-        const response = await getPersonList(page,limit,searchStr);
+        const personId = req.query.personId as string;
+        const companyId = req.query.companyId as string;
+        const response = await getCSMNotes(companyId, personId, page, limit);
         res.statusCode = response.statusCode;
         res.json(response);
     } catch (error) {
@@ -32,10 +21,22 @@ router.get('/get/list',async (req,res) => {
     }
 });
 
-router.post('/delete',async (req,res) => {
+router.post('/create', async (req, res) => {
     try {
         const reqBody = req.body;
-        const response = await deletePeople(reqBody);
+        const response = await createCSMNote(reqBody);
+        res.statusCode = response.statusCode;
+        res.json(response);
+    } catch (error) {
+        logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
+        res.status(500).json(getCustomResponse(null, 500, error.message, false));
+    }
+});
+
+router.delete('/delete', async (req, res) => {
+    try {
+        const noteId = req.query.noteId;
+        const response = await deleteCSMNote(noteId as string);
         res.statusCode = response.statusCode;
         res.json(response);
     } catch (error) {

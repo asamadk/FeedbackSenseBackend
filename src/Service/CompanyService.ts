@@ -26,6 +26,9 @@ export const createCompany = async (reqBody: any): Promise<responseRest> => {
         if (reqBody.status != null && reqBody.status.length > 0) {
             company.status = reqBody.status
         }
+        if (reqBody.id != null && reqBody.id.length > 0) {
+            company.id = reqBody.id;
+        }
         company.owner = reqBody.owner;
         // company.subscriptionPlan = reqBody.plan;
         company.address = reqBody.address;
@@ -36,6 +39,20 @@ export const createCompany = async (reqBody: any): Promise<responseRest> => {
 
         await companyRepo.save(company);
 
+        return response;
+    } catch (error) {
+        logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
+        return getCustomResponse(null, 500, error.message, false)
+    }
+}
+
+export const deleteCompanies = async (companyIds: string[]): Promise<responseRest> => {
+    try {
+        const response = getDefaultResponse('Company created successfully');
+        const companyRepo = Repository.getCompany();
+        if (companyIds != null && companyIds.length > 0) {
+            await companyRepo.delete(companyIds);
+        }
         return response;
     } catch (error) {
         logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
@@ -175,39 +192,90 @@ export const fetchCompaniesPeopleOptions = async () => {
         const peopleRepo = Repository.getPeople();
 
         const company = await companyRepo.find({
-            where : { 
-                organization : {
-                    id : userInfo.organization_id
+            where: {
+                organization: {
+                    id: userInfo.organization_id
                 }
             },
-            select : {
-                id : true,
-                name : true,
+            select: {
+                id: true,
+                name: true,
+            },
+            order : {
+                name : 'ASC'
             }
         });
 
         const people = await peopleRepo.find({
-            where : { 
-                organization : {
-                    id : userInfo.organization_id
+            where: {
+                organization: {
+                    id: userInfo.organization_id
                 }
             },
-            select : {
-                id : true,
-                firstName : true,
-                lastName : true,
-                company : {
-                    id : true
+            select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                company: {
+                    id: true,
+                    name : true
                 }
             },
-            relations : {
-                company : true
+            relations: {
+                company: true
+            },
+            order : {
+                firstName : 'ASC'
             }
         });
 
         response.data = {
-            companies : company,
-            people : people
+            companies: company,
+            people: people
+        }
+        return response;
+    } catch (error) {
+        logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
+        return getCustomResponse(null, 500, error.message, false)
+    }
+}
+
+export const fetchCompaniesFilledSurveys = async (companyId : string) => {
+    try {
+        const response = getDefaultResponse('Company surveys fetched');
+        if(companyId == null || companyId.length < 1){
+            throw new Error(`Company ID not provided.`);
+        }
+        
+        const surveyResponseRepo = Repository.getSurveyResponse();
+        const surveyResponse = await surveyResponseRepo.find({
+            where : {
+                company : {
+                    id : companyId
+                }
+            },
+            select : {
+                person : {
+                    id : true,
+                    firstName : true,
+                    lastName : true
+                },
+                survey : {
+                    id : true,
+                    name : true
+                }
+            },
+            relations : {
+                person : true,
+                survey : true
+            },
+            order : {
+                created_at : 'DESC'
+            }
+        });
+
+        response.data = {
+            list : surveyResponse
         }
         return response;
     } catch (error) {

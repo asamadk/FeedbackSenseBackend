@@ -13,7 +13,7 @@ import { Company } from "./CompanyEntity";
 import { User } from "./UserEntity";
 import { Organization } from "./OrgEntity";
   
-enum ActivityType {
+export enum ActivityType {
     Email = "Email",
     Call = "Call",
     Meeting = "Meeting",
@@ -26,7 +26,7 @@ enum ActivityType {
     Other = "Other"
 }
 
-enum ActivityStatus {
+export enum ActivityStatus {
     Planned = "Planned",
     InProgress = "InProgress",
     Completed = "Completed",
@@ -38,11 +38,11 @@ enum ActivityStatus {
     @PrimaryGeneratedColumn('uuid')
     id!: string;
   
-    @OneToOne(() => Person, { nullable: true })
+    @ManyToOne(() => Person, { nullable: true })
     @JoinColumn({ name: "personId" })
     person?: Person;
   
-    @OneToOne(() => Company, { nullable: true })
+    @ManyToOne(() => Company, { nullable: true })
     @JoinColumn({ name: "companyId" })
     company?: Company;
   

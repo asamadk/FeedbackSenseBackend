@@ -26,6 +26,10 @@ import PeopleController from './Controllers/PeopleController'
 import CustomSettingsController from './Controllers/CustomSettingsController';
 import TagController from './Controllers/TagController';
 import TaskController from './Controllers/TaskController';
+import ActivityController from './Controllers/ActivityController';
+import NotesController from './Controllers/NotesController';
+import UsageEventTypeController from './Controllers/UsageEventTypeController'
+import UsageController from './Controllers/UsageController';
 
 import { AppDataSource } from './Config/AppDataSource';
 import { handleSuccessfulLogin } from './Service/AuthService';
@@ -132,6 +136,7 @@ app.use(express.json({ limit: '2mb' }));
 app.use('/auth', logRequest, AuthController)
 app.use('/live', logRequest, LiveSurveyController);
 app.use('/payment', logRequest, PaymentController);
+app.use('/usage',logRequest,UsageController);
 
 //authenticated endpoints
 app.use('/home', isLoggedIn, logRequest, HomeController);
@@ -149,6 +154,9 @@ app.use('/company', isLoggedIn, logRequest, CompanyController);
 app.use('/people', isLoggedIn, logRequest, PeopleController);
 app.use('/tag', isLoggedIn, logRequest, TagController);
 app.use('/task', isLoggedIn, logRequest, TaskController);
+app.use('/activity', isLoggedIn, logRequest, ActivityController);
+app.use('/notes', isLoggedIn, logRequest, NotesController);
+app.use('/usage-event-type', isLoggedIn, logRequest, UsageEventTypeController);
 
 new MasterScheduler().init();
 

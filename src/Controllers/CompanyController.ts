@@ -2,7 +2,7 @@ import express from 'express';
 import { logger } from '../Config/LoggerConfig';
 import { getCustomResponse } from '../Helpers/ServiceUtils';
 import multer from 'multer';
-import { createCompany, fetchCompaniesPeopleOptions, getCompanyColumns, getCompanyList, getCompanyPeople, handleBulkCompanyUpload } from '../Service/CompanyService';
+import { createCompany, deleteCompanies, fetchCompaniesFilledSurveys, fetchCompaniesPeopleOptions, getCompanyColumns, getCompanyList, getCompanyPeople, handleBulkCompanyUpload } from '../Service/CompanyService';
 
 const router = express.Router();
 
@@ -27,6 +27,18 @@ router.get('/get/list',async (req,res) => {
         const searchStr = req.query.search as string || '';
 
         const response = await getCompanyList(page,limit,searchStr);
+        res.statusCode = response.statusCode;
+        res.json(response);
+    } catch (error) {
+        logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
+        res.status(500).json(getCustomResponse(null, 500, error.message, false));
+    }
+});
+
+router.post('/delete',async (req,res) => {
+    try {
+        const reqBody = req.body;
+        const response = await deleteCompanies(reqBody);
         res.statusCode = response.statusCode;
         res.json(response);
     } catch (error) {
@@ -80,6 +92,18 @@ router.post('/bulk/upload',upload.single('csvFile'),async (req,res) => {
 router.get('/select-options',async (req,res) => {
     try {
         const response = await fetchCompaniesPeopleOptions();
+        res.statusCode = response.statusCode;
+        res.json(response);
+    } catch (error) {
+        logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
+        res.status(500).json(getCustomResponse(null, 500, error.message, false));  
+    }
+});
+
+router.get('/survey-response',async(req,res) => {
+    try {
+        const companyId :string = req.query.companyId as string;
+        const response = await fetchCompaniesFilledSurveys(companyId);
         res.statusCode = response.statusCode;
         res.json(response);
     } catch (error) {

@@ -6,7 +6,6 @@ import {
     UpdateDateColumn,
     ManyToOne,
     JoinColumn, 
-    OneToOne
 } from "typeorm";
 import { Company } from "./CompanyEntity";
 import { Person } from "./PersonEntity";
@@ -24,15 +23,15 @@ export class Notes {
     @PrimaryGeneratedColumn('uuid')
     id!: string;
 
-    @OneToOne(() => Person, { nullable: true })
-    @JoinColumn({ name: "personId" })
+    @ManyToOne(() => Person, { nullable: true})
+    @JoinColumn({ name: "personId"})
     person?: Person;
   
-    @OneToOne(() => Company, { nullable: true })
+    @ManyToOne(() => Company, { nullable: true })
     @JoinColumn({ name: "companyId" })
     company?: Company;
 
-    @OneToOne(() => User, { nullable: true })
+    @ManyToOne(() => User, { nullable: true })
     @JoinColumn({ name: "createdBy" })
     createdBy?: User;
 

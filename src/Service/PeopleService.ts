@@ -71,3 +71,17 @@ export const getPersonList = async (page: number, limit: number, searchStr: stri
         return getCustomResponse(null, 500, error.message, false)
     }
 }
+
+export const deletePeople = async (personIds: string[]): Promise<responseRest> => {
+    try {
+        const response = getDefaultResponse('Company created successfully');
+        const personRepo = Repository.getPeople();
+        if (personIds != null && personIds.length > 0) {
+            await personRepo.delete(personIds);
+        }
+        return response;
+    } catch (error) {
+        logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
+        return getCustomResponse(null, 500, error.message, false)
+    }
+}
