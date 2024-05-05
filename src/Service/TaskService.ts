@@ -36,11 +36,13 @@ export const createTask = async (reqBody: any): Promise<responseRest> => {
 
         task.title = reqBody.title;
         task.description = reqBody.description;
-        task.owner = userInfo.id as any;
+        task.owner = reqBody.owner;
         task.priority = reqBody.priority;
         task.dueDate = reqBody.dueDate;
         task.status = reqBody.status;
         task.organization = userInfo.organization_id as any;
+        
+        console.log("🚀 ~ createTask ~ task:", task)
 
         const taskRepo = Repository.getTask();
         await taskRepo.save(task);
@@ -53,7 +55,7 @@ export const createTask = async (reqBody: any): Promise<responseRest> => {
 }
 
 export const getTask = async (
-    companyId: string, personId: string, page: number, limit: number
+    companyId: string, personId: string, status : string, ownerId : string,page: number, limit: number
 ): Promise<responseRest> => {
     try {
         const response = getDefaultResponse('Task created successfully');
@@ -72,6 +74,16 @@ export const getTask = async (
             whereClause.company = {
                 id: companyId
             }
+        }
+
+        if(ownerId != null && ownerId.length > 0){
+            whereClause.owner = {
+                id : ownerId
+            }
+        }
+
+        if(status != null && status.length > 0){
+            whereClause.status = status as any
         }
 
         const taskRepo = Repository.getTask();
@@ -128,6 +140,27 @@ export const deleteTask = async (taskId: string): Promise<responseRest> => {
     }
 }
 
+export const completeTask = async (data : any): Promise<responseRest> => {
+    try {
+        const response = getDefaultResponse('Task deleted successfully');
+        const taskRepo = Repository.getTask();
+        const task = await taskRepo.findOneBy({id : data.id});
+        if(task == null){
+            throw new Error('Not found');
+        }
+        if(task.status === 'Completed'){
+            task.status = 'Open';
+        }else{
+            task.status = 'Completed';
+        }
+        await taskRepo.save(task);
+        return response;
+    } catch (error) {
+        logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
+        return getCustomResponse(null, 500, error.message, false)
+    }
+}
+
 export const updateTask = async (reqBody: any): Promise<responseRest> => {
     try {
         const response = getDefaultResponse('Task deleted successfully');
@@ -159,7 +192,7 @@ export const updateTask = async (reqBody: any): Promise<responseRest> => {
         const singleTask = task[0];
         singleTask.title = reqBody.title;
         singleTask.description = reqBody.description;
-        // singleTask.owner = userInfo.id as any;
+        singleTask.owner = reqBody.owner;
         singleTask.priority = reqBody.priority;
         singleTask.dueDate = reqBody.dueDate;
         singleTask.status = reqBody.status;

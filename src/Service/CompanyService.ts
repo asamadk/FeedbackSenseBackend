@@ -20,9 +20,9 @@ export const createCompany = async (reqBody: any): Promise<responseRest> => {
         company.name = reqBody.name;
         company.website = reqBody.website;
         company.industry = reqBody.industry;
-        if (reqBody.lStage != null && reqBody.lStage.length > 0) {
-            company.lifecycleStage = reqBody.lStage
-        }
+        // if (reqBody.lStage != null && reqBody.lStage.length > 0) {
+        //     company.lifecycleStage = reqBody.lStage
+        // }
         if (reqBody.status != null && reqBody.status.length > 0) {
             company.status = reqBody.status
         }
@@ -82,11 +82,22 @@ export const getCompanyList = async (page: number, limit: number, searchStr: str
                     tags: {
                         id: true,
                         name: true
+                    },
+                    stage : {
+                        id : true,
+                        name : true,
+                        position : true
+                    },
+                    subStage : {
+                        id : true,
+                        name : true
                     }
                 },
                 relations: {
                     tags: true,
-                    owner: true
+                    owner: true,
+                    stage : true,
+                    subStage : true
                 },
                 order: {
                     name: 'ASC'
@@ -283,3 +294,15 @@ export const fetchCompaniesFilledSurveys = async (companyId : string) => {
         return getCustomResponse(null, 500, error.message, false)
     }
 }
+
+// export const getCompanyJourneySubJourney = async (companyId : string) => {
+//     try {
+//         const response = getDefaultResponse('Company surveys fetched');
+//         const surveyResponseRepo = Repository.getSurveyResponse();
+        
+//         return response;
+//     } catch (error) {
+//         logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
+//         return getCustomResponse(null, 500, error.message, false)
+//     }
+// }

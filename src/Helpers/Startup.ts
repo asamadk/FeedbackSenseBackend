@@ -9,6 +9,7 @@ import { CustomSettings } from "../Entity/CustomSettingsEntity";
 import { Organization } from "../Entity/OrgEntity";
 import { FSCustomSetting } from "../Utils/SettingsUtils/CustomSettingsData";
 import { createCustomSettings } from "../Service/CustomSettingsService";
+import { Repository as LocalRepo } from "../Helpers/Repository";
 
 export class StartUp {
 

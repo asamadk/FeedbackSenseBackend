@@ -110,6 +110,18 @@ router.get('/survey-response',async(req,res) => {
         logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
         res.status(500).json(getCustomResponse(null, 500, error.message, false));  
     }
-})
+});
+
+// router.get('/journey',async(req,res) => {
+//     try {
+//         const companyId :string = req.query.companyId as string;
+//         const response = await getCompanyJourneySubJourney(companyId);
+//         res.statusCode = response.statusCode;
+//         res.json(response);
+//     } catch (error) {
+//         logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
+//         res.status(500).json(getCustomResponse(null, 500, error.message, false));  
+//     }
+// });
 
 export default router;

@@ -7,6 +7,8 @@ import { Task } from "./TaskEntity";
 import { SurveyResponse } from "./SurveyResponse";
 import { UsageEvent } from "./UsageEvent";
 import { UsageSession } from "./UsageSession";
+import { JourneyStage } from "./JourneyStageEntity";
+import { JourneySubStage } from "./JourneySubStageEntity";
 
 enum CustomerLifecycleStage {
     Onboarding = "Onboarding",
@@ -45,12 +47,8 @@ export class Company {
     @Column({ nullable: true })
     industry?: string;
 
-    @Column({
-        type: "enum",
-        enum: CustomerLifecycleStage,
-        default: CustomerLifecycleStage.Onboarding
-    })
-    lifecycleStage?: CustomerLifecycleStage;
+    @Column()
+    contractStatus?: 'Paying' | 'Free';
     
 
     @ManyToOne(() => User, { nullable: true })
@@ -88,6 +86,9 @@ export class Company {
     @Column({ type: 'int', nullable: true })
     healthScore?: number;
 
+    @Column()
+    attributeHealthScore?: string;
+
     @Column({ type: 'int', nullable: true })
     npsScore?: number;
 
@@ -115,6 +116,12 @@ export class Company {
 
     @ManyToOne(() => Organization, organization => organization.companies)
     organization: Organization;
+
+    @ManyToOne(() => JourneyStage, journey => journey.companies)
+    stage: JourneyStage;
+
+    @ManyToOne(() => JourneySubStage, journey => journey.companies)
+    subStage: JourneyStage;
 
     @ManyToMany(() => CompanyTag, tag => tag.companies,{onDelete : 'CASCADE'})
     tags!: CompanyTag[];

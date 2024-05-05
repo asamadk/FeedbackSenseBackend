@@ -1,4 +1,4 @@
-import { Equal, FindOptionsWhere, LessThan, MoreThanOrEqual } from "typeorm";
+import { And, Equal, FindOptionsWhere, LessThan, MoreThan, MoreThanOrEqual, Not } from "typeorm";
 import { Repository } from "../Helpers/Repository";
 import { Task } from "../Entity/TaskEntity";
 
@@ -15,10 +15,15 @@ export class TaskServiceHelper {
         return true;
     }
 
-    async getTaskStats(whereClause : FindOptionsWhere<Task>) {
+    async getTaskStats(whereClause: FindOptionsWhere<Task>) {
         const today = new Date();
         const sevenDaysLater = new Date();
         sevenDaysLater.setDate(today.getDate() + 7);
+
+        whereClause = {
+            ...whereClause,
+            status: And(Not('Completed'), Not('Cancelled'))
+        }
 
         const taskRepository = Repository.getTask();
 
@@ -39,7 +44,7 @@ export class TaskServiceHelper {
         const dueNextSevenDaysCount = await taskRepository.count({
             where: {
                 ...whereClause,
-                dueDate: MoreThanOrEqual(sevenDaysLater)
+                dueDate: And(MoreThan(today), LessThan(sevenDaysLater))
             }
         });
 

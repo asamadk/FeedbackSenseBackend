@@ -25,9 +25,6 @@ export class UsageEvent {
     @Column()
     eventName: string;
 
-    @Column()
-    sessionId : string;
-
     @Column({
         type: "text",
         nullable: true

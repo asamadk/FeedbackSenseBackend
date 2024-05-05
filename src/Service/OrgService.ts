@@ -10,8 +10,8 @@ import { Plan } from "../Entity/PlanEntity";
 import { FREE_PLAN, MONTHLY_BILLING } from "../Helpers/Constants";
 import { Subscription } from "../Entity/SubscriptionEntity";
 import { getFreeSubscriptionLimit } from "./AuthService";
-import Razorpay from "razorpay";
 import { createPaymentCustomer } from "../Integrations/PaymentIntegration/RazorPayHelper";
+import { createOnboardingStageForOrg } from "./JourneyStageService";
 
 export const createOrganizationForUser = async (user: User, reqBody: any): Promise<responseRest> => {
     try {
@@ -54,6 +54,7 @@ export const createOrganizationForUser = async (user: User, reqBody: any): Promi
 
         await createCustomSettings(orgObj.id);
         await createOrgSubscription(orgObj);
+        await createOnboardingStageForOrg(orgObj.id);
         response.data = orgObj;
         return response;
     } catch (error) {

@@ -18,13 +18,13 @@ export class UsageSession {
     @Column("timestamp")
     startTime: Date;
 
-    @Column("timestamp")
+    @Column("timestamp",{nullable : true})
     endTime: Date;
 
     @Column()
     sessionId : string;
 
-    @Column("bigint")
+    @Column("bigint",{nullable : true})
     duration: number;
 
     @Column("varchar")

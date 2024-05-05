@@ -1,7 +1,7 @@
 (function (window) {
   // Configure endpoint and initialize session state
-  var apiEndpointEvent = "https://api.feedbacksense.io/usage/event/v1";
-  var apiEndpointSession = "https://api.feedbacksense.io/usage/session/v1";
+  var apiEndpointEvent = "${eventURL}";
+  var apiEndpointSession = "${sessionURL}";
   var sessionActive = false;
   var sessionId = null;
   var sessionStartTime = null;
@@ -50,7 +50,7 @@
     var xhr = new XMLHttpRequest();
     xhr.open("POST", apiEndpointSession, true);
     xhr.setRequestHeader("Content-Type", "application/json");
-    xhr.send(JSON.stringify({ session: sessionData }));
+    xhr.send(JSON.stringify(sessionData));
     xhr.onload = function () {
       if (xhr.status >= 200 && xhr.status < 300) {
         console.log("Session sent successfully");
@@ -63,7 +63,7 @@
 
   // Generate a unique session ID
   function generateSessionId() {
-    return "session-" + Math.random().toString(36).substr(2, 9);
+    return "session-" + Math.random().toString(36).substr(2, 9)+ Date.now().toString(36);
   }
 
   // Send batch of events to the server
@@ -71,7 +71,7 @@
     var xhr = new XMLHttpRequest();
     xhr.open("POST", apiEndpointEvent, true);
     xhr.setRequestHeader("Content-Type", "application/json");
-    xhr.send(JSON.stringify({ events: events }));
+    xhr.send(JSON.stringify(events));
     window.feedbacksense_tmp_stack = [];
     xhr.onload = function () {
       if (xhr.status >= 200 && xhr.status < 300) {
@@ -88,8 +88,9 @@
   startSession();
 
   setInterval(function () {
+    console.log('Checking batch...');
     saveEventBatch();
-  }, 5000);
+  }, 60000);
 
   function saveEventBatch() {
     if (
@@ -100,9 +101,11 @@
     }
   }
 
+  window.relo
+
   // End session on page unload
-  // window.addEventListener('beforeunload', endSession);
+  window.addEventListener('beforeunload', endSession);
   window.onunload = function () {
     endSession();
   };
-})(window);
+})(window); 

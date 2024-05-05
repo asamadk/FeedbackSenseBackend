@@ -30,6 +30,9 @@ import ActivityController from './Controllers/ActivityController';
 import NotesController from './Controllers/NotesController';
 import UsageEventTypeController from './Controllers/UsageEventTypeController'
 import UsageController from './Controllers/UsageController';
+import UsageEventController from './Controllers/UsageEventController';
+import JourneyStageController from './Controllers/JoruneyController';
+import HealthController from './Controllers/HealthController';
 
 import { AppDataSource } from './Config/AppDataSource';
 import { handleSuccessfulLogin } from './Service/AuthService';
@@ -157,6 +160,9 @@ app.use('/task', isLoggedIn, logRequest, TaskController);
 app.use('/activity', isLoggedIn, logRequest, ActivityController);
 app.use('/notes', isLoggedIn, logRequest, NotesController);
 app.use('/usage-event-type', isLoggedIn, logRequest, UsageEventTypeController);
+app.use('/usage-event', isLoggedIn, logRequest, UsageEventController);
+app.use('/journey-stage', isLoggedIn, logRequest, JourneyStageController);
+app.use('/health', isLoggedIn, logRequest, HealthController);
 
 new MasterScheduler().init();
 
