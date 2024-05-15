@@ -1,14 +1,16 @@
 import { AppDataSource } from "../Config/AppDataSource"
 import { Activity } from "../Entity/ActivityEntity";
 import { Company } from "../Entity/CompanyEntity"
+import { CompanyHistory } from "../Entity/CompanyHistory";
 import { CompanyTag } from "../Entity/CompanyTagEntity";
 import { HealthDesign } from "../Entity/HealthDesign";
 import { JourneyLog } from "../Entity/JourneyLog";
 import { JourneyStage } from "../Entity/JourneyStageEntity";
-import { JourneySubStage } from "../Entity/JourneySubStageEntity";
 import { Notes } from "../Entity/Note";
+import { OnboardingStage } from "../Entity/OnboardingStages";
 import { Organization } from "../Entity/OrgEntity";
 import { Person } from "../Entity/PersonEntity";
+import { RiskStage } from "../Entity/RiskStages";
 import { SurveyResponse } from "../Entity/SurveyResponse";
 import { Task } from "../Entity/TaskEntity";
 import { UsageEvent } from "../Entity/UsageEvent";
@@ -28,6 +30,10 @@ export class Repository {
 
     static getCompany(){
         return AppDataSource.getDataSource().getRepository(Company);
+    }
+
+    static getCompanyHistory(){
+        return AppDataSource.getDataSource().getRepository(CompanyHistory);
     }
 
     static getPeople(){
@@ -70,8 +76,12 @@ export class Repository {
         return AppDataSource.getDataSource().getRepository(JourneyStage);
     }
 
-    static getJourneySubStage(){
-        return AppDataSource.getDataSource().getRepository(JourneySubStage);
+    static getOnboardingStage(){
+        return AppDataSource.getDataSource().getRepository(OnboardingStage);
+    }
+
+    static getRiskStage(){
+        return AppDataSource.getDataSource().getRepository(RiskStage);
     }
 
     static getJourneyLog(){

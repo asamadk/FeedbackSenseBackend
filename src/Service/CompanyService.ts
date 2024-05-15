@@ -1,4 +1,4 @@
-import { Like } from "typeorm";
+import { Like, MoreThan } from "typeorm";
 import { logger } from "../Config/LoggerConfig";
 import { Company } from "../Entity/CompanyEntity";
 import { AuthUserDetails } from "../Helpers/AuthHelper/AuthUserDetails";
@@ -20,9 +20,7 @@ export const createCompany = async (reqBody: any): Promise<responseRest> => {
         company.name = reqBody.name;
         company.website = reqBody.website;
         company.industry = reqBody.industry;
-        // if (reqBody.lStage != null && reqBody.lStage.length > 0) {
-        //     company.lifecycleStage = reqBody.lStage
-        // }
+        
         if (reqBody.status != null && reqBody.status.length > 0) {
             company.status = reqBody.status
         }
@@ -30,15 +28,12 @@ export const createCompany = async (reqBody: any): Promise<responseRest> => {
             company.id = reqBody.id;
         }
         company.owner = reqBody.owner;
-        // company.subscriptionPlan = reqBody.plan;
         company.address = reqBody.address;
         company.organization = AuthUserDetails.getInstance().getUserDetails().organization_id as any;
         company.totalContractAmount = reqBody.amount;
 
         const companyRepo = Repository.getCompany();
-
         await companyRepo.save(company);
-
         return response;
     } catch (error) {
         logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
@@ -88,7 +83,11 @@ export const getCompanyList = async (page: number, limit: number, searchStr: str
                         name : true,
                         position : true
                     },
-                    subStage : {
+                    onboardingStage : {
+                        id : true,
+                        name : true
+                    },
+                    riskStage : {
                         id : true,
                         name : true
                     }
@@ -97,7 +96,8 @@ export const getCompanyList = async (page: number, limit: number, searchStr: str
                     tags: true,
                     owner: true,
                     stage : true,
-                    subStage : true
+                    onboardingStage : true,
+                    riskStage : true
                 },
                 order: {
                     name: 'ASC'
@@ -295,14 +295,57 @@ export const fetchCompaniesFilledSurveys = async (companyId : string) => {
     }
 }
 
-// export const getCompanyJourneySubJourney = async (companyId : string) => {
-//     try {
-//         const response = getDefaultResponse('Company surveys fetched');
-//         const surveyResponseRepo = Repository.getSurveyResponse();
-        
-//         return response;
-//     } catch (error) {
-//         logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
-//         return getCustomResponse(null, 500, error.message, false)
-//     }
-// }
+export const getCompanyHealthHistory = async (companyId : string) => {
+    try {
+        const response = getDefaultResponse('Company surveys fetched');
+    
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+        const historyRepo = Repository.getCompanyHistory();
+        const historyRecords = await historyRepo.find({
+            where : {
+                companyId : companyId,
+                fieldName : 'healthScore',
+                actionDate : MoreThan(thirtyDaysAgo)
+            },
+            order : {
+                actionDate : 'ASC'
+            }
+        });
+        const transformedData = historyRecords.map(record => {
+            return {
+                name: record.actionDate.toLocaleDateString(),  // Format date as 'MM/DD/YYYY', customize as needed
+                health: parseInt(record.extraInfo)  // Assuming 'extraInfo' stores the health score as a string
+            };
+        });
+        response.data = transformedData;
+        return response;
+    } catch (error) {
+        logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
+        return getCustomResponse(null, 500, error.message, false)
+    }
+}
+
+export const getCompanySurveyScoreMetrics = async (companyId : string) => {
+    try {
+        const response = getDefaultResponse('Company surveys fetched');
+    
+        const companyRepo = Repository.getCompany();
+        const company = await companyRepo.findOne({where : {id : companyId}});
+        let transformedData = [];
+        if(company != null){
+            transformedData = [
+                { name: 'Latest NPS Score', score: company.npsScore || 'N/A' },
+                { name: 'Average NPS Score', score: company.avgNpsScore || 'N/A'},
+                { name: 'Latest CSAT Score', score: company.csatScore || 'N/A'},
+                { name: 'Average CSAT Score', score: company.avgCsatScore || 'N/A'},
+              ]
+        }
+        response.data = transformedData;
+        return response;
+    } catch (error) {
+        logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
+        return getCustomResponse(null, 500, error.message, false)
+    }
+}

@@ -8,18 +8,8 @@ import { SurveyResponse } from "./SurveyResponse";
 import { UsageEvent } from "./UsageEvent";
 import { UsageSession } from "./UsageSession";
 import { JourneyStage } from "./JourneyStageEntity";
-import { JourneySubStage } from "./JourneySubStageEntity";
-
-enum CustomerLifecycleStage {
-    Onboarding = "Onboarding",
-    Active = "Active",
-    Engaged = "Engaged",
-    AtRisk = "At Risk",
-    Churned = "Churned",
-    Expansion = "Expansion",
-    Renewal = "Renewal",
-    Advocate = "Advocate"
-}
+import { OnboardingStage } from "./OnboardingStages";
+import { RiskStage } from "./RiskStages";
 
 enum CompanyStatus {
     Active = "Active",
@@ -47,22 +37,21 @@ export class Company {
     @Column({ nullable: true })
     industry?: string;
 
-    @Column()
+    @Column({default : 'Free'})
     contractStatus?: 'Paying' | 'Free';
-    
 
     @ManyToOne(() => User, { nullable: true })
     @JoinColumn({ name: "ownerId" }) // This creates the ownerId column in the Company table
     owner?: User;
 
     @Column({
-        type : 'enum',
-        enum : CompanyStatus,
-        default : CompanyStatus.Active
+        type: 'enum',
+        enum: CompanyStatus,
+        default: CompanyStatus.Active
     })
     status!: CompanyStatus;
 
-    @Column({type : 'date',nullable : true})
+    @Column({ type: 'date', nullable: true })
     startDate?: Date;
 
     @Column('date', { nullable: true })
@@ -71,38 +60,32 @@ export class Company {
     @Column('decimal', { precision: 10, scale: 2, nullable: true })
     totalContractAmount?: number;
 
-    @Column('timestamp', { nullable: true })
-    lastActivityDate?: Date;
-
-    @Column({ nullable: true })
-    licenseCount?: number;
-
-    @Column({ nullable: true })
-    subscriptionPlan?: string;
-
     @Column('text', { nullable: true })
     address?: string;
 
     @Column({ type: 'int', nullable: true })
     healthScore?: number;
 
-    @Column()
+    @Column({nullable : true})
     attributeHealthScore?: string;
 
     @Column({ type: 'int', nullable: true })
     npsScore?: number;
 
-    @Column({ nullable: true })
-    churnRiskLevel?: string;
+    @Column({ type: 'int', nullable: true })
+    csatScore?: number;
+
+    @Column({ type: 'int', nullable: true })
+    avgNpsScore?: number;
+
+    @Column({ type: 'int', nullable: true })
+    avgCsatScore?: number;
 
     @Column({ nullable: true })
     usageFrequency?: string;
 
     @Column('timestamp', { nullable: true })
     lastContactDate?: Date;
-
-    @Column({ nullable: true })
-    onboardingCompletionStatus?: string;
 
     @CreateDateColumn()
     created_at!: Date;
@@ -111,8 +94,8 @@ export class Company {
     updated_at!: Date;
 
     @ManyToOne(() => CustomSubscription)
-    @JoinColumn({name : 'subscriptionId'})
-    subscription! : CustomSubscription
+    @JoinColumn({ name: 'subscriptionId' })
+    subscription!: CustomSubscription
 
     @ManyToOne(() => Organization, organization => organization.companies)
     organization: Organization;
@@ -120,13 +103,16 @@ export class Company {
     @ManyToOne(() => JourneyStage, journey => journey.companies)
     stage: JourneyStage;
 
-    @ManyToOne(() => JourneySubStage, journey => journey.companies)
-    subStage: JourneyStage;
+    @ManyToOne(() => OnboardingStage, journey => journey.companies)
+    onboardingStage: OnboardingStage;
 
-    @ManyToMany(() => CompanyTag, tag => tag.companies,{onDelete : 'CASCADE'})
+    @ManyToOne(() => RiskStage, riskStage => riskStage.companies,{nullable : true})
+    riskStage: RiskStage;
+
+    @ManyToMany(() => CompanyTag, tag => tag.companies, { onDelete: 'CASCADE' })
     tags!: CompanyTag[];
 
-    @ManyToMany(() => Task,task => task.company,{onDelete : 'CASCADE'})
+    @ManyToMany(() => Task, task => task.company, { onDelete: 'CASCADE' })
     @JoinTable({
         name: "company_task", // Name of the join table
         joinColumn: { name: "taskId", referencedColumnName: "id" },

@@ -2,7 +2,7 @@ import express from 'express';
 import { logger } from '../Config/LoggerConfig';
 import { getCustomResponse } from '../Helpers/ServiceUtils';
 import multer from 'multer';
-import { createCompany, deleteCompanies, fetchCompaniesFilledSurveys, fetchCompaniesPeopleOptions, getCompanyColumns, getCompanyList, getCompanyPeople, handleBulkCompanyUpload } from '../Service/CompanyService';
+import { createCompany, deleteCompanies, fetchCompaniesFilledSurveys, fetchCompaniesPeopleOptions, getCompanyColumns, getCompanyHealthHistory, getCompanyList, getCompanyPeople, getCompanySurveyScoreMetrics, handleBulkCompanyUpload } from '../Service/CompanyService';
 
 const router = express.Router();
 
@@ -112,16 +112,28 @@ router.get('/survey-response',async(req,res) => {
     }
 });
 
-// router.get('/journey',async(req,res) => {
-//     try {
-//         const companyId :string = req.query.companyId as string;
-//         const response = await getCompanyJourneySubJourney(companyId);
-//         res.statusCode = response.statusCode;
-//         res.json(response);
-//     } catch (error) {
-//         logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
-//         res.status(500).json(getCustomResponse(null, 500, error.message, false));  
-//     }
-// });
+router.get('/health-history-chart',async(req,res) => {
+    try {
+        const companyId :string = req.query.companyId as string;
+        const response = await getCompanyHealthHistory(companyId);
+        res.statusCode = response.statusCode;
+        res.json(response);
+    } catch (error) {
+        logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
+        res.status(500).json(getCustomResponse(null, 500, error.message, false));  
+    }
+});
+
+router.get('/survey-score-metrics',async(req,res) => {
+    try {
+        const companyId :string = req.query.companyId as string;
+        const response = await getCompanySurveyScoreMetrics(companyId);
+        res.statusCode = response.statusCode;
+        res.json(response);
+    } catch (error) {
+        logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
+        res.status(500).json(getCustomResponse(null, 500, error.message, false));  
+    }
+});
 
 export default router;

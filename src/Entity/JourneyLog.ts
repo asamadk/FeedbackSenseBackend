@@ -1,7 +1,8 @@
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, CreateDateColumn, UpdateDateColumn } from "typeorm";
 import { Company } from "./CompanyEntity";
 import { JourneyStage } from "./JourneyStageEntity";
-import { JourneySubStage } from "./JourneySubStageEntity";
+import { OnboardingStage } from "./OnboardingStages";
+import { RiskStage } from "./RiskStages";
 
 
 @Entity()
@@ -14,13 +15,17 @@ export class JourneyLog {
     @JoinColumn({ name: 'companyId' })
     company: Company;
 
-    @ManyToOne(() => JourneyStage)
-    @JoinColumn({ name: 'journeyId' })
+    @ManyToOne(() => JourneyStage,{nullable : true})
+    @JoinColumn({ name: 'journeyId'})
     journey: JourneyStage;
 
-    @ManyToOne(() => JourneySubStage)
-    @JoinColumn({ name: 'journeySubStageId' })
-    journeySubStage: JourneySubStage;
+    @ManyToOne(() => OnboardingStage,{nullable : true})
+    @JoinColumn({ name: 'onboardingStageId'})
+    onboarding: OnboardingStage;
+
+    @ManyToOne(() => RiskStage,{nullable : true})
+    @JoinColumn({ name: 'riskStageId'})
+    risk: RiskStage;
 
     @Column({ type: 'timestamp', nullable: true })
     enterTime: Date;

@@ -51,12 +51,6 @@ export class Person {
   @CreateDateColumn({ type: 'timestamp', nullable: true })
   lastContactedDate?: Date;
 
-  @Column({ type: 'float', nullable: true })
-  engagementScore?: number;
-
-  @Column({ default: 0 })
-  supportTicketCount!: number;
-
   @Column({ default: false })
   trainingCompleted!: boolean;
 

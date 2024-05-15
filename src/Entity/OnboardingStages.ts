@@ -9,11 +9,10 @@ import {
     OneToMany
 } from "typeorm";
 import { Organization } from "./OrgEntity";
-import { JourneyStage } from "./JourneyStageEntity";
 import { Company } from "./CompanyEntity";
 
 @Entity()
-export class JourneySubStage {
+export class OnboardingStage {
 
     @PrimaryGeneratedColumn('uuid')
     id!: string;
@@ -40,12 +39,7 @@ export class JourneySubStage {
     @JoinColumn({ name: 'organizationId' })
     organization: Organization;
 
-    // @ManyToOne(() => JourneyStage)
-    // @JoinColumn({ name: 'JourneyStageId' })
-    // journeyStage: JourneyStage;
-    @Column()
-    journeyType :string
-
     @OneToMany(() => Company, keyValue => keyValue.stage)
     companies!: Company[];
+
 }

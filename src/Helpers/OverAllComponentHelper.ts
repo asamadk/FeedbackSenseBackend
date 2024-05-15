@@ -32,6 +32,8 @@ const processBulkResult = (key: number, value: any[]): any => {
             return processRatingComp(value);
         case 8:
             return processNPSComp(value);
+        case 9:
+            return processCSATComp(value);
         case 11:
             return contactInfoComp(value);
         case 13:
@@ -80,9 +82,9 @@ export const processSingleSelectionComp = (data: any[]): any => {
     const rtnArr = [];
     for (const [key, value] of answerFreq) {
         rtnArr.push({
-            name: `${key.substring(0,10)}${key.length > 11 ? '...' : ''}`,
+            name: `${key.substring(0, 10)}${key.length > 11 ? '...' : ''}`,
             Frequency: getPercentage(value, data?.length),
-            fullName : key
+            fullName: key
         })
     }
 
@@ -131,9 +133,9 @@ export const processTextAnswerComp = (data: any[]): any => {
     }
     const rtn = [];
     const sentimentData = [
-        { name: AnalysisText.POSITIVE, value: 0,label :  AnalysisText.POSITIVE},
-        { name: AnalysisText.NEUTRAL, value: 0,label : AnalysisText.NEUTRAL },
-        { name: AnalysisText.NEGATIVE, value: 0,label : AnalysisText.NEGATIVE },
+        { name: AnalysisText.POSITIVE, value: 0, label: AnalysisText.POSITIVE },
+        { name: AnalysisText.NEUTRAL, value: 0, label: AnalysisText.NEUTRAL },
+        { name: AnalysisText.NEGATIVE, value: 0, label: AnalysisText.NEGATIVE },
     ];
     let question: string;
     const frequencyAnalyzer = new FrequencyAnalyzer();
@@ -183,7 +185,7 @@ const transformSentimentOverTime = (responses: any[]) => {
     responses.forEach(response => {
         const question = response?.compData?.question;
         const date = new Date(response.createdDate);
-        
+
         // Calculate the period based on every 5 days
         const periodStart = new Date(date.getFullYear(), date.getMonth(), date.getDate() - date.getDate() % 5);
         const periodEnd = new Date(periodStart);
@@ -321,6 +323,62 @@ export const processRatingComp = (data: any[]): any => {
     return {
         question: question,
         statsArr: rtnObj
+    }
+}
+
+//TODO process CSAT Score
+export const processCSATComp = (data: any[]) => {
+    if (data == null || data.length < 1) {
+        return [];
+    }
+    console.log("🚀 ~ processCSATComp ~ data:", data)
+    const totalResponses = data.length;
+    let totalSatisfiedCustomer = 0;
+    let question: string;
+    const freqMap = new Map<number, number>();
+
+    data?.forEach(d => {
+        const selectVal = parseInt(d?.data?.value);
+        if (selectVal >= 4) {
+            totalSatisfiedCustomer++;
+        }
+        let freq = freqMap.get(selectVal);
+        if (freq == null || Number.isNaN(freq)) {
+            freq = 0;
+        }
+        freq++;
+        freqMap.set(selectVal, freq);
+        question = d?.compData?.question;
+    });
+
+    let score = 0;
+    if (totalResponses > 0) {
+        score = (totalSatisfiedCustomer / totalResponses) * 100;
+    }
+
+    const rtnObj = [];
+    for (let i = 1; i <= 5; i++) {
+        let value = freqMap.get(i);
+        if (Number.isNaN(value)) {
+            value = 0;
+        }
+
+        const percentageStr = getPercentage(value, data?.length);
+        let percentage = parseInt(percentageStr);
+        if (Number.isNaN(percentage) === true) {
+            percentage = 0;
+        }
+        rtnObj.push({
+            name: `Page${i}`,
+            percentage: percentage,
+            value: i.toString()
+        });
+    }
+
+    return {
+        score: score,
+        question: question,
+        chart: rtnObj
     }
 }
 
