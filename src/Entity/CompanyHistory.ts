@@ -1,8 +1,9 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn } from "typeorm";
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, ManyToOne } from "typeorm";
+import { Organization } from "./OrgEntity";
 
 @Entity()
 export class CompanyHistory {
-    
+
     @PrimaryGeneratedColumn('uuid')
     id!: string;  // Using UUID for unique identifiers
 
@@ -23,4 +24,7 @@ export class CompanyHistory {
 
     @Column({ nullable: true })
     changedBy: string;  // ID of the user who made the change, if applicable
+
+    @ManyToOne(() => Organization)
+    organization: Organization;
 }

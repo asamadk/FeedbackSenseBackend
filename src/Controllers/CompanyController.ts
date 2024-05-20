@@ -2,7 +2,7 @@ import express from 'express';
 import { logger } from '../Config/LoggerConfig';
 import { getCustomResponse } from '../Helpers/ServiceUtils';
 import multer from 'multer';
-import { createCompany, deleteCompanies, fetchCompaniesFilledSurveys, fetchCompaniesPeopleOptions, getCompanyColumns, getCompanyHealthHistory, getCompanyList, getCompanyPeople, getCompanySurveyScoreMetrics, handleBulkCompanyUpload } from '../Service/CompanyService';
+import { createCompany, deleteCompanies, fetchCompaniesFilledSurveys, fetchCompaniesPeopleOptions, getCompanyColumns, getCompanyHealthHistory, getCompanyList, getCompanyPeople, getCompanySurveyScoreMetrics, handleBulkCompanyUpload, updateCompany } from '../Service/CompanyService';
 
 const router = express.Router();
 
@@ -12,6 +12,18 @@ router.post('/create/individual',async (req,res) => {
     try {
         const reqBody = req.body;
         const response = await createCompany(reqBody);
+        res.statusCode = response.statusCode;
+        res.json(response);
+    } catch (error) {
+        logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
+        res.status(500).json(getCustomResponse(null, 500, error.message, false));
+    }
+});
+
+router.post('/update',async (req,res) => {
+    try {
+        const reqBody = req.body;
+        const response = await updateCompany(reqBody);
         res.statusCode = response.statusCode;
         res.json(response);
     } catch (error) {

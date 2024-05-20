@@ -13,7 +13,7 @@ export class HealthDesign {
     @Column({nullable : true})
     segment : string
 
-    @Column({nullable : true})
+    @Column({nullable : true,type : 'longtext'})
     config : string
 
     @ManyToOne(() => Organization, organization => organization.companies)

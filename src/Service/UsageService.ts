@@ -5,6 +5,7 @@ import { getCustomResponse, getDefaultResponse } from "../Helpers/ServiceUtils";
 import { responseRest } from "../Types/ApiTypes";
 import { UsageEvent } from "../Entity/UsageEvent";
 import { UsageSession } from "../Entity/UsageSession";
+import { UsageEventType } from "../Entity/UsageEventTypes";
 
 export const createUsageEvent = async (reqBody: any): Promise<responseRest> => {
   try {
@@ -55,23 +56,39 @@ export const createUsageEvent = async (reqBody: any): Promise<responseRest> => {
       eventNameVsType.set(t.eventName.toLowerCase(), t.eventType);
     });
 
+    const toCreateEventTypes: UsageEventType[] = [];
     const toInsertEvent: UsageEvent[] = [];
+
+    const activityTypeSet = new Set<string>();
 
     for (let i = 0; i < reqBody.length; i++) {
       const event = reqBody[i];
       const activity: string = event?.activity?.toLowerCase();
-
-      if (!eventNameVsType.has(activity)) { continue; }
+      
+      if (!eventNameVsType.has(activity)) { 
+        if(activityTypeSet.has(activity)){continue;}
+        toCreateEventTypes.push({
+          eventName : activity,
+          eventType : 'Other',
+          organization : orgId as any
+        } as any);
+        activityTypeSet.add(activity);
+        continue;
+      }
 
       const saveEvent = new UsageEvent();
       saveEvent.createdDate = event.createdDate,
-        saveEvent.eventName = activity,
-        saveEvent.eventType = eventNameVsType.get(activity),
-        saveEvent.person = currentUser.id as any,
-        saveEvent.company = currentUser.company.id as any
+      saveEvent.eventName = activity,
+      saveEvent.eventType = eventNameVsType.get(activity),
+      saveEvent.person = currentUser.id as any,
+      saveEvent.company = currentUser.company.id as any
       saveEvent.extraInfo = '[]';
 
       toInsertEvent.push(saveEvent);
+    }
+
+    if(toCreateEventTypes.length > 0){
+      await eventTypeRepo.save(toCreateEventTypes);
     }
 
     await eventRepo.save(toInsertEvent);

@@ -1,10 +1,11 @@
 import moment from "moment";
 import { convertLiteralToDate } from "../Utils/DateTimeUtils";
 import { Repository } from "./Repository";
-import { Between } from "typeorm";
+import { Between, FindOptionsWhere, Not } from "typeorm";
 import { formatMoney } from "../test/TestUtils.ts/AnalysisUtils";
 import { AuthUserDetails } from "./AuthHelper/AuthUserDetails";
 import { User } from "../Entity/UserEntity";
+import { Company } from "../Entity/CompanyEntity";
 
 type ChartData = {
     name: string,
@@ -30,19 +31,40 @@ export class DashboardHelper {
         this.endOfQuarter = moment().endOf('quarter').toDate();
     }
 
+    //TODO filter all based on contract status
+    
+    getPayingWhereClause() :FindOptionsWhere<Company>{
+        return {
+            contractStatus : 'Paying'
+        }
+    }
+
+    getOwnerWhereClause(): FindOptionsWhere<Company> {
+        if (this.type === 'my') {
+            return {
+                owner: {
+                    id: this.userInfo.id
+                }
+            }
+        }
+        return {};
+    }
+
     async getTotalACV(): Promise<string> {
         const companies = await Repository.getCompany().find({
             where: {
                 organization: {
                     id: this.userInfo.organization_id
-                }
+                },
+                ...this.getOwnerWhereClause(),
+                ...this.getPayingWhereClause()
             },
             select: ['totalContractAmount']
         });
 
         let totalContractValue = 0;
         companies.forEach(company => {
-            totalContractValue += company.totalContractAmount
+            totalContractValue = totalContractValue + parseFloat(company.totalContractAmount.toString())
         });
         return formatMoney(totalContractValue);
     }
@@ -50,10 +72,11 @@ export class DashboardHelper {
     async getOverAllCustomerHealth(): Promise<ChartData[]> {
         const companies = await Repository.getCompany().find({
             where: {
-                // created_at: Between(this.startDate, this.endDate),
                 organization: {
                     id: this.userInfo.organization_id
-                }
+                },
+                ...this.getOwnerWhereClause(),
+                ...this.getPayingWhereClause()
             }
         });
         let goodCount = 0;
@@ -79,10 +102,18 @@ export class DashboardHelper {
     }
 
     async getCustomJourneyData(): Promise<ChartData[]> {
-        const journeyStages = await Repository.getJourneyStage().find({
-            relations: ['companies'],
-            where: { organization: { id: this.userInfo.organization_id } }
-        });
+        const journeyStageRepository = Repository.getJourneyStage();
+        const query = journeyStageRepository.createQueryBuilder('journeyStage')
+            .leftJoinAndSelect('journeyStage.companies', 'company')
+            .where('journeyStage.organizationId = :organizationId', { organizationId: this.userInfo.organization_id })
+            .where('company.contractStatus = :contractStatus',{contractStatus : 'Paying'})
+            .orderBy('journeyStage.position', 'ASC');
+
+        if (this.type === 'my') {
+            query.andWhere('company.ownerId = :ownerId', { ownerId: this.userInfo.id });
+        }
+
+        const journeyStages = await query.getMany();
 
         const journeyStageCounts = journeyStages.map(stage => ({
             name: stage.name,
@@ -95,17 +126,22 @@ export class DashboardHelper {
         const count = await Repository.getCompany().count({
             where: {
                 organization: { id: this.userInfo.organization_id },
-                contractStatus: 'Paying'
+                ...this.getPayingWhereClause(),
+                ...this.getOwnerWhereClause()
             }
         });
         return count;
     }
 
     async getQtrRenewalCompanies() {
-
         const companies = await Repository.getCompany().count({
             where: {
                 nextRenewalDate: Between(this.startOfQuarter, this.endOfQuarter),
+                organization: {
+                    id: this.userInfo.organization_id
+                },
+                ...this.getOwnerWhereClause(),
+                ...this.getPayingWhereClause()
             },
         });
 
@@ -118,14 +154,16 @@ export class DashboardHelper {
                 nextRenewalDate: Between(this.startOfQuarter, this.endOfQuarter),
                 organization: {
                     id: this.userInfo.organization_id
-                }
+                },
+                ...this.getOwnerWhereClause(),
+                ...this.getPayingWhereClause()
             },
             select: ['totalContractAmount']
         });
 
         let totalContractValue = 0;
         companies.forEach(company => {
-            totalContractValue += company.totalContractAmount
+            totalContractValue += parseFloat(company.totalContractAmount.toString())
         });
         return formatMoney(totalContractValue);
     }
@@ -135,7 +173,9 @@ export class DashboardHelper {
         const companies = await Repository.getCompany().find({
             where: {
                 nextRenewalDate: Between(this.startOfQuarter, this.endOfQuarter),
-                organization: { id: this.userInfo.id }
+                organization: { id: this.userInfo.organization_id },
+                ...this.getOwnerWhereClause(),
+                ...this.getPayingWhereClause()
             },
         });
 
@@ -147,7 +187,7 @@ export class DashboardHelper {
             if (company.healthScore !== null && company.healthScore !== undefined) {
                 if (company.healthScore == 100) {
                     goodCount++;
-                } else if (company.healthScore === 50) {
+                } else if (company.healthScore == 50) {
                     averageCount++;
                 } else {
                     poorCount++;
@@ -168,40 +208,134 @@ export class DashboardHelper {
         return await Repository.getCompany().count({
             where: {
                 nextRenewalDate: Between(this.startOfQuarter, today),
+                organization: { id: this.userInfo.organization_id },
+                ...this.getOwnerWhereClause(),
+                ...this.getPayingWhereClause()
             },
         });
     }
 
     async getQtrRiskRenewals() {
-        return 0
+        return await Repository.getCompany().count({
+            where: {
+                nextRenewalDate: Between(this.startOfQuarter, this.endOfQuarter),
+                organization: { id: this.userInfo.organization_id },
+                riskStage: {
+                    id: Not(''),
+                    isEnd: false
+                },
+                ...this.getOwnerWhereClause(),
+                ...this.getPayingWhereClause()
+            },
+        });
     }
 
     async getQtrRiskContractValue() {
-        return `$0`
-    }
-
-    async getQtrRenewedContractData(): Promise<ChartData[]> {
         const companies = await Repository.getCompany().find({
             where: {
                 nextRenewalDate: Between(this.startOfQuarter, this.endOfQuarter),
+                organization: { id: this.userInfo.organization_id },
+                riskStage: {
+                    id: Not(''),
+                    isEnd: false
+                },
+                ...this.getOwnerWhereClause(),
+                ...this.getPayingWhereClause()
             },
             select: ['totalContractAmount']
         });
+        let value = 0;
+        companies.forEach(company => {
+            value += parseFloat(company.totalContractAmount.toString())
+        });
 
-        const totalRenewedContractValue = companies.reduce((total, company) => {
-            return total + (company.totalContractAmount || 0);
-        }, 0);
+        return formatMoney(value);
+    }
 
-        return [{ name: 'Renewed Contract Value', value: totalRenewedContractValue }];
-        // return [{ name: 'Renewed', value: 80 }, { name: 'Unrenewed', value: 20 }]
+    async getQtrRenewedContractData(): Promise<ChartData[]> {
+        const startOfQuarter = moment().startOf('quarter').toDate();
+        const endOfQuarter = moment().endOf('quarter').toDate();
+
+        // Fetch company histories
+        const historyQuery = Repository.getCompanyHistory().createQueryBuilder('history')
+            .where('history.fieldName = :fieldName', { fieldName: 'totalContractAmount' })
+            .andWhere('history.actionType = :actionType', { actionType: 'Update' })
+            .andWhere('history.actionDate BETWEEN :startOfQuarter AND :endOfQuarter', { startOfQuarter, endOfQuarter })
+            .andWhere('history.organizationId = :organizationId', { organizationId: this.userInfo.organization_id });
+
+        const histories = await historyQuery.getMany();
+
+        let totalRenewedContractValue = 0;
+        histories.forEach((history) => {
+            totalRenewedContractValue += parseFloat(history.extraInfo.toString());
+        });
+
+        // Fetch companies
+        const companyQuery = Repository.getCompany().createQueryBuilder('company')
+            .where('company.nextRenewalDate BETWEEN :startOfQuarter AND :endOfQuarter', { startOfQuarter, endOfQuarter })
+            .andWhere('company.organizationId = :organizationId', { organizationId: this.userInfo.organization_id })
+            .andWhere('company.contractStatus = :contractStatus',{contractStatus : 'Paying'});
+
+        if (this.type === 'my') {
+            companyQuery.andWhere('company.ownerId = :ownerId', { ownerId: this.userInfo.id });
+        }
+
+        const companies = await companyQuery.select(['company.totalContractAmount']).getMany();
+
+        let totalContractValue = 0;
+        companies.forEach(company => {
+            totalContractValue += parseFloat(company.totalContractAmount.toString());
+        });
+
+        return [
+            { name: 'Renewed Value', value: totalRenewedContractValue },
+            { name: 'Total Value', value: totalContractValue },
+        ];
     }
 
     async getQtrChurnedContractData(): Promise<ChartData[]> {
-        return [{ name: 'Retained', value: 2000 }, { name: 'Churned', value: 13000 }]
+        const companies = await Repository.getCompany().find({
+            where: {
+                nextRenewalDate: Between(this.startOfQuarter, this.endOfQuarter),
+                organization: {
+                    id: this.userInfo.organization_id
+                },
+                ...this.getOwnerWhereClause()
+            },
+            select: ['totalContractAmount', 'contractStatus']
+        });
+
+        let retained = 0;
+        let churned = 0;
+        companies.forEach(company => {
+            if (company.contractStatus === 'Paying') {
+                retained += parseFloat(company.totalContractAmount.toString());
+            } else if (company.contractStatus === 'Churned') {
+                churned += parseFloat(company.totalContractAmount.toString());
+            }
+        });
+        return [{ name: 'Retained', value: retained }, { name: 'Churned', value: churned }]
     }
 
     async getContractValueAtRisk() {
-        return '$0';
+        const companies = await Repository.getCompany().find({
+            where: {
+                organization: { id: this.userInfo.organization_id },
+                riskStage: {
+                    id: Not(''),
+                    isEnd: false
+                },
+                ...this.getOwnerWhereClause(),
+                ...this.getPayingWhereClause()
+            },
+            select: ['totalContractAmount']
+        });
+        let value = 0;
+        companies.forEach(company => {
+            value += parseFloat(company.totalContractAmount.toString())
+        });
+
+        return formatMoney(value);
     }
 
     async getChurnRiskReasons(): Promise<ChartData[]> {
@@ -209,19 +343,108 @@ export class DashboardHelper {
     }
 
     async getNpsScoreChart(): Promise<ChartData[]> {
-        return [{ name: 'Promoters', value: 8 }, { name: 'Detractors', value: 2 }];
+        const companies = await Repository.getCompany().find({
+            where: {
+                organization: { id: this.userInfo.organization_id },
+                ...this.getOwnerWhereClause(),
+                ...this.getPayingWhereClause()
+            },
+            select: ['npsScore']
+        });
+
+        let promoters = 0;
+        let passives = 0;
+        let retractors = 0;
+
+        companies.forEach(company => {
+            const score = company.npsScore;
+            if (score >= 9) { promoters++ }
+            else if (score == 7 || score == 8) { passives++ }
+            else if (score <= 6) { retractors++ }
+        })
+
+        return [{ name: 'Promoters', value: promoters }, { name: 'Detractors', value: retractors }, { name: 'Passives', value: passives }];
     }
 
     async getCsatScoreChart(): Promise<ChartData[]> {
-        return [{ name: 'Satisfied', value: 65 }, { name: 'Unsatisfied', value: 35 }]
+        const companies = await Repository.getCompany().find({
+            where: {
+                organization: { id: this.userInfo.organization_id },
+                ...this.getOwnerWhereClause(),
+                ...this.getPayingWhereClause()
+            },
+            select: ['csatScore']
+        });
+
+        let satisfied = 0;
+        let unsatisfied = 0;
+
+        companies.forEach(company => {
+            const score = company.csatScore;
+            if (score == 4 || score == 5) { satisfied++ }
+            else { unsatisfied++ }
+        })
+
+        return [{ name: 'Satisfied', value: satisfied }, { name: 'Unsatisfied', value: unsatisfied }];
     }
 
-    async getDelayedOnboardingChart(): Promise<ChartData[]> {
-        return [{ name: 'Delayed', value: 15 }, { name: 'On Time', value: 56 }]
+    async getOnboardingStagesChart(): Promise<ChartData[]> {
+        const onboardingStageRepository = Repository.getOnboardingStage();
+
+        const query = onboardingStageRepository.createQueryBuilder('onboardingStage')
+            .leftJoinAndSelect('onboardingStage.companies', 'company')
+            .where('onboardingStage.organizationId = :organizationId', { organizationId: this.userInfo.organization_id })
+            .andWhere('company.contractStatus = :contractStatus',{contractStatus : 'Paying'})
+            .orderBy('onboardingStage.position', 'ASC');
+
+        if (this.type === 'my') {
+            query.andWhere('company.ownerId = :ownerId', { ownerId: this.userInfo.id });
+        }
+
+        const onboardingStages = await query.getMany();
+
+        const onboardingStageCounts = onboardingStages.map(stage => ({
+            name: stage.name,
+            value: stage.companies.length,
+        }));
+
+        return onboardingStageCounts;
     }
 
-    getOnboardingHealth(): ChartData[] {
-        return [{ name: 'Good', value: 30 }, { name: 'Poor', value: 80 }];
+    async getOnboardingHealth(): Promise<ChartData[]> {
+        const companies = await Repository.getCompany().find({
+            where: {
+                organization: {
+                    id: this.userInfo.organization_id
+                },
+                onboardingStage: {
+                    id: Not(''),
+                    isEnd: false
+                },
+                ...this.getOwnerWhereClause(),
+                ...this.getPayingWhereClause()
+            }
+        });
+        let goodCount = 0;
+        let averageCount = 0;
+        let poorCount = 0;
+
+        companies.forEach(company => {
+            if (company.healthScore !== null && company.healthScore !== undefined) {
+                if (company.healthScore == 100) {
+                    goodCount++;
+                } else if (company.healthScore === 50) {
+                    averageCount++;
+                } else {
+                    poorCount++;
+                }
+            }
+        });
+        return [
+            { name: 'Good', value: goodCount },
+            { name: 'Average', value: averageCount },
+            { name: 'Poor', value: poorCount },
+        ];
     }
 
 }

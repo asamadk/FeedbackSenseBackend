@@ -7,6 +7,7 @@ import { getCustomResponse, getDefaultResponse } from "../Helpers/ServiceUtils";
 import { CompanyServiceHelper } from "../ServiceHelper/CompanyServiceHelper";
 import { responseRest } from "../Types/ApiTypes";
 import { parseCsvData } from "../Utils/CsvUtils";
+import { CompanyHistory } from "../Entity/CompanyHistory";
 
 export const createCompany = async (reqBody: any): Promise<responseRest> => {
     try {
@@ -20,7 +21,7 @@ export const createCompany = async (reqBody: any): Promise<responseRest> => {
         company.name = reqBody.name;
         company.website = reqBody.website;
         company.industry = reqBody.industry;
-        
+
         if (reqBody.status != null && reqBody.status.length > 0) {
             company.status = reqBody.status
         }
@@ -78,26 +79,26 @@ export const getCompanyList = async (page: number, limit: number, searchStr: str
                         id: true,
                         name: true
                     },
-                    stage : {
-                        id : true,
-                        name : true,
-                        position : true
+                    stage: {
+                        id: true,
+                        name: true,
+                        position: true
                     },
-                    onboardingStage : {
-                        id : true,
-                        name : true
+                    onboardingStage: {
+                        id: true,
+                        name: true
                     },
-                    riskStage : {
-                        id : true,
-                        name : true
+                    riskStage: {
+                        id: true,
+                        name: true
                     }
                 },
                 relations: {
                     tags: true,
                     owner: true,
-                    stage : true,
-                    onboardingStage : true,
-                    riskStage : true
+                    stage: true,
+                    onboardingStage: true,
+                    riskStage: true
                 },
                 order: {
                     name: 'ASC'
@@ -212,8 +213,8 @@ export const fetchCompaniesPeopleOptions = async () => {
                 id: true,
                 name: true,
             },
-            order : {
-                name : 'ASC'
+            order: {
+                name: 'ASC'
             }
         });
 
@@ -229,14 +230,14 @@ export const fetchCompaniesPeopleOptions = async () => {
                 lastName: true,
                 company: {
                     id: true,
-                    name : true
+                    name: true
                 }
             },
             relations: {
                 company: true
             },
-            order : {
-                firstName : 'ASC'
+            order: {
+                firstName: 'ASC'
             }
         });
 
@@ -251,42 +252,42 @@ export const fetchCompaniesPeopleOptions = async () => {
     }
 }
 
-export const fetchCompaniesFilledSurveys = async (companyId : string) => {
+export const fetchCompaniesFilledSurveys = async (companyId: string) => {
     try {
         const response = getDefaultResponse('Company surveys fetched');
-        if(companyId == null || companyId.length < 1){
+        if (companyId == null || companyId.length < 1) {
             throw new Error(`Company ID not provided.`);
         }
-        
+
         const surveyResponseRepo = Repository.getSurveyResponse();
         const surveyResponse = await surveyResponseRepo.find({
-            where : {
-                company : {
-                    id : companyId
+            where: {
+                company: {
+                    id: companyId
                 }
             },
-            select : {
-                person : {
-                    id : true,
-                    firstName : true,
-                    lastName : true
+            select: {
+                person: {
+                    id: true,
+                    firstName: true,
+                    lastName: true
                 },
-                survey : {
-                    id : true,
-                    name : true
+                survey: {
+                    id: true,
+                    name: true
                 }
             },
-            relations : {
-                person : true,
-                survey : true
+            relations: {
+                person: true,
+                survey: true
             },
-            order : {
-                created_at : 'DESC'
+            order: {
+                created_at: 'DESC'
             }
         });
 
         response.data = {
-            list : surveyResponse
+            list: surveyResponse
         }
         return response;
     } catch (error) {
@@ -295,22 +296,22 @@ export const fetchCompaniesFilledSurveys = async (companyId : string) => {
     }
 }
 
-export const getCompanyHealthHistory = async (companyId : string) => {
+export const getCompanyHealthHistory = async (companyId: string) => {
     try {
         const response = getDefaultResponse('Company surveys fetched');
-    
+
         const thirtyDaysAgo = new Date();
         thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
         const historyRepo = Repository.getCompanyHistory();
         const historyRecords = await historyRepo.find({
-            where : {
-                companyId : companyId,
-                fieldName : 'healthScore',
-                actionDate : MoreThan(thirtyDaysAgo)
+            where: {
+                companyId: companyId,
+                fieldName: 'healthScore',
+                actionDate: MoreThan(thirtyDaysAgo)
             },
-            order : {
-                actionDate : 'ASC'
+            order: {
+                actionDate: 'ASC'
             }
         });
         const transformedData = historyRecords.map(record => {
@@ -327,22 +328,52 @@ export const getCompanyHealthHistory = async (companyId : string) => {
     }
 }
 
-export const getCompanySurveyScoreMetrics = async (companyId : string) => {
+export const getCompanySurveyScoreMetrics = async (companyId: string) => {
     try {
         const response = getDefaultResponse('Company surveys fetched');
-    
+
         const companyRepo = Repository.getCompany();
-        const company = await companyRepo.findOne({where : {id : companyId}});
+        const company = await companyRepo.findOne({ where: { id: companyId } });
         let transformedData = [];
-        if(company != null){
+        if (company != null) {
             transformedData = [
                 { name: 'Latest NPS Score', score: company.npsScore || 'N/A' },
-                { name: 'Average NPS Score', score: company.avgNpsScore || 'N/A'},
-                { name: 'Latest CSAT Score', score: company.csatScore || 'N/A'},
-                { name: 'Average CSAT Score', score: company.avgCsatScore || 'N/A'},
-              ]
+                { name: 'Average NPS Score', score: company.avgNpsScore || 'N/A' },
+                { name: 'Latest CSAT Score', score: company.csatScore || 'N/A' },
+                { name: 'Average CSAT Score', score: company.avgCsatScore || 'N/A' },
+            ]
         }
         response.data = transformedData;
+        return response;
+    } catch (error) {
+        logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
+        return getCustomResponse(null, 500, error.message, false)
+    }
+}
+
+export const updateCompany = async (payload: any) => {
+    try {
+        const response = getDefaultResponse('Company surveys fetched');
+        const companyRepo = Repository.getCompany();
+
+        const histories = [];
+
+        for (const key in payload) {
+            if (key.toLowerCase() === 'id') { continue; }
+            const history = new CompanyHistory();
+            history.companyId = payload.id;
+            history.fieldName = key;
+            history.actionType = 'Update';
+            history.organization = AuthUserDetails.getInstance().getUserDetails().organization_id as any;
+            history.extraInfo = payload.totalContractAmount; //stores new contract value
+            histories.push(history);
+        }
+
+        await Promise.all([
+            companyRepo.save(payload),
+            Repository.getCompanyHistory().save(histories)
+        ]);
+
         return response;
     } catch (error) {
         logger.error(`message - ${error.message}, stack trace - ${error.stack}`);

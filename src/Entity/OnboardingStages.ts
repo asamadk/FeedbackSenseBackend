@@ -39,7 +39,7 @@ export class OnboardingStage {
     @JoinColumn({ name: 'organizationId' })
     organization: Organization;
 
-    @OneToMany(() => Company, keyValue => keyValue.stage)
+    @OneToMany(() => Company, keyValue => keyValue.onboardingStage)
     companies!: Company[];
 
 }

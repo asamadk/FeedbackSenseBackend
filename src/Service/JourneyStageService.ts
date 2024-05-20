@@ -124,16 +124,15 @@ export const updateCompanyJourney = async (data: any): Promise<responseRest> => 
 
         if(type === 'Journey Stage'){
             company.stage = journeyId as any;
-            whereClause.journey = Not(null);
+            whereClause.journey = Not('');
         }else if(type === 'Onboarding'){
             company.onboardingStage = journeyId as any;
-            whereClause.onboarding = Not(null);
+            whereClause.onboarding = Not('');
         }else{
             company.riskStage = journeyId as any
-            whereClause.risk = Not(null);
+            whereClause.risk = Not('');
         }
 
-        console.log("🚀 ~ updateCompanyJourney ~ company:", company)
         await companyRepo.save(company);
 
         const toUpdateLogs = await journeyLogRepo.find({

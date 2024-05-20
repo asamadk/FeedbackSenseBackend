@@ -7,10 +7,12 @@ import { HealthDesign } from "../Entity/HealthDesign";
 import { JourneyLog } from "../Entity/JourneyLog";
 import { JourneyStage } from "../Entity/JourneyStageEntity";
 import { Notes } from "../Entity/Note";
+import { Notification } from "../Entity/NotificationEntity";
 import { OnboardingStage } from "../Entity/OnboardingStages";
 import { Organization } from "../Entity/OrgEntity";
 import { Person } from "../Entity/PersonEntity";
 import { RiskStage } from "../Entity/RiskStages";
+import { Survey } from "../Entity/SurveyEntity";
 import { SurveyResponse } from "../Entity/SurveyResponse";
 import { Task } from "../Entity/TaskEntity";
 import { UsageEvent } from "../Entity/UsageEvent";
@@ -58,6 +60,14 @@ export class Repository {
 
     static getNotes(){
         return AppDataSource.getDataSource().getRepository(Notes);
+    }
+
+    static getNotifications(){
+        return AppDataSource.getDataSource().getRepository(Notification);
+    }
+
+    static getSurveys(){
+        return AppDataSource.getDataSource().getRepository(Survey);
     }
 
     static getUsageEventType(){

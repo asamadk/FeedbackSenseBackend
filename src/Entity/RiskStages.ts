@@ -39,7 +39,7 @@ export class RiskStage {
     @JoinColumn({ name: 'organizationId' })
     organization: Organization;
 
-    @OneToMany(() => Company, keyValue => keyValue.stage)
+    @OneToMany(() => Company, keyValue => keyValue.riskStage)
     companies!: Company[];
 
 }

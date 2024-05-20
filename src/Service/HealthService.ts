@@ -16,6 +16,7 @@ export const createHealthConfig = async (reqBody: any): Promise<responseRest> =>
         const userInfo = AuthUserDetails.getInstance().getUserDetails();
 
         const health = new HealthDesign();
+        console.log("🚀 ~ createHealthConfig ~ config:", config)
         health.config = config;
         health.name = 'Initial Health';
         health.organization = userInfo.organization_id as any;

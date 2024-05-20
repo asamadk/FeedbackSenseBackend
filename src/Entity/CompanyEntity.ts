@@ -38,7 +38,7 @@ export class Company {
     industry?: string;
 
     @Column({default : 'Free'})
-    contractStatus?: 'Paying' | 'Free';
+    contractStatus?: 'Paying' | 'Free' | 'Churned';
 
     @ManyToOne(() => User, { nullable: true })
     @JoinColumn({ name: "ownerId" }) // This creates the ownerId column in the Company table
@@ -50,9 +50,6 @@ export class Company {
         default: CompanyStatus.Active
     })
     status!: CompanyStatus;
-
-    @Column({ type: 'date', nullable: true })
-    startDate?: Date;
 
     @Column('date', { nullable: true })
     nextRenewalDate?: Date;
@@ -103,7 +100,7 @@ export class Company {
     @ManyToOne(() => JourneyStage, journey => journey.companies)
     stage: JourneyStage;
 
-    @ManyToOne(() => OnboardingStage, journey => journey.companies)
+    @ManyToOne(() => OnboardingStage, onboarding => onboarding.companies)
     onboardingStage: OnboardingStage;
 
     @ManyToOne(() => RiskStage, riskStage => riskStage.companies,{nullable : true})

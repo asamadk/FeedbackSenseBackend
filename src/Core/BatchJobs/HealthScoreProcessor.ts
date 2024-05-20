@@ -73,12 +73,13 @@ export class HealthScoreProcessor {
         this.companyHistory = [];
     }
 
-    addHealthScoreHistory(companyId : string,score : number){
+    addHealthScoreHistory(companyId : string,score : number,orgId : string){
         const history = new CompanyHistory();
         history.companyId = companyId;
         history.fieldName = 'healthScore';
         history.actionType = 'Update';
         history.extraInfo = score.toString();
+        history.organization = orgId as any;
         this.companyHistory.push(history);
     }
 
@@ -89,7 +90,7 @@ export class HealthScoreProcessor {
         const poorCompaniesId = new Set<string>();
         poorCompanies.forEach(poor => {
             if(poor.healthScore != 0){
-                this.addHealthScoreHistory(poor.id,0);
+                this.addHealthScoreHistory(poor.id,0,orgId);
             }
             poor.healthScore = 0;
             poorCompaniesId.add(poor.id);
@@ -100,7 +101,7 @@ export class HealthScoreProcessor {
         const goodCompaniesId = new Set<string>();
         goodCompanies.forEach(good => {
             if(good.healthScore != 100){
-                this.addHealthScoreHistory(good.id,100);
+                this.addHealthScoreHistory(good.id,100,orgId);
             }
             good.healthScore = 100;
             goodCompaniesId.add(good.id);
@@ -115,7 +116,7 @@ export class HealthScoreProcessor {
         });
         averageCompanies.forEach(average => {
             if(average.healthScore != 50){
-                this.addHealthScoreHistory(average.id,50);
+                this.addHealthScoreHistory(average.id,50,orgId);
             }
             average.healthScore = 50;
             updatedCompanies.push(average);
