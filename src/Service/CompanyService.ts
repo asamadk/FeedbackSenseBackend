@@ -23,7 +23,7 @@ export const createCompany = async (reqBody: any): Promise<responseRest> => {
         company.industry = reqBody.industry;
 
         if (reqBody.status != null && reqBody.status.length > 0) {
-            company.status = reqBody.status
+            company.contractStatus = reqBody.status
         }
         if (reqBody.id != null && reqBody.id.length > 0) {
             company.id = reqBody.id;
@@ -112,6 +112,60 @@ export const getCompanyList = async (page: number, limit: number, searchStr: str
             count: companyList.length,
             list: paginatedCompanies
         }
+        return response;
+    } catch (error) {
+        logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
+        return getCustomResponse(null, 500, error.message, false)
+    }
+}
+
+export const getIndividualCompany = async (id: string) => {
+    try {
+        const response = getDefaultResponse('Company fetched successfully');
+
+        const companyRepo = Repository.getCompany();
+        const companyList = await companyRepo.find(
+            {
+                where: {
+                    id: id
+                },
+                select: {
+                    owner: {
+                        id: true,
+                        name: true
+                    },
+                    tags: {
+                        id: true,
+                        name: true
+                    },
+                    stage: {
+                        id: true,
+                        name: true,
+                        position: true
+                    },
+                    onboardingStage: {
+                        id: true,
+                        name: true
+                    },
+                    riskStage: {
+                        id: true,
+                        name: true
+                    }
+                },
+                relations: {
+                    tags: true,
+                    owner: true,
+                    stage: true,
+                    onboardingStage: true,
+                    riskStage: true
+                },
+                order: {
+                    name: 'ASC'
+                }
+            }
+        );
+
+        response.data = companyList;
         return response;
     } catch (error) {
         logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
@@ -337,10 +391,10 @@ export const getCompanySurveyScoreMetrics = async (companyId: string) => {
         let transformedData = [];
         if (company != null) {
             transformedData = [
-                { name: 'Latest NPS Score', score: company.npsScore || 'N/A' },
-                { name: 'Average NPS Score', score: company.avgNpsScore || 'N/A' },
-                { name: 'Latest CSAT Score', score: company.csatScore || 'N/A' },
-                { name: 'Average CSAT Score', score: company.avgCsatScore || 'N/A' },
+                { name: 'Latest NPS Score', score: company.npsScore || '0' },
+                { name: 'Average NPS Score', score: company.avgNpsScore || '0' },
+                { name: 'Latest CSAT Score', score: company.csatScore || '0' },
+                { name: 'Average CSAT Score', score: company.avgCsatScore || '0' },
             ]
         }
         response.data = transformedData;
@@ -353,7 +407,7 @@ export const getCompanySurveyScoreMetrics = async (companyId: string) => {
 
 export const updateCompany = async (payload: any) => {
     try {
-        const response = getDefaultResponse('Company surveys fetched');
+        const response = getDefaultResponse('Company updated');
         const companyRepo = Repository.getCompany();
 
         const histories = [];

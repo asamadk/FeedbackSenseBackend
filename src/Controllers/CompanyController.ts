@@ -2,7 +2,7 @@ import express from 'express';
 import { logger } from '../Config/LoggerConfig';
 import { getCustomResponse } from '../Helpers/ServiceUtils';
 import multer from 'multer';
-import { createCompany, deleteCompanies, fetchCompaniesFilledSurveys, fetchCompaniesPeopleOptions, getCompanyColumns, getCompanyHealthHistory, getCompanyList, getCompanyPeople, getCompanySurveyScoreMetrics, handleBulkCompanyUpload, updateCompany } from '../Service/CompanyService';
+import { createCompany, deleteCompanies, fetchCompaniesFilledSurveys, fetchCompaniesPeopleOptions, getCompanyColumns, getCompanyHealthHistory, getCompanyList, getCompanyPeople, getCompanySurveyScoreMetrics, getIndividualCompany, handleBulkCompanyUpload, updateCompany } from '../Service/CompanyService';
 
 const router = express.Router();
 
@@ -39,6 +39,18 @@ router.get('/get/list',async (req,res) => {
         const searchStr = req.query.search as string || '';
 
         const response = await getCompanyList(page,limit,searchStr);
+        res.statusCode = response.statusCode;
+        res.json(response);
+    } catch (error) {
+        logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
+        res.status(500).json(getCustomResponse(null, 500, error.message, false));
+    }
+});
+
+router.get('/get',async (req,res) => {
+    try {
+        const companyId = req.query.companyId as string;
+        const response = await getIndividualCompany(companyId);
         res.statusCode = response.statusCode;
         res.json(response);
     } catch (error) {
@@ -112,10 +124,10 @@ router.get('/select-options',async (req,res) => {
     }
 });
 
-router.get('/survey-response',async(req,res) => {
+router.get('/health-history-chart',async(req,res) => {
     try {
         const companyId :string = req.query.companyId as string;
-        const response = await fetchCompaniesFilledSurveys(companyId);
+        const response = await getCompanyHealthHistory(companyId);
         res.statusCode = response.statusCode;
         res.json(response);
     } catch (error) {
@@ -124,10 +136,10 @@ router.get('/survey-response',async(req,res) => {
     }
 });
 
-router.get('/health-history-chart',async(req,res) => {
+router.get('/survey-response',async(req,res) => {
     try {
         const companyId :string = req.query.companyId as string;
-        const response = await getCompanyHealthHistory(companyId);
+        const response = await fetchCompaniesFilledSurveys(companyId);
         res.statusCode = response.statusCode;
         res.json(response);
     } catch (error) {

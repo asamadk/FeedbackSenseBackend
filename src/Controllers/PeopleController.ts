@@ -1,7 +1,7 @@
 import express from 'express';
 import { logger } from '../Config/LoggerConfig';
 import { getCustomResponse } from '../Helpers/ServiceUtils';
-import { createPerson, deletePeople, getPersonList } from '../Service/PeopleService';
+import { createPerson, deletePeople, fetchPersonFilledSurveys, getPersonList, getPersonSurveyScoreMetrics, updatePeople } from '../Service/PeopleService';
 
 const router = express.Router();
 
@@ -41,6 +41,42 @@ router.post('/delete',async (req,res) => {
     } catch (error) {
         logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
         res.status(500).json(getCustomResponse(null, 500, error.message, false));
+    }
+});
+
+router.post('/update',async (req,res) => {
+    try {
+        const reqBody = req.body;
+        const response = await updatePeople(reqBody);
+        res.statusCode = response.statusCode;
+        res.json(response);
+    } catch (error) {
+        logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
+        res.status(500).json(getCustomResponse(null, 500, error.message, false));
+    }
+});
+
+router.get('/survey-response',async(req,res) => {
+    try {
+        const personId :string = req.query.personId as string;
+        const response = await fetchPersonFilledSurveys(personId);
+        res.statusCode = response.statusCode;
+        res.json(response);
+    } catch (error) {
+        logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
+        res.status(500).json(getCustomResponse(null, 500, error.message, false));  
+    }
+});
+
+router.get('/survey-score-metrics',async(req,res) => {
+    try {
+        const personId :string = req.query.personId as string;
+        const response = await getPersonSurveyScoreMetrics(personId);
+        res.statusCode = response.statusCode;
+        res.json(response);
+    } catch (error) {
+        logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
+        res.status(500).json(getCustomResponse(null, 500, error.message, false));  
     }
 });
 
