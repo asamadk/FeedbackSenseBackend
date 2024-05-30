@@ -100,7 +100,7 @@ export const updatePeople = async (payload: any) => {
 
 export const fetchPersonFilledSurveys = async (personId: string) => {
     try {
-        const response = getDefaultResponse('Company surveys fetched');
+        const response = getDefaultResponse('Person surveys fetched');
         if (personId == null || personId.length < 1) {
             throw new Error(`Person ID not provided.`);
         }
@@ -152,6 +152,7 @@ export const getPersonSurveyScoreMetrics = async (personId: string) => {
                 where: { id: personId },
                 select: {
                     company: {
+                        id : true,
                         npsScore: true,
                         avgNpsScore: true,
                         avgCsatScore: true,

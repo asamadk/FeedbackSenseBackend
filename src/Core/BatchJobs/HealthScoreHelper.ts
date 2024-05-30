@@ -29,9 +29,9 @@ export function mapOperatorToTypeORM(operator: string, value: any): string {
         case 'Is Not Empty':
             return 'IS NOT NULL';
         case 'Older than X Days':
-            return `< CURRENT_DATE - INTERVAL '${parseInt(value)}' DAY`;
+            return `<= DATE(CURRENT_DATE - INTERVAL '${parseInt(value)}' DAY)`;
         case 'Newer than X Days':
-            return `> CURRENT_DATE + INTERVAL '${parseInt(value)}' DAY`;
+            return `>= DATE(CURRENT_DATE + INTERVAL '${parseInt(value)}' DAY)`;
         case 'greater than':
             return `> '${value}'`;
         case 'less than':

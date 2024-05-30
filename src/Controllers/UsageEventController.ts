@@ -1,7 +1,7 @@
 import express from 'express';
 import { logger } from '../Config/LoggerConfig';
 import { getCustomResponse } from '../Helpers/ServiceUtils';
-import { getTimeSpentOverTime, getEventsOverTime, getTopUsagePeople } from '../Service/UsageEventService';
+import { getTimeSpentOverTime, getEventsOverTime, getTopUsagePeople, getUsageStatus } from '../Service/UsageEventService';
 
 const router = express.Router();
 
@@ -38,6 +38,17 @@ router.get('/top-people',async (req,res) => {
         const timeInterval : string | null = req.query.interval as string | null;
         const companyId : string | null = req.query.companyId as string | null;
         const response = await getTopUsagePeople(timeInterval,companyId);
+        res.statusCode = response.statusCode;
+        res.json(response);
+    }catch(error){
+        logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
+        res.status(500).json(getCustomResponse(null, 500, error.message, false)); 
+    }
+});
+
+router.get('/usage-status',async (req,res) => {
+    try{
+        const response = await getUsageStatus();
         res.statusCode = response.statusCode;
         res.json(response);
     }catch(error){

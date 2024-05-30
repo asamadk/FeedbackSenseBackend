@@ -13,6 +13,23 @@ export class CustomSettingsHelper {
         return this.instance;
     }
 
+    static parseValue(value : string) :any{
+        if (value === 'true') {
+            return true;
+          }
+          if (value === 'false') {
+            return false;
+          }
+          if (!isNaN(Number(value))) {
+            return Number(value);
+          }
+          try {
+            return JSON.parse(value);
+          } catch (e) {
+            return value;
+          }
+    }
+
     orgId: string
     customSettingsRepo : Repository<CustomSettings>
     settings: {

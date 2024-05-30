@@ -6,7 +6,7 @@ import { mapOperatorToTypeORM, metricInfoType } from "./HealthScoreHelper";
 import { logger } from "../../Config/LoggerConfig";
 import { CompanyHistory } from "../../Entity/CompanyHistory";
 
-type configType = {
+export type configType = {
     metric: string,
     metricInfo: metricInfoType,
     good: {
@@ -136,6 +136,7 @@ export class HealthScoreProcessor {
         config.forEach(conf => {
             const condition = mapOperatorToTypeORM(conf.poor.operator, conf.poor.value);
             if (conf.metricInfo.table === 'company') {
+                // condition = condition.replace('company.column_name', `company.${conf.metricInfo.value}`);
                 const caseCondition = `CASE WHEN company.${conf.metricInfo.value} ${condition} THEN '${conf.metricInfo.label} criteria satisfied' ELSE NULL END`;
                 caseStatements.push(caseCondition);
                 otherConditions.push(`company.${conf.metricInfo.value} ${condition}`);
@@ -183,6 +184,7 @@ export class HealthScoreProcessor {
         config.forEach(conf => {
             const condition = mapOperatorToTypeORM(conf.good.operator, conf.good.value);
             if (conf.metricInfo.table === 'company') {
+                // condition = condition.replace('company.column_name', `company.${conf.metricInfo.value}`);
                 query.andWhere(`company.${conf.metricInfo.value} ${condition}`);
             }
         });

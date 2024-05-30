@@ -5,14 +5,26 @@ import { PaymentHandlerJob } from '../Integrations/PaymentIntegration/PaymentHan
 import { HealthScoreProcessor } from './BatchJobs/HealthScoreProcessor';
 import { cronSchedule } from '../Helpers/CronConstants';
 import { SurveyScoreProcessor } from './BatchJobs/SurveyScoreProcessor';
+import { UsageFrequencyProcessor } from './BatchJobs/UsageFrequencyProcessor';
 
 export class JobScheduler {
 
     public init() {
         logger.info('Job Scheduler initializing')
         this.scheduleHealthChecker();
+        this.runUsageFrequencyProcessor();
         this.runHealthScoreProcessor();
         this.runSurveyScoreProcessor();
+    }
+
+    //process usage frequency 
+    private runUsageFrequencyProcessor(){
+        try{
+            new UsageFrequencyProcessor().execute();
+            cron.schedule(cronSchedule.DAILY_MIDNIGHT,() => new UsageFrequencyProcessor().execute());
+        }catch(error){
+            logger.error(`Error :: JobScheduler :: runSurveyScoreProcessor = ${error}`)
+        }
     }
 
     //process nps & csat survey scores

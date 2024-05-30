@@ -163,8 +163,9 @@ export const handleInviteUsers = async (email: string, role: 'OWNER' | 'ADMIN' |
         const currentOrgUsers = await userRepo.count({ where: { organization_id: userDetails.organization_id, isDeleted: false } });
 
         const emailList = email.split(',');
+        const toBeTotalUsers = currentOrgUsers + emailList.length;
 
-        if (currentOrgUsers + emailList.length > teamMemberSeats) {
+        if (toBeTotalUsers > teamMemberSeats && role === 'OWNER') {
             throw new Error('Upgrade plan for more seats.Team member limit reached.');
         }
 

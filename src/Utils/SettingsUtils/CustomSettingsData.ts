@@ -11,6 +11,7 @@ import {
     SURVEY_RESPONSE_CAPACITY,
     TEAM_ROLES,
     TEAM_SEATS,
+    TOTAL_CUSTOMER,
     WORD_CLOUD
 } from "../../Constants/CustomSettingsCont";
 
@@ -21,7 +22,8 @@ FSCustomSetting.set(REMOVE_FEEDBACK_SENSE_LOGO, 'false');
 FSCustomSetting.set(ADD_CUSTOM_LOGO, 'false');
 FSCustomSetting.set(SKIP_LOGIC_FEATURE, 'true');
 FSCustomSetting.set(SURVEY_RESPONSE_CAPACITY, '50');
-FSCustomSetting.set(TEAM_SEATS, '1');
+FSCustomSetting.set(TEAM_SEATS, '2');
+FSCustomSetting.set(TOTAL_CUSTOMER, '500');
 FSCustomSetting.set(LOGO_DATA, '');
 FSCustomSetting.set(EXPORT_FEATURE, 'true');
 FSCustomSetting.set(AI_TEXT_ANALYSIS, 'false');

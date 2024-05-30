@@ -9,7 +9,6 @@ import { CustomSettings } from "../Entity/CustomSettingsEntity";
 import { Organization } from "../Entity/OrgEntity";
 import { FSCustomSetting } from "../Utils/SettingsUtils/CustomSettingsData";
 import { createCustomSettings } from "../Service/CustomSettingsService";
-import { Repository as LocalRepo } from "../Helpers/Repository";
 
 export class StartUp {
 
@@ -147,7 +146,7 @@ export class StartUp {
             await this.insertPlan();
             logger.info('Plans created.');
         } catch (error) {
-            logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
+            logger.error(`Startup :: CreatePlans :: message - ${error.message}, stack trace - ${error.stack}`);
         }
     }
 

@@ -11,7 +11,7 @@ export const getClientCompassDashboardData = async (date: string, type: string):
         const [
             totalACV, customerHealth, journeyStage, totalCompanies, qtrRenewalCompanies, qtrRenewalContractVal,
             qtrCustomerHealth, overdueRenewals, qtrRiskRenewal, qtrRiskContractVal, qtrRenewContract, qtrChurnContract,
-            riskContractVal, churnRiskReasons, npsScore, csatScores, onboardingStages, onboardingHealth
+            riskContractVal, churnRiskReasons, npsScore,avgNpsScore, csatScores,avgCsatScore, onboardingStages, onboardingHealth
         ] = await Promise.all([
             helper.getTotalACV(),
             helper.getOverAllCustomerHealth(),
@@ -28,7 +28,9 @@ export const getClientCompassDashboardData = async (date: string, type: string):
             helper.getContractValueAtRisk(),
             helper.getChurnRiskReasons(),
             helper.getNpsScoreChart(),
+            helper.getAvgNpsScoreChart(),
             helper.getCsatScoreChart(),
+            helper.getAvgCsatScoreChart(),
             helper.getOnboardingStagesChart(),
             helper.getOnboardingHealth()
         ]);
@@ -36,7 +38,7 @@ export const getClientCompassDashboardData = async (date: string, type: string):
         response.data = {
             totalACV, customerHealth, journeyStage, totalCompanies, qtrRenewalCompanies, qtrRenewalContractVal, qtrCustomerHealth, 
             overdueRenewals,qtrRiskRenewal, qtrRiskContractVal, qtrRenewContract, qtrChurnContract, riskContractVal, churnRiskReasons,
-            npsScore, csatScores,onboardingStages, onboardingHealth
+            npsScore,avgNpsScore, csatScores,avgCsatScore,onboardingStages, onboardingHealth
         };
         return response;
     } catch (error) {

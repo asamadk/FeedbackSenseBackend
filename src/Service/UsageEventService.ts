@@ -1,10 +1,10 @@
-import { MoreThanOrEqual } from "typeorm";
 import { logger } from "../Config/LoggerConfig";
 import { Repository } from "../Helpers/Repository";
 import { getCustomResponse, getDefaultResponse } from "../Helpers/ServiceUtils";
 import { responseRest } from "../Types/ApiTypes";
 import { UserEventServiceHelper } from "../ServiceHelper/UserEventServiceHelper";
 import { Person } from "../Entity/PersonEntity";
+import { AuthUserDetails } from "../Helpers/AuthHelper/AuthUserDetails";
 
 export const getTimeSpentOverTime = async (timeInterval: string | null, personId: string | null, companyId: string | null): Promise<responseRest> => {
     try {
@@ -103,6 +103,27 @@ export const getTopUsagePeople = async (timeInterval: string | null, companyId: 
             activeDays: parseInt(result.activeDays),
         }));
 
+        return response;
+    } catch (error) {
+        logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
+        return getCustomResponse(null, 500, error.message, false)
+    }
+}
+
+export const getUsageStatus = async (): Promise<responseRest> => {
+    try {
+        const response = getDefaultResponse('Events fetched.');
+        const usageSessionRepo = Repository.getUsageSession();
+        const usageCount = await usageSessionRepo.count({
+            where : {
+                company : {
+                    organization : {
+                        id : AuthUserDetails.getInstance().getUserDetails().organization_id
+                    }
+                }
+            }
+        });
+        response.data = usageCount;
         return response;
     } catch (error) {
         logger.error(`message - ${error.message}, stack trace - ${error.stack}`);

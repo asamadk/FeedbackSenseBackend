@@ -1,4 +1,4 @@
-import { And, Equal, FindOptionsWhere, LessThan, MoreThan, MoreThanOrEqual, Not } from "typeorm";
+import { And, Between, Equal, FindOptionsWhere, LessThan, MoreThan, MoreThanOrEqual, Not } from "typeorm";
 import { Repository } from "../Helpers/Repository";
 import { Task } from "../Entity/TaskEntity";
 
@@ -11,12 +11,19 @@ interface TaskStats {
 export class TaskServiceHelper {
 
     validateCreateTaskPayload = (data: any): boolean => {
-        // if(!data.name || !data.website){return false;}
         return true;
     }
 
     async getTaskStats(whereClause: FindOptionsWhere<Task>) {
         const today = new Date();
+        today.setHours(0, 0, 0, 0); // Set to the start of the day (midnight)
+
+        const todayEnd = new Date();
+        todayEnd.setHours(23,59,59,0);
+        
+        const tomorrow = new Date(today);
+        tomorrow.setDate(today.getDate() + 1); // Get the start of the next day
+
         const sevenDaysLater = new Date();
         sevenDaysLater.setDate(today.getDate() + 7);
 
@@ -30,14 +37,14 @@ export class TaskServiceHelper {
         const overdueCount = await taskRepository.count({
             where: {
                 ...whereClause,
-                dueDate: LessThan(today)
+                dueDate: LessThan(today),
             }
         });
 
         const dueTodayCount = await taskRepository.count({
             where: {
                 ...whereClause,
-                dueDate: Equal(today),
+                dueDate: Between(today, todayEnd)
             }
         });
 

@@ -91,6 +91,7 @@ passport.use(new MicrosoftStrategy({
       }
     });
     if (currentUser == null) {
+      done(null, null);
       throw new Error('Unable to create user.Please contact support.');
     }
     done(null, currentUser);
@@ -114,6 +115,7 @@ passport.use(
         }
       });
       if (currentUser == null) {
+        callback(null, null);
         throw new Error('Unable to create user.Please contact support.');
       }
       callback(null, currentUser);
@@ -137,7 +139,7 @@ app.use('/webhook', express.raw({ type: 'application/json' }), logRequest, Webho
 app.use(express.json({ limit: '2mb' }));
 
 //Open endpoints
-app.use('/auth', logRequest, AuthController)
+app.use('/auth', logRequest, AuthController);
 app.use('/live', logRequest, LiveSurveyController);
 app.use('/payment', logRequest, PaymentController);
 app.use('/usage',logRequest,UsageController);

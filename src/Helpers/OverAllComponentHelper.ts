@@ -326,12 +326,10 @@ export const processRatingComp = (data: any[]): any => {
     }
 }
 
-//TODO process CSAT Score
 export const processCSATComp = (data: any[]) => {
     if (data == null || data.length < 1) {
         return [];
     }
-    console.log("🚀 ~ processCSATComp ~ data:", data)
     const totalResponses = data.length;
     let totalSatisfiedCustomer = 0;
     let question: string;
@@ -353,7 +351,7 @@ export const processCSATComp = (data: any[]) => {
 
     let score = 0;
     if (totalResponses > 0) {
-        score = (totalSatisfiedCustomer / totalResponses) * 100;
+        score = Math.ceil((totalSatisfiedCustomer / totalResponses) * 100);
     }
 
     const rtnObj = [];

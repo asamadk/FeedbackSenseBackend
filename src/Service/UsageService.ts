@@ -52,6 +52,7 @@ export const createUsageEvent = async (reqBody: any): Promise<responseRest> => {
         eventName: In(activitySet)
       }
     });
+
     eventTypes.forEach(t => {
       eventNameVsType.set(t.eventName.toLowerCase(), t.eventType);
     });
@@ -65,7 +66,7 @@ export const createUsageEvent = async (reqBody: any): Promise<responseRest> => {
       const event = reqBody[i];
       const activity: string = event?.activity?.toLowerCase();
       
-      if (!eventNameVsType.has(activity)) { 
+      if (!eventNameVsType.has(activity)) {
         if(activityTypeSet.has(activity)){continue;}
         toCreateEventTypes.push({
           eventName : activity,
@@ -163,114 +164,167 @@ export const getUsageJavaScript = (): string => {
   const sessionURL = `${process.env.SERVER_URL}usage/session/v1`;
 
   return `
-    (function (window) {
-        // Configure endpoint and initialize session state
-        var apiEndpointEvent = "${eventURL}";
-        var apiEndpointSession = "${sessionURL}";
-        var sessionActive = false;
-        var sessionId = null;
-        var sessionStartTime = null;
-      
-        // Start a new session
-        function startSession() {
-          sessionActive = true;
-          sessionId = generateSessionId();
-          sessionStartTime = new Date().toISOString();
-          console.log("Session started:", sessionId);
-      
-          sendSession({
+  (function (window) {
+    // Configure endpoint and initialize session state
+    var apiEndpointEvent = "${eventURL}";
+    var apiEndpointSession = "${sessionURL}";
+    var sessionActive = false;
+    var sessionId = null;
+    var sessionStartTime = null;
+    var activeTime = 0;
+    var lastActivityTime = null;
+    var inactivityLimit = 15 * 60 * 1000; // 15 minutes in milliseconds
+    var inactivityTimer = null;
+
+    // Start a new session
+    function startSession() {
+        sessionActive = true;
+        sessionId = generateSessionId();
+        sessionStartTime = new Date().toISOString();
+        lastActivityTime = Date.now();
+        console.log("Session started:", sessionId);
+
+        sendSession({
             sessionId: sessionId,
             startTime: sessionStartTime,
-          });
-        }
-      
-        // End the current session
-        function endSession() {
-          if (sessionActive && sessionId) {
+        });
+
+        document.addEventListener('mousemove', updateLastActivityTime);
+        document.addEventListener('click', updateLastActivityTime);
+        document.addEventListener('dblclick', updateLastActivityTime);
+        document.addEventListener('keyup', updateLastActivityTime);
+        document.addEventListener('touchstart', updateLastActivityTime);
+        document.addEventListener('touchmove', updateLastActivityTime);
+        document.addEventListener('touchend', updateLastActivityTime);
+        document.addEventListener('scroll', updateLastActivityTime);
+
+        startInactivityTimer();
+    }
+
+    // End the current session
+    function endSession() {
+        if (sessionActive && sessionId) {
             var sessionEndTime = new Date().toISOString();
-            var duration = new Date(sessionEndTime) - new Date(sessionStartTime);
+            var duration = activeTime;
             sendSession({
-              sessionId: sessionId,
-              startTime: sessionStartTime,
-              endTime: sessionEndTime,
-              duration: duration,
+                sessionId: sessionId,
+                startTime: sessionStartTime,
+                endTime: sessionEndTime,
+                duration: duration,
             });
             saveEventBatch();
             console.log("Session ended:", sessionId);
             sessionActive = false;
             sessionId = null;
             sessionStartTime = null;
-            sessionEndTime = null;
-          }
+            activeTime = 0;
+            lastActivityTime = null;
+
+            document.removeEventListener('mousemove', updateLastActivityTime);
+            document.removeEventListener('click', updateLastActivityTime);
+            document.removeEventListener('dblclick', updateLastActivityTime);
+            document.removeEventListener('keyup', updateLastActivityTime);
+            document.removeEventListener('touchstart', updateLastActivityTime);
+            document.removeEventListener('touchmove', updateLastActivityTime);
+            document.removeEventListener('touchend', updateLastActivityTime);
+            document.removeEventListener('scroll', updateLastActivityTime);
+
+            clearInactivityTimer();
         }
-      
-        function sendSession(sessionData) {
-          sessionData = {
-              ...sessionData,
-              userAgent : window.navigator.userAgent,
-              personId : window.feedbacksense_options.person.id,
-              companyId : window.feedbacksense_options.company.id,
-              org : window.feedbacksense_options.organization_id,
-          }
-          var xhr = new XMLHttpRequest();
-          xhr.open("POST", apiEndpointSession, true);
-          xhr.setRequestHeader("Content-Type", "application/json");
-          xhr.send(JSON.stringify(sessionData));
-          xhr.onload = function () {
-            if (xhr.status >= 200 && xhr.status < 300) {
-              console.log("Session sent successfully");
-            } else {
-              console.error("Failed to send events:", xhr.status, xhr.statusText);
-              // Optionally handle retries or log failures locally
-            }
-          };
-        }
-      
-        // Generate a unique session ID
-        function generateSessionId() {
-          return "session-" + Math.random().toString(36).substr(2, 9)+ Date.now().toString(36);
-        }
-      
-        // Send batch of events to the server
-        function sendBatchToServer(events) {
-          var xhr = new XMLHttpRequest();
-          xhr.open("POST", apiEndpointEvent, true);
-          xhr.setRequestHeader("Content-Type", "application/json");
-          xhr.send(JSON.stringify(events));
-          window.feedbacksense_tmp_stack = [];
-          xhr.onload = function () {
-            if (xhr.status >= 200 && xhr.status < 300) {
-              console.log("Events sent successfully");
-              window.feedbacksense_tmp_stack = [];
-            } else {
-              console.error("Failed to send events:", xhr.status, xhr.statusText);
-              // Optionally handle retries or log failures locally
-            }
-          };
-        }
-      
-        // Automatically start a session when the script loads
-        startSession();
-      
-        setInterval(function () {
-          console.log('Checking batch...');
-          saveEventBatch();
-        }, 60000);
-      
-        function saveEventBatch() {
-          if (
-            window.feedbacksense_tmp_stack != null &&
-            window.feedbacksense_tmp_stack.length > 0
-          ) {
-            sendBatchToServer(window.feedbacksense_tmp_stack);
-          }
-        }
-      
-        // End session on page unload
-        window.addEventListener('beforeunload', endSession);
-        window.onunload = function () {
-          endSession();
+    }
+
+    function sendSession(sessionData) {
+        sessionData = {
+            ...sessionData,
+            userAgent: window.navigator.userAgent,
+            personId: window.feedbacksense_options.person.id,
+            companyId: window.feedbacksense_options.company.id,
+            org: window.feedbacksense_options.organization_id,
         };
-      })(window);      
-      `;
+        var xhr = new XMLHttpRequest();
+        xhr.open("POST", apiEndpointSession, true);
+        xhr.setRequestHeader("Content-Type", "application/json");
+        xhr.send(JSON.stringify(sessionData));
+        xhr.onload = function () {
+            if (xhr.status >= 200 && xhr.status < 300) {
+                console.log("Session sent successfully");
+            } else {
+                console.error("Failed to send session:", xhr.status, xhr.statusText);
+                // Optionally handle retries or log failures locally
+            }
+        };
+    }
+
+    // Generate a unique session ID
+    function generateSessionId() {
+        return "session-" + Math.random().toString(36).substr(2, 9) + Date.now().toString(36);
+    }
+
+    // Send batch of events to the server
+    function sendBatchToServer(events) {
+        var xhr = new XMLHttpRequest();
+        xhr.open("POST", apiEndpointEvent, true);
+        xhr.setRequestHeader("Content-Type", "application/json");
+        xhr.send(JSON.stringify(events));
+        window.feedbacksense_tmp_stack = [];
+        xhr.onload = function () {
+            if (xhr.status >= 200 && xhr.status < 300) {
+                console.log("Events sent successfully");
+                window.feedbacksense_tmp_stack = [];
+            } else {
+                console.error("Failed to send events:", xhr.status, xhr.statusText);
+                // Optionally handle retries or log failures locally
+            }
+        };
+    }
+
+    // Automatically start a session when the script loads
+    startSession();
+
+    setInterval(function () {
+        console.log('Checking batch...');
+        saveEventBatch();
+    }, 60000);
+
+    function saveEventBatch() {
+        if (window.feedbacksense_tmp_stack != null && window.feedbacksense_tmp_stack.length > 0) {
+            sendBatchToServer(window.feedbacksense_tmp_stack);
+        }
+    }
+
+    function updateLastActivityTime() {
+        var now = Date.now();
+        if (lastActivityTime && (now - lastActivityTime) < inactivityLimit) {
+            activeTime += now - lastActivityTime;
+        }
+        lastActivityTime = now;
+        //console.log('activeTime: ' + activeTime);
+        //console.log('lastActivityTime: ' + lastActivityTime);
+
+        resetInactivityTimer();
+    }
+
+    function startInactivityTimer() {
+        inactivityTimer = setTimeout(function () {
+            //console.log('User inactive for ' + inactivityLimit / 60000 + ' minutes.');
+        }, inactivityLimit);
+    }
+
+    function resetInactivityTimer() {
+        clearTimeout(inactivityTimer);
+        startInactivityTimer();
+    }
+
+    function clearInactivityTimer() {
+        clearTimeout(inactivityTimer);
+    }
+
+    // End session on page unload
+    window.addEventListener('beforeunload', endSession);
+    window.onunload = function () {
+        endSession();
+    };
+})(window);
+       
+  `;
 }

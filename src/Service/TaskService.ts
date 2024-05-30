@@ -41,8 +41,6 @@ export const createTask = async (reqBody: any): Promise<responseRest> => {
         task.dueDate = reqBody.dueDate;
         task.status = reqBody.status;
         task.organization = userInfo.organization_id as any;
-        
-        console.log("🚀 ~ createTask ~ task:", task)
 
         const taskRepo = Repository.getTask();
         await taskRepo.save(task);
@@ -55,7 +53,7 @@ export const createTask = async (reqBody: any): Promise<responseRest> => {
 }
 
 export const getTask = async (
-    companyId: string, personId: string, status : string, ownerId : string,page: number, limit: number
+    companyId: string, personId: string, status: string, ownerId: string, page: number, limit: number
 ): Promise<responseRest> => {
     try {
         const response = getDefaultResponse('Task created successfully');
@@ -63,7 +61,11 @@ export const getTask = async (
         const offset = (page) * limit;
         const helper = new TaskServiceHelper();
 
-        const whereClause: FindOptionsWhere<Task> = {};
+        const whereClause: FindOptionsWhere<Task> = {
+            organization: {
+                id: userInfo.organization_id
+            }
+        };
 
         if (personId != null && personId.length > 0) {
             whereClause.person = {
@@ -76,22 +78,22 @@ export const getTask = async (
             }
         }
 
-        if(ownerId != null && ownerId.length > 0){
+        if (ownerId != null && ownerId.length > 0) {
             whereClause.owner = {
-                id : ownerId
+                id: ownerId
             }
         }
 
-        if(status != null && status.length > 0){
+        if (status != null && status.length > 0) {
             whereClause.status = status as any
         }
 
         const taskRepo = Repository.getTask();
         const count = await taskRepo.count({
-            where: { ...whereClause, organization: { id: userInfo.organization_id } }
+            where: whereClause
         })
         const res = await taskRepo.find({
-            where: { ...whereClause, organization: { id: userInfo.organization_id } },
+            where: whereClause,
             select: {
                 company: {
                     id: true,
@@ -113,7 +115,11 @@ export const getTask = async (
                 owner: true
             },
             skip: offset,
-            take: limit
+            take: limit,
+            order : {
+                status : 'DESC',
+                dueDate : 'DESC'
+            }
         });
 
         response.data = {
@@ -140,17 +146,17 @@ export const deleteTask = async (taskId: string): Promise<responseRest> => {
     }
 }
 
-export const completeTask = async (data : any): Promise<responseRest> => {
+export const completeTask = async (data: any): Promise<responseRest> => {
     try {
         const response = getDefaultResponse('Task deleted successfully');
         const taskRepo = Repository.getTask();
-        const task = await taskRepo.findOneBy({id : data.id});
-        if(task == null){
+        const task = await taskRepo.findOneBy({ id: data.id });
+        if (task == null) {
             throw new Error('Not found');
         }
-        if(task.status === 'Completed'){
+        if (task.status === 'Completed') {
             task.status = 'Open';
-        }else{
+        } else {
             task.status = 'Completed';
         }
         await taskRepo.save(task);
@@ -189,6 +195,7 @@ export const updateTask = async (reqBody: any): Promise<responseRest> => {
         if (task == null || task.length < 1) {
             throw new Error('Task not found');
         }
+
         const singleTask = task[0];
         singleTask.title = reqBody.title;
         singleTask.description = reqBody.description;
@@ -196,6 +203,22 @@ export const updateTask = async (reqBody: any): Promise<responseRest> => {
         singleTask.priority = reqBody.priority;
         singleTask.dueDate = reqBody.dueDate;
         singleTask.status = reqBody.status;
+
+        if (reqBody.personID) {
+            const personRepo = Repository.getPeople();
+            const person = await personRepo.findOneBy({
+                id: reqBody.personID
+            });
+            singleTask.person = [person];
+        }
+
+        if (reqBody.companyID) {
+            const companyRepo = Repository.getCompany();
+            const company = await companyRepo.findOneBy({
+                id: reqBody.companyID
+            });
+            singleTask.company = [company];
+        }
 
         await taskRepo.save(singleTask);
 

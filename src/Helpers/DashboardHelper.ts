@@ -31,11 +31,9 @@ export class DashboardHelper {
         this.endOfQuarter = moment().endOf('quarter').toDate();
     }
 
-    //TODO filter all based on contract status
-    
-    getPayingWhereClause() :FindOptionsWhere<Company>{
+    getPayingWhereClause(): FindOptionsWhere<Company> {
         return {
-            contractStatus : 'Paying'
+            contractStatus: 'Paying'
         }
     }
 
@@ -106,7 +104,8 @@ export class DashboardHelper {
         const query = journeyStageRepository.createQueryBuilder('journeyStage')
             .leftJoinAndSelect('journeyStage.companies', 'company')
             .where('journeyStage.organizationId = :organizationId', { organizationId: this.userInfo.organization_id })
-            .where('company.contractStatus = :contractStatus',{contractStatus : 'Paying'})
+            .where('company.contractStatus = :contractStatus', { contractStatus: 'Paying' })
+            .andWhere('company.organizationId =:organizationId',{organizationId : this.userInfo.organization_id})
             .orderBy('journeyStage.position', 'ASC');
 
         if (this.type === 'my') {
@@ -252,16 +251,31 @@ export class DashboardHelper {
         return formatMoney(value);
     }
 
-    async getQtrRenewedContractData(): Promise<ChartData[]> {
+    async getQtrRenewedContractData(): Promise<string> {
         const startOfQuarter = moment().startOf('quarter').toDate();
         const endOfQuarter = moment().endOf('quarter').toDate();
+
+        const companies = await Repository.getCompany().find({
+            where: {
+                organization: { id: this.userInfo.organization_id },
+                // nextRenewalDate: Between(this.startOfQuarter, this.endOfQuarter),
+                ...this.getOwnerWhereClause(),
+                ...this.getPayingWhereClause()
+            }
+        });
+
+        const companyIds = [];
+        companies.forEach(company => companyIds.push(company.id));
+
+        if(companyIds.length < 1){return '$0'}
 
         // Fetch company histories
         const historyQuery = Repository.getCompanyHistory().createQueryBuilder('history')
             .where('history.fieldName = :fieldName', { fieldName: 'totalContractAmount' })
             .andWhere('history.actionType = :actionType', { actionType: 'Update' })
             .andWhere('history.actionDate BETWEEN :startOfQuarter AND :endOfQuarter', { startOfQuarter, endOfQuarter })
-            .andWhere('history.organizationId = :organizationId', { organizationId: this.userInfo.organization_id });
+            .andWhere('history.organizationId = :organizationId', { organizationId: this.userInfo.organization_id })
+            .andWhere('history.companyId In (:...companyIds)', { companyIds: [...companyIds] });
 
         const histories = await historyQuery.getMany();
 
@@ -269,52 +283,27 @@ export class DashboardHelper {
         histories.forEach((history) => {
             totalRenewedContractValue += parseFloat(history.extraInfo.toString());
         });
-
-        // Fetch companies
-        const companyQuery = Repository.getCompany().createQueryBuilder('company')
-            .where('company.nextRenewalDate BETWEEN :startOfQuarter AND :endOfQuarter', { startOfQuarter, endOfQuarter })
-            .andWhere('company.organizationId = :organizationId', { organizationId: this.userInfo.organization_id })
-            .andWhere('company.contractStatus = :contractStatus',{contractStatus : 'Paying'});
-
-        if (this.type === 'my') {
-            companyQuery.andWhere('company.ownerId = :ownerId', { ownerId: this.userInfo.id });
-        }
-
-        const companies = await companyQuery.select(['company.totalContractAmount']).getMany();
-
-        let totalContractValue = 0;
-        companies.forEach(company => {
-            totalContractValue += parseFloat(company.totalContractAmount.toString());
-        });
-
-        return [
-            { name: 'Renewed Value', value: totalRenewedContractValue },
-            { name: 'Total Value', value: totalContractValue },
-        ];
+        return formatMoney(totalRenewedContractValue);
     }
 
-    async getQtrChurnedContractData(): Promise<ChartData[]> {
+    async getQtrChurnedContractData(): Promise<string> {
         const companies = await Repository.getCompany().find({
             where: {
                 nextRenewalDate: Between(this.startOfQuarter, this.endOfQuarter),
                 organization: {
                     id: this.userInfo.organization_id
                 },
+                contractStatus : 'Churned',
                 ...this.getOwnerWhereClause()
             },
             select: ['totalContractAmount', 'contractStatus']
         });
 
-        let retained = 0;
         let churned = 0;
         companies.forEach(company => {
-            if (company.contractStatus === 'Paying') {
-                retained += parseFloat(company.totalContractAmount.toString());
-            } else if (company.contractStatus === 'Churned') {
-                churned += parseFloat(company.totalContractAmount.toString());
-            }
+            churned += parseFloat(company.totalContractAmount.toString());
         });
-        return [{ name: 'Retained', value: retained }, { name: 'Churned', value: churned }]
+        return formatMoney(churned);
     }
 
     async getContractValueAtRisk() {
@@ -366,6 +355,30 @@ export class DashboardHelper {
         return [{ name: 'Promoters', value: promoters }, { name: 'Detractors', value: retractors }, { name: 'Passives', value: passives }];
     }
 
+    async getAvgNpsScoreChart(): Promise<ChartData[]> {
+        const companies = await Repository.getCompany().find({
+            where: {
+                organization: { id: this.userInfo.organization_id },
+                ...this.getOwnerWhereClause(),
+                ...this.getPayingWhereClause()
+            },
+            select: ['avgNpsScore']
+        });
+
+        let promoters = 0;
+        let passives = 0;
+        let retractors = 0;
+
+        companies.forEach(company => {
+            const score = company.avgNpsScore;
+            if (score >= 9) { promoters++ }
+            else if (score == 7 || score == 8) { passives++ }
+            else if (score <= 6) { retractors++ }
+        })
+
+        return [{ name: 'Promoters', value: promoters }, { name: 'Detractors', value: retractors }, { name: 'Passives', value: passives }];
+    }
+
     async getCsatScoreChart(): Promise<ChartData[]> {
         const companies = await Repository.getCompany().find({
             where: {
@@ -388,13 +401,35 @@ export class DashboardHelper {
         return [{ name: 'Satisfied', value: satisfied }, { name: 'Unsatisfied', value: unsatisfied }];
     }
 
+    async getAvgCsatScoreChart(): Promise<ChartData[]> {
+        const companies = await Repository.getCompany().find({
+            where: {
+                organization: { id: this.userInfo.organization_id },
+                ...this.getOwnerWhereClause(),
+                ...this.getPayingWhereClause()
+            },
+            select: ['avgCsatScore']
+        });
+
+        let satisfied = 0;
+        let unsatisfied = 0;
+
+        companies.forEach(company => {
+            const score = company.avgCsatScore;
+            if (score == 4 || score == 5) { satisfied++ }
+            else { unsatisfied++ }
+        })
+
+        return [{ name: 'Satisfied', value: satisfied }, { name: 'Unsatisfied', value: unsatisfied }];
+    }
+
     async getOnboardingStagesChart(): Promise<ChartData[]> {
         const onboardingStageRepository = Repository.getOnboardingStage();
 
         const query = onboardingStageRepository.createQueryBuilder('onboardingStage')
             .leftJoinAndSelect('onboardingStage.companies', 'company')
             .where('onboardingStage.organizationId = :organizationId', { organizationId: this.userInfo.organization_id })
-            .andWhere('company.contractStatus = :contractStatus',{contractStatus : 'Paying'})
+            .andWhere('company.contractStatus = :contractStatus', { contractStatus: 'Paying' })
             .orderBy('onboardingStage.position', 'ASC');
 
         if (this.type === 'my') {

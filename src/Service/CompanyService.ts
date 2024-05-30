@@ -8,6 +8,8 @@ import { CompanyServiceHelper } from "../ServiceHelper/CompanyServiceHelper";
 import { responseRest } from "../Types/ApiTypes";
 import { parseCsvData } from "../Utils/CsvUtils";
 import { CompanyHistory } from "../Entity/CompanyHistory";
+import { CustomSettingsHelper } from "../Helpers/CustomSettingHelper";
+import { TOTAL_CUSTOMER } from "../Constants/CustomSettingsCont";
 
 export const createCompany = async (reqBody: any): Promise<responseRest> => {
     try {
@@ -15,6 +17,21 @@ export const createCompany = async (reqBody: any): Promise<responseRest> => {
         const helper = new CompanyServiceHelper();
         if (helper.validateCreateCompanyPayload(reqBody) === false) {
             throw new Error('Payload incorrect.');
+        }
+
+        const companyRepo = Repository.getCompany();
+        const userInfo = AuthUserDetails.getInstance().getUserDetails();
+
+        const [totalCompanies,tmp] = await Promise.all([
+            companyRepo.count({where : {organization : {id : userInfo.organization_id}}}),
+            CustomSettingsHelper.getInstance().initialize(userInfo.organization_id)
+        ]);
+
+        let totalCustomerLimit :any = CustomSettingsHelper.getInstance().getCustomSettings(TOTAL_CUSTOMER);
+        totalCustomerLimit = CustomSettingsHelper.parseValue(totalCustomerLimit);
+
+        if(totalCompanies >= totalCustomerLimit){
+            throw new Error('Total companies limit reached');
         }
 
         const company = new Company();
@@ -30,10 +47,9 @@ export const createCompany = async (reqBody: any): Promise<responseRest> => {
         }
         company.owner = reqBody.owner;
         company.address = reqBody.address;
-        company.organization = AuthUserDetails.getInstance().getUserDetails().organization_id as any;
+        company.organization = userInfo.organization_id as any;
         company.totalContractAmount = reqBody.amount;
 
-        const companyRepo = Repository.getCompany();
         await companyRepo.save(company);
         return response;
     } catch (error) {
@@ -220,7 +236,7 @@ export const handleBulkCompanyUpload = async (csv: string, fsFields: string, csv
         const response = getDefaultResponse('Company columns fetched');
         const fsFieldStr = fsFields.split(',');
         const csvFieldStr = csvFields.split(',');
-
+        const userInfo = AuthUserDetails.getInstance().getUserDetails();
         const csvRecords = await parseCsvData(csv);
         if (csvRecords.length > 1000) {
             throw new Error('Bulk process is limited to "1000 record" per CSV file.');
@@ -237,11 +253,24 @@ export const handleBulkCompanyUpload = async (csv: string, fsFields: string, csv
                     }
                 }
             });
-            company.organization = AuthUserDetails.getInstance().getUserDetails().organization_id as any;
+            company.organization = userInfo.organization_id as any;
             return company;
         });
 
         const companyRepo = Repository.getCompany();
+
+        const [totalCompanies,tmp] = await Promise.all([
+            companyRepo.count({where : {organization : {id : userInfo.organization_id}}}),
+            CustomSettingsHelper.getInstance().initialize(userInfo.organization_id)
+        ]);
+
+        let totalCustomerLimit :any = CustomSettingsHelper.getInstance().getCustomSettings(TOTAL_CUSTOMER);
+        totalCustomerLimit = CustomSettingsHelper.parseValue(totalCustomerLimit);
+
+        if((totalCompanies + companies.length) >=  totalCustomerLimit){
+            throw new Error('Total companies limit reached');
+        }
+
         await companyRepo.save(companies);
         return response;
     } catch (error) {
@@ -419,7 +448,7 @@ export const updateCompany = async (payload: any) => {
             history.fieldName = key;
             history.actionType = 'Update';
             history.organization = AuthUserDetails.getInstance().getUserDetails().organization_id as any;
-            history.extraInfo = payload.totalContractAmount; //stores new contract value
+            history.extraInfo = payload[key]; //stores new contract value
             histories.push(history);
         }
 
