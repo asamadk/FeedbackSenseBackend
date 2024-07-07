@@ -10,8 +10,8 @@ import { Plan } from "../Entity/PlanEntity";
 import { FREE_PLAN, MONTHLY_BILLING } from "../Helpers/Constants";
 import { Subscription } from "../Entity/SubscriptionEntity";
 import { getFreeSubscriptionLimit } from "./AuthService";
-import Razorpay from "razorpay";
 import { createPaymentCustomer } from "../Integrations/PaymentIntegration/RazorPayHelper";
+import { createOnboardingStageForOrg } from "./JourneyStageService";
 
 export const createOrganizationForUser = async (user: User, reqBody: any): Promise<responseRest> => {
     try {
@@ -42,10 +42,10 @@ export const createOrganizationForUser = async (user: User, reqBody: any): Promi
         await userRepository.save(validUser);
 
         const orgObj = new Organization();
-        if (process.env.NODE_ENV !== 'test') {
-            const customerId = await createPaymentCustomer(orgName,validUser);
-            orgObj.payment_customerId = customerId;
-        }
+        // if (process.env.NODE_ENV !== 'test') {
+        //     const customerId = await createPaymentCustomer(orgName,validUser);
+        //     orgObj.payment_customerId = customerId;
+        // }
         orgObj.name = orgName;
         await orgRepo.save(orgObj);
 
@@ -54,6 +54,7 @@ export const createOrganizationForUser = async (user: User, reqBody: any): Promi
 
         await createCustomSettings(orgObj.id);
         await createOrgSubscription(orgObj);
+        await createOnboardingStageForOrg(orgObj.id);
         response.data = orgObj;
         return response;
     } catch (error) {

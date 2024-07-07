@@ -11,7 +11,7 @@ export const isLoggedIn = async (req: any, res: any, next: any) => {
         const updatedUser = await userRepo.findOneBy({id : req.user.id});
         AuthUserDetails.getInstance().setUserDetails(updatedUser);
         const user = AuthUserDetails.getInstance().getUserDetails();
-        if (user.isDeleted === true) {
+        if (user?.isDeleted === true) {
             res.statusCode = 401;
             res.json(getUnAuthorizedResponse());
         } else {

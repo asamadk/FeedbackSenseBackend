@@ -79,7 +79,7 @@ export class SubscriptionHelper {
             customSettingHelper.setCustomSettings(REMOVE_FEEDBACK_SENSE_LOGO, 'false');
             customSettingHelper.setCustomSettings(SKIP_LOGIC_FEATURE, 'true');
             customSettingHelper.setCustomSettings(SURVEY_RESPONSE_CAPACITY, '100');
-            customSettingHelper.setCustomSettings(TEAM_SEATS, '1');
+            customSettingHelper.setCustomSettings(TEAM_SEATS, '2');
             customSettingHelper.setCustomSettings(LOGO_DATA, '');
             customSettingHelper.setCustomSettings(EXPORT_FEATURE, 'true');
             customSettingHelper.setCustomSettings(AI_TEXT_ANALYSIS, 'false');
@@ -92,7 +92,7 @@ export class SubscriptionHelper {
             customSettingHelper.setCustomSettings(REMOVE_FEEDBACK_SENSE_LOGO, 'true');
             customSettingHelper.setCustomSettings(SKIP_LOGIC_FEATURE, 'true');
             customSettingHelper.setCustomSettings(SURVEY_RESPONSE_CAPACITY, '1000');
-            customSettingHelper.setCustomSettings(TEAM_SEATS, '3');
+            customSettingHelper.setCustomSettings(TEAM_SEATS, '5');
             customSettingHelper.setCustomSettings(LOGO_DATA, '');
             customSettingHelper.setCustomSettings(EXPORT_FEATURE, 'true');
             customSettingHelper.setCustomSettings(AI_TEXT_ANALYSIS, 'true');

@@ -20,7 +20,26 @@ export const getFeedbackResponseList = async (surveyId: string): Promise<respons
             return getCustomResponse({}, 404, 'Survey Id not provided', false);
         }
         const surveyResponseRepo = AppDataSource.getDataSource().getRepository(SurveyResponse);
-        const surveyList = await surveyResponseRepo.findBy({ survey_id: surveyId });
+        const surveyList = await surveyResponseRepo.find({
+            where : { 
+                survey_id: surveyId
+            },
+            select : {
+                company : {
+                    id : true,
+                    name : true
+                },
+                person : {
+                    id : true,
+                    firstName : true,
+                    lastName : true
+                }
+            },
+            relations : {
+                company : true,
+                person : true
+            }
+        })
         response.data = surveyList;
         return response;
     } catch (error) {

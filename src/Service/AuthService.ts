@@ -34,9 +34,15 @@ export const handleSuccessfulLogin = async (user: UserProfile, microsoftUser: an
         if (userEmail == null || userEmail === '') {
             return;
         }
+        
         const savedUser = await userRepository.findOneBy({
             email: userEmail
         });
+
+        if(savedUser == null){
+            throw new Error('User not found.')
+        }
+
         if (savedUser != null && savedUser.emailVerified === true) { return; }
         if (savedUser != null && savedUser.emailVerified === false) {
             userEntity = savedUser;
@@ -122,7 +128,7 @@ export const handleInviteUser = async (payload: string): Promise<responseRest> =
             throw new Error('Invitation link is invalid.');
         }
         const inviteeUser = await userRepo.findOneBy({ email: decryptedPayload.email });
-        if(inviteeUser.organization_id === invitedByUser.organization_id){
+        if(inviteeUser?.organization_id === invitedByUser.organization_id){
             throw new Error('The invite you are trying to use has already been accepted.');
         }
         

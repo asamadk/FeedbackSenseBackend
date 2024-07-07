@@ -98,3 +98,12 @@ export function generateSmileyDataset(count :number, emojiCounts = { "0": 0, "1"
   }
   return dataset;
 }
+
+export function formatMoney(val :number | string){
+  if(val == null){return '$0';}
+  if(typeof val === 'string'){
+      if(val.length < 1){return '$0'}
+      val = parseInt(val);
+  }
+  return `$${Intl.NumberFormat('en',{notation : 'compact'}).format(val)}`;
+}

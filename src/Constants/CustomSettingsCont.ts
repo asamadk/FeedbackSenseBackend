@@ -10,3 +10,4 @@ export const EXPORT_FEATURE = 'export-feature';
 export const AI_TEXT_ANALYSIS = 'AI_TEXT_ANALYSIS';
 export const WORD_CLOUD = 'WORD_CLOUD';
 export const TEAM_ROLES = 'TEAM_ROLES'
+export const TOTAL_CUSTOMER = 'TOTAL_CUSTOMER';

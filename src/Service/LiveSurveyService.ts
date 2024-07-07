@@ -8,6 +8,7 @@ import { SurveyResponse } from "../Entity/SurveyResponse";
 import { User } from "../Entity/UserEntity";
 import { Workflow } from "../Entity/WorkflowEntity";
 import { CustomSettingsHelper } from "../Helpers/CustomSettingHelper";
+import { Repository } from "../Helpers/Repository";
 import { getCustomResponse, getDefaultResponse } from "../Helpers/ServiceUtils";
 import { getCountOfSurveysForOrganizationByMonth, hasSurveyReachedResponseLimit, isSurveyEnded, sortSurveyFlowNodes } from "../Helpers/SurveyUtils";
 import { responseRest } from "../Types/ApiTypes";
@@ -107,7 +108,8 @@ export const saveSurveyResponse = async (surveyId: string, responseData: any) =>
         const data = responseData?.data;
         const info = responseData?.info;
         const annUserId = responseData?.anUserId;
-
+        const personId = responseData?.personId;
+        
         const surveyResponseRepo = AppDataSource.getDataSource().getRepository(SurveyResponse);
         let surveyResponse = await surveyResponseRepo.findOne({
             where: {
@@ -121,9 +123,23 @@ export const saveSurveyResponse = async (surveyId: string, responseData: any) =>
             await sendSurveyEmailToAdmin(surveyId, annUserId);
         }
 
+        if(surveyResponse.person == null && personId != null){
+            const peopleRepo = Repository.getPeople();
+            const person = await peopleRepo.find({
+                where : {id : personId},
+                select : {company : {id : true}},
+                relations : {company : true}
+            })
+            surveyResponse.person = personId;
+            if(person != null && person.length > 0){
+                surveyResponse.company = person[0].company.id as any;
+            } 
+        }
         surveyResponse.survey_id = surveyId;
         surveyResponse.anonymousUserId = annUserId;
-        surveyResponse.userDetails = info?.userAgent;
+        if(info?.platform != null){
+            surveyResponse.userDetails = JSON.stringify(info?.platform);
+        }
         if (surveyResponse.response == null) {
             surveyResponse.response = '[]';
         }

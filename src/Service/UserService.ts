@@ -6,6 +6,7 @@ import { User } from "../Entity/UserEntity";
 import { AuthUserDetails } from "../Helpers/AuthHelper/AuthUserDetails";
 import { INVITE_QUERY_PARAM } from "../Helpers/Constants";
 import { CustomSettingsHelper } from "../Helpers/CustomSettingHelper";
+import { Repository } from "../Helpers/Repository";
 import { getCustomResponse, getDefaultResponse } from "../Helpers/ServiceUtils";
 import { InviteData, responseRest } from "../Types/ApiTypes";
 import { EncryptionHelper } from "../Utils/CryptoHelper";
@@ -49,12 +50,80 @@ export const removeUserFromOrg = async (toDeleteUserId: string): Promise<respons
         const userRepo = AppDataSource.getDataSource().getRepository(User);
         const toUpdateUser = await userRepo.findOneBy({ id: toDeleteUserId });
         toUpdateUser.isDeleted = true;
-        userRepo.save(toUpdateUser);
+        await Promise.all([
+            userRepo.save(toUpdateUser),
+            transferUserResources(toDeleteUserId)
+        ]);
         return response;
     } catch (error) {
         logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
         return getCustomResponse(null, 500, error.message, false)
     }
+}
+
+async function transferUserResources(toDeleteUserId: string) {
+
+    const userInfo = AuthUserDetails.getInstance().getUserDetails();
+    const [
+        activities,
+        companies,
+        notes,
+        notifications,
+        surveys,
+        task
+    ] = await Promise.all([
+        Repository.getActivity().find({
+            where: { owner: { id: toDeleteUserId } }
+        }),
+        Repository.getCompany().find({
+            where: { owner: { id: toDeleteUserId } }
+        }),
+        Repository.getNotes().find({
+            where: { owner: { id: toDeleteUserId } }
+        }),
+        Repository.getNotifications().find({
+            where: { user: { id: toDeleteUserId } }
+        }),
+        Repository.getSurveys().find({
+            where: { user: { id: toDeleteUserId } }
+        }),
+        Repository.getTask().find({
+            where: { owner: { id: toDeleteUserId } }
+        })
+    ]);
+
+    activities.forEach(act => {
+        act.owner = userInfo.id as any
+    });
+
+    companies.forEach(cmp => {
+        cmp.owner = userInfo.id as any
+    });
+
+    notes.forEach(nt => {
+        nt.owner = userInfo.id as any
+    });
+
+    notifications.forEach(nt => {
+        nt.user = userInfo.id as any
+    });
+
+    surveys.forEach(sr => {
+        sr.user = userInfo.id as any
+    });
+
+    task.forEach(tsk => {
+        tsk.owner = userInfo.id as any
+    });
+
+    await Promise.all([
+        Repository.getActivity().save(activities),
+        Repository.getCompany().save(companies),
+        Repository.getNotes().save(notes),
+        Repository.getNotifications().save(notifications),
+        Repository.getSurveys().save(surveys),
+        Repository.getTask().save(task),
+    ])
 }
 
 export const updateUserRole = async (userId: string, role: 'OWNER' | 'ADMIN' | 'USER' | 'GUEST'): Promise<responseRest> => {
@@ -68,7 +137,7 @@ export const updateUserRole = async (userId: string, role: 'OWNER' | 'ADMIN' | '
 
         const userRepo = AppDataSource.getDataSource().getRepository(User);
         const toUpdateUser = await userRepo.findOneBy({ id: userId });
-        if(userDetails.role === 'ADMIN' && toUpdateUser.role === 'OWNER'){
+        if (userDetails.role === 'ADMIN' && toUpdateUser.role === 'OWNER') {
             throw new Error('Sorry, you cannot modify roles that are superior to your role.');
         }
         toUpdateUser.role = role;
@@ -94,13 +163,14 @@ export const handleInviteUsers = async (email: string, role: 'OWNER' | 'ADMIN' |
         const currentOrgUsers = await userRepo.count({ where: { organization_id: userDetails.organization_id, isDeleted: false } });
 
         const emailList = email.split(',');
+        const toBeTotalUsers = currentOrgUsers + emailList.length;
 
-        if (currentOrgUsers + emailList.length > teamMemberSeats) {
+        if (toBeTotalUsers > teamMemberSeats && role === 'OWNER') {
             throw new Error('Upgrade plan for more seats.Team member limit reached.');
         }
 
-        for(const email of emailList){
-            if(userDetails.email === email){
+        for (const email of emailList) {
+            if (userDetails.email === email) {
                 throw new Error('Permission Denied: You cannot invite yourself.');
             }
         }

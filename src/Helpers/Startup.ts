@@ -146,7 +146,7 @@ export class StartUp {
             await this.insertPlan();
             logger.info('Plans created.');
         } catch (error) {
-            logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
+            logger.error(`Startup :: CreatePlans :: message - ${error.message}, stack trace - ${error.stack}`);
         }
     }
 

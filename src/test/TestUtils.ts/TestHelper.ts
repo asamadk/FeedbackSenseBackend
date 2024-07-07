@@ -12,19 +12,10 @@ export class TestHelper {
     }
 
     public dbConnect!: DataSource;
-    private testdb!: any;
 
     async setupTestDB() {
         try {
-            // this.dbConnect = await testDataSource.initialize();
-            // AppDataSource.setDataSource(this.dbConnect);
-            // this.testdb = new Database(":memory:", { verbose: console.log });
             this.dbConnect = new DataSource({
-                // name: "default",
-                // type: "better-sqlite3",
-                // database: ":memory:",
-                // entities: [__dirname + "/../../../dist/Entity/*.js"],
-                // synchronize: true,
                 "name": "test",
                 "type": "mysql",
                 "host": process.env.DB_HOST,
@@ -48,21 +39,44 @@ export class TestHelper {
     async teardownTestDB() {
         try {
             try {
-                await this.dbConnect.query('DROP TABLE IF EXISTS survey_config');
-                await this.dbConnect.query('DROP TABLE IF EXISTS workflow');
-                await this.dbConnect.query('DROP TABLE IF EXISTS survey_response');
-                await this.dbConnect.query('DROP TABLE IF EXISTS survey_log');
-                await this.dbConnect.query('DROP TABLE IF EXISTS survey');
-                await this.dbConnect.query('DROP TABLE IF EXISTS survey_type');
-                await this.dbConnect.query('DROP TABLE IF EXISTS invoice');
-                await this.dbConnect.query('DROP TABLE IF EXISTS subscription');
-                await this.dbConnect.query('DROP TABLE IF EXISTS folder');
-                await this.dbConnect.query('DROP TABLE IF EXISTS notification');
-                await this.dbConnect.query('DROP TABLE IF EXISTS custom_settings');
-                await this.dbConnect.query('DROP TABLE IF EXISTS organization');
-                await this.dbConnect.query('DROP TABLE IF EXISTS plan');
-                await this.dbConnect.query('DROP TABLE IF EXISTS user');
-                await this.dbConnect.query('DROP TABLE IF EXISTS templates');
+                await this.dbConnect.query('SET FOREIGN_KEY_CHECKS = 0');
+                await this.dbConnect.query('DROP TABLE IF EXISTS survey_config ');
+                await this.dbConnect.query('DROP TABLE IF EXISTS workflow ');
+                await this.dbConnect.query('DROP TABLE IF EXISTS survey_response ');
+                await this.dbConnect.query('DROP TABLE IF EXISTS survey_log ');
+                await this.dbConnect.query('DROP TABLE IF EXISTS survey ');
+                await this.dbConnect.query('DROP TABLE IF EXISTS survey_type ');
+                await this.dbConnect.query('DROP TABLE IF EXISTS invoice  ');
+                await this.dbConnect.query('DROP TABLE IF EXISTS subscription  ');
+                await this.dbConnect.query('DROP TABLE IF EXISTS folder ');
+                await this.dbConnect.query('DROP TABLE IF EXISTS notification ');
+                await this.dbConnect.query('DROP TABLE IF EXISTS custom_settings ');
+                await this.dbConnect.query('DROP TABLE IF EXISTS plan ');
+                await this.dbConnect.query('DROP TABLE IF EXISTS templates ');
+                await this.dbConnect.query('DROP TABLE IF EXISTS activity ');
+                await this.dbConnect.query('DROP TABLE IF EXISTS company_history ');
+                await this.dbConnect.query('DROP TABLE IF EXISTS company_tags ');
+                await this.dbConnect.query('DROP TABLE IF EXISTS company_tag ');
+                await this.dbConnect.query('DROP TABLE IF EXISTS custom_subscription ');
+                await this.dbConnect.query('DROP TABLE IF EXISTS company_task ');
+                await this.dbConnect.query('DROP TABLE IF EXISTS health_design ');
+                await this.dbConnect.query('DROP TABLE IF EXISTS journey_log ');
+                await this.dbConnect.query('DROP TABLE IF EXISTS mails ');
+                await this.dbConnect.query('DROP TABLE IF EXISTS notes ');
+                await this.dbConnect.query('DROP TABLE IF EXISTS person_task ');
+                await this.dbConnect.query('DROP TABLE IF EXISTS task ');
+                await this.dbConnect.query('DROP TABLE IF EXISTS usage_event ');
+                await this.dbConnect.query('DROP TABLE IF EXISTS usage_event_type ');
+                await this.dbConnect.query('DROP TABLE IF EXISTS usage_session ');
+                await this.dbConnect.query('DROP TABLE IF EXISTS person ');
+                await this.dbConnect.query('DROP TABLE IF EXISTS company ');
+                await this.dbConnect.query('DROP TABLE IF EXISTS onboarding_stage');
+                await this.dbConnect.query('DROP TABLE IF EXISTS risk_stage ');
+                await this.dbConnect.query('DROP TABLE IF EXISTS journey_stage');
+                await this.dbConnect.query('DROP TABLE IF EXISTS journey_sub_stage ');
+                await this.dbConnect.query('DROP TABLE IF EXISTS user ');
+                await this.dbConnect.query('DROP TABLE IF EXISTS organization ');
+                await this.dbConnect.query('SET FOREIGN_KEY_CHECKS = 1');
             } catch (error) {
                 logger.error(`Sub outer message - ${error.message}, stack trace - ${error.stack}`);
             }
