@@ -43,6 +43,7 @@ export class User {
     isDeleted!: boolean;
 
     surveys: any;
+    flows :any;
     notifications: any;
     subscriptions: any;
 }

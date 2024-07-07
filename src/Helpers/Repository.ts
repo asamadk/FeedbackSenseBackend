@@ -3,6 +3,7 @@ import { Activity } from "../Entity/ActivityEntity";
 import { Company } from "../Entity/CompanyEntity"
 import { CompanyHistory } from "../Entity/CompanyHistory";
 import { CompanyTag } from "../Entity/CompanyTagEntity";
+import { Flow } from "../Entity/FlowEntity";
 import { HealthDesign } from "../Entity/HealthDesign";
 import { JourneyLog } from "../Entity/JourneyLog";
 import { JourneyStage } from "../Entity/JourneyStageEntity";
@@ -19,6 +20,7 @@ import { UsageEvent } from "../Entity/UsageEvent";
 import { UsageEventType } from "../Entity/UsageEventTypes";
 import { UsageSession } from "../Entity/UsageSession";
 import { User } from "../Entity/UserEntity";
+import { Workflow } from "../Entity/WorkflowEntity";
 
 export class Repository {
 
@@ -100,6 +102,14 @@ export class Repository {
 
     static getHealthDesign(){
         return AppDataSource.getDataSource().getRepository(HealthDesign);
+    }
+
+    static getFlow(){
+        return AppDataSource.getDataSource().getRepository(Flow);
+    }
+
+    static getWorkflow(){
+        return AppDataSource.getDataSource().getRepository(Workflow);
     }
 
 }
