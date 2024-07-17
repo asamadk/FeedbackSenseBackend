@@ -6,6 +6,7 @@ import { AuthUserDetails } from "../Helpers/AuthHelper/AuthUserDetails";
 import { Repository } from "../Helpers/Repository";
 import { getCustomResponse, getDefaultResponse } from "../Helpers/ServiceUtils";
 import { responseRest } from "../Types/ApiTypes";
+import { CompanyTrigger } from "../Triggers/CompanyTrigger";
 
 export const createJourney = async (reqBody: any): Promise<responseRest> => {
     try {
@@ -133,7 +134,7 @@ export const updateCompanyJourney = async (data: any): Promise<responseRest> => 
             whereClause.risk = Not('');
         }
 
-        await companyRepo.save(company);
+        await CompanyTrigger.save(company);
 
         const toUpdateLogs = await journeyLogRepo.find({
             where: whereClause

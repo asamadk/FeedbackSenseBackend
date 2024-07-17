@@ -39,6 +39,7 @@
   "dependencies": {
     "@stdlib/nlp-lda": "^0.1.0",
     "@types/moment-timezone": "^0.5.30",
+    "amqplib": "^0.10.4",
     "axios": "^1.5.1",
     "better-sqlite3": "^8.5.0",
     "cookie-parser": "^1.4.6",

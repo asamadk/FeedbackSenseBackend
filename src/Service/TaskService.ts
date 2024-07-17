@@ -6,6 +6,7 @@ import { Repository } from "../Helpers/Repository";
 import { getCustomResponse, getDefaultResponse } from "../Helpers/ServiceUtils";
 import { TaskServiceHelper } from "../ServiceHelper/TaskServiceHelper";
 import { responseRest } from "../Types/ApiTypes";
+import { TaskTrigger } from "../Triggers/TaskTrigger";
 
 export const createTask = async (reqBody: any): Promise<responseRest> => {
     try {
@@ -42,8 +43,7 @@ export const createTask = async (reqBody: any): Promise<responseRest> => {
         task.status = reqBody.status;
         task.organization = userInfo.organization_id as any;
 
-        const taskRepo = Repository.getTask();
-        await taskRepo.save(task);
+        await TaskTrigger.save(task);
 
         return response;
     } catch (error) {
@@ -159,7 +159,7 @@ export const completeTask = async (data: any): Promise<responseRest> => {
         } else {
             task.status = 'Completed';
         }
-        await taskRepo.save(task);
+        await TaskTrigger.save(task);
         return response;
     } catch (error) {
         logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
@@ -220,7 +220,7 @@ export const updateTask = async (reqBody: any): Promise<responseRest> => {
             singleTask.company = [company];
         }
 
-        await taskRepo.save(singleTask);
+        await TaskTrigger.save(singleTask)
 
         return response;
     } catch (error) {

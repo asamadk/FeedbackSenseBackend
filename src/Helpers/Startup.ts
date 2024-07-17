@@ -2,13 +2,14 @@ import { Repository } from "typeorm";
 import { AppDataSource } from "../Config/AppDataSource"
 import { Plan } from "../Entity/PlanEntity";
 import { SurveyType } from "../Entity/SurveyTypeEntity";
-import { BASIC_PLAN, FREE_PLAN, PLUS_PLAN, PRO_PLAN } from "./Constants";
+import { BASIC_PLAN, FREE_PLAN, PLUS_PLAN, PRO_PLAN, recordQueue } from "./Constants";
 import { logger } from "../Config/LoggerConfig";
 import { TemplateStartupScript } from "./StartupScripts/TemplateStartupScript";
 import { CustomSettings } from "../Entity/CustomSettingsEntity";
 import { Organization } from "../Entity/OrgEntity";
 import { FSCustomSetting } from "../Utils/SettingsUtils/CustomSettingsData";
 import { createCustomSettings } from "../Service/CustomSettingsService";
+import { connectRabbitMQ, getRabbitMQChannel } from "../Config/RabbitMQ";
 
 export class StartUp {
 
@@ -30,6 +31,7 @@ export class StartUp {
             await this.createPlans();
             await this.createCustomerSettingsExistingUser();
             await new TemplateStartupScript().initialize();
+            await this.initializeRabbitMQ();
         } catch (error) {
             logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
         }
@@ -238,6 +240,18 @@ export class StartUp {
 
         } catch (error) {
             logger.error(`CreateCustomerSettingsExistingUser :: message - ${error.message}, stack trace - ${error.stack}`);
+        }
+    }
+
+    async initializeRabbitMQ(){
+        try{
+            logger.info(`Initializing RabbitMQ...`);
+            await connectRabbitMQ();
+            logger.info(`RabbitMQ initialized`)
+            const channel = getRabbitMQChannel();
+            await channel.assertQueue(recordQueue, { durable: true });
+        }catch(error){
+            logger.error(`initializeRabbitMQ :: message - ${error.message}, stack trace - ${error.stack}`);
         }
     }
 

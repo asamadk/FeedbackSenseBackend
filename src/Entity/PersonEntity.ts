@@ -16,6 +16,7 @@ import { Task } from "./TaskEntity";
 import { SurveyResponse } from "./SurveyResponse";
 import { UsageEvent } from "./UsageEvent";
 import { UsageSession } from "./UsageSession";
+import { User } from "./UserEntity";
 
 
 @Entity()
@@ -40,6 +41,10 @@ export class Person {
 
   @Column({ nullable: true })
   role?: string;
+
+  @ManyToOne(() => User, { nullable: true })
+  @JoinColumn({ name: "ownerId" }) // This creates the ownerId column in the Company table
+  owner?: User;
 
   @ManyToOne(() => Company)
   @JoinColumn({ name: "companyId" }) // This links the companyId column to the Company entity

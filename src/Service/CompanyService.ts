@@ -10,6 +10,7 @@ import { parseCsvData } from "../Utils/CsvUtils";
 import { CompanyHistory } from "../Entity/CompanyHistory";
 import { CustomSettingsHelper } from "../Helpers/CustomSettingHelper";
 import { TOTAL_CUSTOMER } from "../Constants/CustomSettingsCont";
+import { CompanyTrigger } from "../Triggers/CompanyTrigger";
 
 export const createCompany = async (reqBody: any): Promise<responseRest> => {
     try {
@@ -50,7 +51,7 @@ export const createCompany = async (reqBody: any): Promise<responseRest> => {
         company.organization = userInfo.organization_id as any;
         company.totalContractAmount = reqBody.amount;
 
-        await companyRepo.save(company);
+        await CompanyTrigger.save(company);
         return response;
     } catch (error) {
         logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
@@ -107,6 +108,11 @@ export const getCompanyList = async (page: number, limit: number, searchStr: str
                     riskStage: {
                         id: true,
                         name: true
+                    },
+                    pointOfContact : {
+                        id : true,
+                        firstName : true,
+                        lastName : true
                     }
                 },
                 relations: {
@@ -114,7 +120,8 @@ export const getCompanyList = async (page: number, limit: number, searchStr: str
                     owner: true,
                     stage: true,
                     onboardingStage: true,
-                    riskStage: true
+                    riskStage: true,
+                    pointOfContact : true
                 },
                 order: {
                     name: 'ASC'
@@ -271,7 +278,7 @@ export const handleBulkCompanyUpload = async (csv: string, fsFields: string, csv
             throw new Error('Total companies limit reached');
         }
 
-        await companyRepo.save(companies);
+        await CompanyTrigger.saveBulk(companies);
         return response;
     } catch (error) {
         logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
@@ -437,8 +444,6 @@ export const getCompanySurveyScoreMetrics = async (companyId: string) => {
 export const updateCompany = async (payload: any) => {
     try {
         const response = getDefaultResponse('Company updated');
-        const companyRepo = Repository.getCompany();
-
         const histories = [];
 
         for (const key in payload) {
@@ -453,7 +458,7 @@ export const updateCompany = async (payload: any) => {
         }
 
         await Promise.all([
-            companyRepo.save(payload),
+            CompanyTrigger.save(payload),
             Repository.getCompanyHistory().save(histories)
         ]);
 

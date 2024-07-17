@@ -1,3 +1,5 @@
+import { Edge, Node } from "./FlowTypes"
+
 export type surveyTheme = {
     id : number,
     header : string,
@@ -7,8 +9,8 @@ export type surveyTheme = {
 }
 
 export type surveyFlowType = {
-    nodes : any[],
-    edges : any[],
+    nodes : Node[],
+    edges : Edge[],
     viewport : any
 }
 

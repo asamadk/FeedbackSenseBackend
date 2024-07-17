@@ -6,6 +6,8 @@ import { HealthScoreProcessor } from './BatchJobs/HealthScoreProcessor';
 import { cronSchedule } from '../Helpers/CronConstants';
 import { SurveyScoreProcessor } from './BatchJobs/SurveyScoreProcessor';
 import { UsageFrequencyProcessor } from './BatchJobs/UsageFrequencyProcessor';
+import { WorkflowProcessor } from './BatchJobs/WorkflowProcessor';
+import { WaitRecordProcessor } from './Automation/WaitRecordsProcessor';
 
 export class JobScheduler {
 
@@ -15,6 +17,26 @@ export class JobScheduler {
         this.runUsageFrequencyProcessor();
         this.runHealthScoreProcessor();
         this.runSurveyScoreProcessor();
+        this.runWorkflowProcessor();
+        this.runWaitForRecordsProcessor();
+    }
+
+    private runWaitForRecordsProcessor(){
+        try{
+            new WaitRecordProcessor().execute();
+            cron.schedule(cronSchedule.DAILY_3_AM,() => new WaitRecordProcessor().execute());
+        }catch(error){
+            logger.error(`Error :: JobScheduler :: runWaitForRecordsProcessor = ${error}`)
+        }
+    }
+
+    private runWorkflowProcessor(){
+        try{
+            new WorkflowProcessor().execute();
+            cron.schedule(cronSchedule.EVERY_X_MINUTE(60),() => new WorkflowProcessor().execute());
+        }catch(error){
+            logger.error(`Error :: JobScheduler :: runWorkflowProcessor = ${error}`)
+        }
     }
 
     //process usage frequency 
@@ -70,5 +92,4 @@ export class JobScheduler {
             logger.error(`Error :: JobScheduler :: schedulePaymentHandlerJob = ${error}`)
         }
     }
-
 }

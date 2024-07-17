@@ -7,6 +7,7 @@ import { Repository } from "../Helpers/Repository";
 import { getCustomResponse, getDefaultResponse } from "../Helpers/ServiceUtils";
 import { PeopleServiceHelper } from "../ServiceHelper/PeopleServiceHelper";
 import { responseRest } from "../Types/ApiTypes";
+import { PersonTrigger } from "../Triggers/PersonTrigger";
 
 export const createPerson = async (reqBody: any): Promise<responseRest> => {
     try {
@@ -15,7 +16,7 @@ export const createPerson = async (reqBody: any): Promise<responseRest> => {
         if (helper.validateCreatePersonPayload(reqBody) === false) {
             throw new Error('Payload incorrect.');
         }
-        const personRepo = Repository.getPeople();
+        
         const person = new Person();
         person.firstName = reqBody.firstName;
         person.lastName = reqBody.lastName;
@@ -26,7 +27,7 @@ export const createPerson = async (reqBody: any): Promise<responseRest> => {
         person.communicationPreferences = reqBody.commPref;
         person.organization = AuthUserDetails.getInstance().getUserDetails().organization_id as any
 
-        await personRepo.save(person);
+        await PersonTrigger.save(person);
         return response;
     } catch (error) {
         logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
@@ -89,8 +90,7 @@ export const deletePeople = async (personIds: string[]): Promise<responseRest> =
 export const updatePeople = async (payload: any) => {
     try {
         const response = getDefaultResponse('Person updated');
-        const peopleRepo = Repository.getPeople();
-        await peopleRepo.save(payload);
+        await PersonTrigger.save(payload);
         return response;
     } catch (error) {
         logger.error(`message - ${error.message}, stack trace - ${error.stack}`);

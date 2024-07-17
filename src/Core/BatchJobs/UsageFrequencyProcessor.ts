@@ -1,6 +1,7 @@
 import { logger } from "../../Config/LoggerConfig";
 import { Company } from "../../Entity/CompanyEntity";
 import { Repository } from "../../Helpers/Repository";
+import { CompanyTrigger } from "../../Triggers/CompanyTrigger";
 
 export class UsageFrequencyProcessor {
 
@@ -18,8 +19,8 @@ export class UsageFrequencyProcessor {
                     this.processUsage(company)
                 );
             }
-            const toUpdateCompanies = await Promise.all(companyPromise);
-            Repository.getCompany().save(toUpdateCompanies);
+            const toUpdateCompanies = await Promise.all(companyPromise);            
+            await CompanyTrigger.saveBulk(toUpdateCompanies);
             logger.info('Company usage frequency updated successfully');
         } catch (error) {
             logger.error(`Failed to update company usage frequency: ${error.message}`);

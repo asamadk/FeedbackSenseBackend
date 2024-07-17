@@ -46,6 +46,7 @@ export const mainDataSource = new DataSource({
     password: process.env.DB_PASSWORD,
     database: process.env.DB_NAME,
     entities: ["dist/Entity/*.js"],
+    subscribers : ["dist/Subscriber/*.js"],
     migrations: [
         "src/migration/**/*.ts"
     ],

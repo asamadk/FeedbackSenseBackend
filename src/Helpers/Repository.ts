@@ -20,6 +20,7 @@ import { UsageEvent } from "../Entity/UsageEvent";
 import { UsageEventType } from "../Entity/UsageEventTypes";
 import { UsageSession } from "../Entity/UsageSession";
 import { User } from "../Entity/UserEntity";
+import { WaitRecordsEntity } from "../Entity/WaitRecordsEntity";
 import { Workflow } from "../Entity/WorkflowEntity";
 
 export class Repository {
@@ -110,6 +111,10 @@ export class Repository {
 
     static getWorkflow(){
         return AppDataSource.getDataSource().getRepository(Workflow);
+    }
+
+    static getWaitRecords(){
+        return AppDataSource.getDataSource().getRepository(WaitRecordsEntity);
     }
 
 }
