@@ -107,6 +107,7 @@ export const getUserAfterLogin = async (user: any): Promise<responseRest> => {
             return getCustomResponse(null, 404, 'Subscription not found', false);
         }
 
+        console.log("🚀 ~ getUserAfterLogin ~ userObj:", userObj)
         response.data = userObj;
         return response;
     } catch (error) {

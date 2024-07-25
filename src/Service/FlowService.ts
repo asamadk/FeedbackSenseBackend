@@ -1,7 +1,9 @@
 import { logger } from "../Config/LoggerConfig";
+import { PUBLISH_AUTOMATION_COUNT } from "../Constants/CustomSettingsCont";
 import { Flow, flowTypes } from "../Entity/FlowEntity";
 import { Workflow } from "../Entity/WorkflowEntity";
 import { AuthUserDetails } from "../Helpers/AuthHelper/AuthUserDetails";
+import { CustomSettingsHelper } from "../Helpers/CustomSettingHelper";
 import { Repository } from "../Helpers/Repository";
 import { getCustomResponse, getDefaultResponse } from "../Helpers/ServiceUtils";
 import { cleanSurveyFlowJSON, validateIsNodeDisconnected, validateLogicEdge, validateSurveyFlowOnSave } from "../Helpers/SurveyUtils";
@@ -126,6 +128,7 @@ export const publishAutomationFlow = async (flowId: string): Promise<responseRes
         const response = getDefaultResponse('Flow published.');
         const workflowRepo = Repository.getWorkflow();
         const workflowObj = await workflowRepo.findOneBy({ flowId: flowId });
+        const userInfo = AuthUserDetails.getInstance().getUserDetails();
 
         if (workflowObj == null) {
             throw new Error('Cannot publish. Flow is empty.');
@@ -150,6 +153,24 @@ export const publishAutomationFlow = async (flowId: string): Promise<responseRes
 
         const flowRepo = Repository.getFlow();
         const flow = await flowRepo.findOneBy({ id: flowId });
+
+        await CustomSettingsHelper.getInstance().initialize(userInfo.organization_id);
+        let totalCustomerLimit :any = CustomSettingsHelper.getInstance().getCustomSettings(PUBLISH_AUTOMATION_COUNT);
+        console.log("🚀 ~ publishAutomationFlow ~ totalCustomerLimit:", totalCustomerLimit)
+        const publishCount = await flowRepo.count({
+            where : {
+                organization : {
+                    id : userInfo.organization_id
+                },
+                type : flow.type,
+                is_published : true
+            }
+        });
+
+        if(publishCount >= totalCustomerLimit){
+            throw new Error('You have reached you limit, Please contact support to increase published flows.');
+        }
+        
         flow.is_published = true;
         await flowRepo.save(flow);
         response.data = flow;
