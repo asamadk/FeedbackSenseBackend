@@ -5,7 +5,7 @@ import dotenv from "dotenv";
 dotenv.config();
 const clienT_URL = process.env.CLIENT_URL;
 
-import { getUserAfterLogin, handleCleanInvite, handleInviteUser } from "../Service/AuthService";
+import { createUserApplyCoupon, getUserAfterLogin, handleCleanInvite, handleInviteUser } from "../Service/AuthService";
 import { getCustomResponse } from "../Helpers/ServiceUtils";
 import { logger } from "../Config/LoggerConfig";
 import { INVITE_QUERY_PARAM } from "../Helpers/Constants";
@@ -91,9 +91,9 @@ router.get("/login/failed", (req, res) => {
                 </style>
                 <body> 
                     <div class="error-container"> 
-                        <h1>Not Found</h1> 
+                        <h1>User Not Found</h1> 
                         <p> 
-                            Please reach us out at support@feedbacksense.io 
+                            Please reach us out at support@retainsense.com 
                         </p> 
                         <a href="${process.env.CLIENT_URL}"> 
                             Go Back to Home 
@@ -163,13 +163,23 @@ router.post('/process/clean/invite', async (req, res) => {
 });
 
 router.get('/microsoft',
-    passport.authenticate('microsoft', { failureRedirect: '/auth/login/failed',prompt: 'select_account' }));
+    passport.authenticate('microsoft', { failureRedirect: '/auth/login/failed', prompt: 'select_account' }));
 
 router.get('/microsoft/oauth2/redirect',
-    passport.authenticate('microsoft', { failureRedirect: '/auth/login/failed',prompt: 'select_account' }),
+    passport.authenticate('microsoft', { failureRedirect: '/auth/login/failed', prompt: 'select_account' }),
     function (req, res) {
         res.redirect(clienT_URL);
     });
+
+router.post('/appsumo/init', async (req, res) => {
+    try {
+        const response = await createUserApplyCoupon(req.body);
+        res.status(response.statusCode).json(response);
+    } catch (error) {
+        logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
+        res.status(500).json(getCustomResponse(null, 500, error.message, false));
+    }
+});
 
 
 export default router;

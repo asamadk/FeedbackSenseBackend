@@ -7,7 +7,7 @@ import { getUnAuthorizedResponse } from "../MiddleWares/AuthMiddleware";
 import { responseRest } from "../Types/ApiTypes";
 import { createCustomSettings } from "./CustomSettingsService";
 import { Plan } from "../Entity/PlanEntity";
-import { FREE_PLAN, MONTHLY_BILLING } from "../Helpers/Constants";
+import { BASIC_PLAN, FREE_PLAN, MONTHLY_BILLING } from "../Helpers/Constants";
 import { Subscription } from "../Entity/SubscriptionEntity";
 import { getFreeSubscriptionLimit } from "./AuthService";
 import { createPaymentCustomer } from "../Integrations/PaymentIntegration/RazorPayHelper";
@@ -67,7 +67,7 @@ const createOrgSubscription = async (org: Organization) => {
     const planRepo = AppDataSource.getDataSource().getRepository(Plan);
     const subscriptionRepo = AppDataSource.getDataSource().getRepository(Subscription);
     const planObj = await planRepo.findOneBy({
-        name: FREE_PLAN
+        name: BASIC_PLAN
     });
 
     if (planObj != null) {

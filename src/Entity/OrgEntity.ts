@@ -1,8 +1,9 @@
-import { Column, CreateDateColumn, Entity, OneToMany, OneToOne, UpdateDateColumn } from "typeorm";
+import { Column, CreateDateColumn, Entity, ManyToMany, OneToMany, OneToOne, UpdateDateColumn } from "typeorm";
 import { PrimaryGeneratedColumn } from "typeorm/decorator/columns/PrimaryGeneratedColumn";
 import { CustomSettings } from "./CustomSettingsEntity";
 import { Subscription } from "./SubscriptionEntity";
 import { Company } from "./CompanyEntity";
+import { Coupon } from "./CouponEntity";
 
 @Entity()
 export class Organization {
@@ -29,6 +30,8 @@ export class Organization {
 
   @OneToMany(() => Company, keyValue => keyValue.organization)
   companies!: Company[];
-
+  
+  @OneToMany(() => Coupon, coupon => coupon.organization)
+  coupons: Coupon[];
 
 }

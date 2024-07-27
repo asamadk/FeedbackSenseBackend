@@ -1,5 +1,7 @@
 import { Repository } from "typeorm";
 import { AppDataSource } from "../Config/AppDataSource"
+import fs from 'fs';
+import csv from 'csv-parser'
 import { Plan } from "../Entity/PlanEntity";
 import { SurveyType } from "../Entity/SurveyTypeEntity";
 import { BASIC_PLAN, FREE_PLAN, PLUS_PLAN, PRO_PLAN, recordQueue } from "./Constants";
@@ -10,6 +12,9 @@ import { Organization } from "../Entity/OrgEntity";
 import { FSCustomSetting } from "../Utils/SettingsUtils/CustomSettingsData";
 import { createCustomSettings } from "../Service/CustomSettingsService";
 import { connectRabbitMQ, getRabbitMQChannel } from "../Config/RabbitMQ";
+import { Repository as R } from '../Helpers/Repository';
+import path from "path";
+import { Coupon } from "../Entity/CouponEntity";
 
 export class StartUp {
 
@@ -32,6 +37,7 @@ export class StartUp {
             await this.createCustomerSettingsExistingUser();
             await new TemplateStartupScript().initialize();
             await this.initializeRabbitMQ();
+            await this.populateCoupons();
         } catch (error) {
             logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
         }
@@ -259,6 +265,32 @@ export class StartUp {
         } catch (error) {
             logger.error(`initializeRabbitMQ :: message - ${error.message}, stack trace - ${error.stack}`);
         }
+    }
+
+    async populateCoupons() {
+        const couponRepo = R.getCoupons();
+        const existingCouponCount = await couponRepo.count();
+        if (existingCouponCount > 0) { return; }
+        logger.info('Populating REDEEM Coupons...');
+
+        const coupons = [];
+        fs.createReadStream(path.resolve(__dirname, '../../uuid.csv'))
+            .pipe(csv({ headers: false }))
+            .on('data', (row) => {
+                const coupon = new Coupon();
+                coupon.id = row[0];
+                coupon.isUsed = false;
+                coupons.push(coupon);
+            })
+            .on('end', async () => {
+                try {
+                    await couponRepo.save(coupons);
+                    logger.info(`Successfully inserted ${coupons.length} coupons`);
+                } catch (error) {
+                    logger.error('Error inserting coupons:', error);
+                }
+
+            });
     }
 
 }

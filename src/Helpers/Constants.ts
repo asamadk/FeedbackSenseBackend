@@ -17,6 +17,6 @@ export const answerNotNeededSet = new Set<string>([
 ]);
 
 export const INVITE_QUERY_PARAM = 'code';
-export const SUPPORT_MAIL = 'support@feedbacksense.io';
+export const SUPPORT_MAIL = 'support@retainsense.com';
 
 export const recordQueue = 'record-queue';

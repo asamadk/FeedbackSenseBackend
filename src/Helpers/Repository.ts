@@ -3,6 +3,7 @@ import { Activity } from "../Entity/ActivityEntity";
 import { Company } from "../Entity/CompanyEntity"
 import { CompanyHistory } from "../Entity/CompanyHistory";
 import { CompanyTag } from "../Entity/CompanyTagEntity";
+import { Coupon } from "../Entity/CouponEntity";
 import { Flow } from "../Entity/FlowEntity";
 import { HealthDesign } from "../Entity/HealthDesign";
 import { JourneyLog } from "../Entity/JourneyLog";
@@ -115,6 +116,10 @@ export class Repository {
 
     static getWaitRecords(){
         return AppDataSource.getDataSource().getRepository(WaitRecordsEntity);
+    }
+
+    static getCoupons(){
+        return AppDataSource.getDataSource().getRepository(Coupon);
     }
 
 }
