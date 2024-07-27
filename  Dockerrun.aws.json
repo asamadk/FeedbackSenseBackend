@@ -1,0 +1,11 @@
+{
+    "AWSEBDockerrunVersion": "1",
+    "Image": {
+        "Name": "asamadk002/retainsensebackend"
+    },
+    "Ports": [
+        {
+            "ContainerPort": "3001"
+        }
+    ]
+}
