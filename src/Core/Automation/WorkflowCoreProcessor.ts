@@ -104,24 +104,32 @@ export class WorkflowCoreProcessor {
             WorkflowInteract.getInstance(this.recordType).saveRecords();
         } catch (error) {
             logger.error(`WorkflowCoreProcessor :: saving records :: error - ${error.message}`);
+        }finally{
+            WorkflowInteract.getInstance(this.recordType).clearData();
         }
 
         try {
             await TaskInteract.getInstance().createTasks();
         } catch (error) {
             logger.error(`WorkflowCoreProcessor :: TaskInteract :: error - ${error.message}`);
+        }finally{
+            TaskInteract.getInstance().clearData();
         }
 
         try {
             await EmailInteract.getInstance().sendEmails();
         } catch (error) {
             logger.error(`WorkflowCoreProcessor :: EmailInteract :: error - ${error.message}`);
+        }finally{
+            EmailInteract.getInstance().clearData();
         }
 
         try {
             await WaitRecordInteract.getInstance().saveWaitRecords(this.flowId);
         } catch (error) {
             logger.error(`WorkflowCoreProcessor :: WaitRecordInteract :: error - ${error.message}`);
+        }finally{
+            WaitRecordInteract.getInstance().clearData();
         }
 
     }

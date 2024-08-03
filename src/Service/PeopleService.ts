@@ -28,6 +28,7 @@ export const createPerson = async (reqBody: any): Promise<responseRest> => {
         person.organization = AuthUserDetails.getInstance().getUserDetails().organization_id as any
 
         await PersonTrigger.save(person);
+        response.data =  person;
         return response;
     } catch (error) {
         logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
@@ -42,12 +43,20 @@ export const getPersonList = async (page: number, limit: number, searchStr: stri
         const peopleRepo = Repository.getPeople();
         const peopleList = await peopleRepo.find(
             {
-                where: {
-                    organization: {
-                        id: AuthUserDetails.getInstance().getUserDetails().organization_id
+                where: [
+                    {
+                        organization: {
+                            id: AuthUserDetails.getInstance().getUserDetails().organization_id
+                        },
+                        firstName: Like(`%${searchStr}%`)
                     },
-                    firstName: Like(`%${searchStr}%`)
-                },
+                    {
+                        organization: {
+                            id: AuthUserDetails.getInstance().getUserDetails().organization_id
+                        },
+                        lastName: Like(`%${searchStr}%`)
+                    }
+                ],
                 select: {
                     company: {
                         id: true,

@@ -32,8 +32,8 @@ export class JobScheduler {
 
     private runWorkflowProcessor(){
         try{
-            new WorkflowProcessor().execute();
-            cron.schedule(cronSchedule.EVERY_X_MINUTE(60),() => new WorkflowProcessor().execute());
+            // new WorkflowProcessor().execute();
+            cron.schedule(cronSchedule.EVERY_X_MINUTE(1),() => new WorkflowProcessor().execute());
         }catch(error){
             logger.error(`Error :: JobScheduler :: runWorkflowProcessor = ${error}`)
         }

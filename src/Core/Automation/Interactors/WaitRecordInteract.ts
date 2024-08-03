@@ -25,6 +25,7 @@ export class WaitRecordInteract {
             this.waitRecords.forEach(wr => {
                 wr.flowId = flowId;
             });
+            
             await Repository.getWaitRecords().insert(this.waitRecords);
         }
         this.clearData();

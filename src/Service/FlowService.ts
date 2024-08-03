@@ -156,7 +156,6 @@ export const publishAutomationFlow = async (flowId: string): Promise<responseRes
 
         await CustomSettingsHelper.getInstance().initialize(userInfo.organization_id);
         let totalCustomerLimit :any = CustomSettingsHelper.getInstance().getCustomSettings(PUBLISH_AUTOMATION_COUNT);
-        console.log("🚀 ~ publishAutomationFlow ~ totalCustomerLimit:", totalCustomerLimit)
         const publishCount = await flowRepo.count({
             where : {
                 organization : {
@@ -189,6 +188,20 @@ export const unPublishAutomationFlow = async (flowId: string): Promise<responseR
         flow.is_published = false;
         await flowRepo.save(flow);
         response.data = flow;
+        return response;
+    } catch (error) {
+        logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
+        return getCustomResponse(null, 500, error.message, false)
+    }
+}
+
+export const deleteAutomationFlow = async (flowId: string): Promise<responseRest> => {
+    try {
+        const response = getDefaultResponse('Flow deleted.');
+        const flowRepo = Repository.getFlow();
+        await flowRepo.delete({
+            id : flowId
+        });
         return response;
     } catch (error) {
         logger.error(`message - ${error.message}, stack trace - ${error.stack}`);

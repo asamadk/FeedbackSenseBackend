@@ -1,5 +1,5 @@
 import { Task } from "../../../Entity/TaskEntity";
-import { Repository } from "../../../Helpers/Repository";
+import { TaskTrigger } from "../../../Triggers/TaskTrigger";
 
 export class TaskInteract{
 
@@ -24,12 +24,12 @@ export class TaskInteract{
 
     async createTasks(){
         if(this.toCreateTasks.length > 0){
-            await Repository.getTask().insert(this.toCreateTasks);
+            await TaskTrigger.saveBulk(this.toCreateTasks);
             this.clearData();
         }
     }
 
-    private clearData(){
+    clearData(){
         this.toCreateTasks = [];
     }
 

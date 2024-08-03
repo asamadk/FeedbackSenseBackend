@@ -30,6 +30,7 @@ export class AutomationQueue<T> {
         const filteredRecords = this.filterValidWorkflowRecords(validFlows, records);
         records = [];
         const toStoreRecords = this.filterCriteriaMatchingRecords(validFlows, filteredRecords);
+        // console.log("🚀 ~ AutomationQueue<T> ~ addRecord ~ toStoreRecords:", toStoreRecords)
         this.addRecordToQueue(toStoreRecords, type);
     }
 
@@ -77,7 +78,8 @@ export class AutomationQueue<T> {
             if (sameOrgFlows == null || sameOrgFlows.length < 1 || sameOrgRecords == null || sameOrgRecords.length < 1) { return; }
             sameOrgRecords.forEach((rec: any) => {
                 sameOrgFlows.forEach(flow => {
-                    if (recordMatchCondition(flow.workflows[0].json, rec)) {
+                    const isValid = recordMatchCondition(flow.workflows[0].json, rec);
+                    if (isValid) {
                         rec.flowId = flow.id;
                         finalRecords.push(rec);
                     }

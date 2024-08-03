@@ -107,7 +107,7 @@ export function recordMatchCondition(flowJSONStr: string, record: any) :boolean 
                     throw new Error(`Unsupported operator: ${operator}`);
             }
         });
-
+        
         finalResult = conditionResult[0];
         for (let i = 1; i < conditions.length; i++) {
             const condition = conditions[i];

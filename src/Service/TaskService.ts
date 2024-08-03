@@ -116,9 +116,9 @@ export const getTask = async (
             },
             skip: offset,
             take: limit,
-            order : {
-                status : 'DESC',
-                dueDate : 'DESC'
+            order: {
+                status: 'DESC',
+                dueDate: 'DESC'
             }
         });
 
@@ -204,20 +204,21 @@ export const updateTask = async (reqBody: any): Promise<responseRest> => {
         singleTask.dueDate = reqBody.dueDate;
         singleTask.status = reqBody.status;
 
-        if (reqBody.personID) {
-            const personRepo = Repository.getPeople();
-            const person = await personRepo.findOneBy({
-                id: reqBody.personID
-            });
-            singleTask.person = [person];
-        }
-
-        if (reqBody.companyID) {
+        if (reqBody.companyID && reqBody.companyID?.length > 0) {
             const companyRepo = Repository.getCompany();
             const company = await companyRepo.findOneBy({
                 id: reqBody.companyID
             });
             singleTask.company = [company];
+            singleTask.person = null;
+        }
+
+        if (reqBody.personID && reqBody.personID?.length > 0 ) {
+            const personRepo = Repository.getPeople();
+            const person = await personRepo.findOneBy({
+                id: reqBody.personID
+            });
+            singleTask.person = [person];
         }
 
         await TaskTrigger.save(singleTask)

@@ -3,6 +3,9 @@ import { Company } from "../../../Entity/CompanyEntity";
 import { Person } from "../../../Entity/PersonEntity";
 import { Task } from "../../../Entity/TaskEntity";
 import { Repository } from "../../../Helpers/Repository";
+import { CompanyTrigger } from "../../../Triggers/CompanyTrigger";
+import { PersonTrigger } from "../../../Triggers/PersonTrigger";
+import { TaskTrigger } from "../../../Triggers/TaskTrigger";
 import { recordType } from "../../../Types/ApiTypes";
 import { RObject } from "../../../Types/FlowTypes";
 
@@ -34,18 +37,22 @@ export class WorkflowInteract {
         if (this.recordType === 'company') {
             const tmp: Company[] = [];
             this.toUpdateRecords.forEach(r => tmp.push(r as Company));
-            await Repository.getCompany().save(tmp);
+            await CompanyTrigger.saveBulk(tmp);
         } else if (this.recordType === 'person') {
             const tmp: Person[] = [];
             this.toUpdateRecords.forEach(r => tmp.push(r as Person));
-            await Repository.getPeople().save(tmp);
+            await PersonTrigger.saveBulk(tmp);
         } else if (this.recordType === 'task') {
             const tmp: Task[] = [];
             this.toUpdateRecords.forEach(r => tmp.push(r as Task));
-            await Repository.getTask().save(tmp);
+            await TaskTrigger.saveBulk(tmp);
         } else {
             throw new Error('Invalid record type');
         }
+    }
+
+    clearData(){
+        this.toUpdateRecords = [];
     }
 
 }

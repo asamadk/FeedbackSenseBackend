@@ -171,12 +171,16 @@ export const createSurveyConfig = async (userId: string, surveyId: string) => {
 
 export const validateSurveyFlowOnSave = (flow: any): string | null => {
     const nodes: any[] = flow?.nodes;
+    let sourceTrigger = 0;
     for (const node of nodes) {
         if (node == null || node.data == null) {
             continue;
         }
         if (node?.data?.compConfig == null) {
             node.data.compConfig = '{}'
+        }
+        if(node.data.compId === 15 || node.data.compId === 16){
+            sourceTrigger++;
         }
         const isValidated = validateFlowComponent(JSON.parse(node?.data?.compConfig), node.data.compId);
         const componentLogicValidate = validateComponentLogic(JSON.parse(node?.data?.compConfig), node.data.compId);
@@ -185,6 +189,9 @@ export const validateSurveyFlowOnSave = (flow: any): string | null => {
         } else if (componentLogicValidate != null) {
             return componentLogicValidate;
         }
+    }
+    if(sourceTrigger > 1){
+        return 'Multiple trigger component not supported.';
     }
     return null;
 }
