@@ -1,14 +1,24 @@
 {
     "AWSEBDockerrunVersion": "1",
     "Image": {
-        "Name": "rabbitmq:3-management"
+        "Name": "rabbitmq"
     },
     "Ports": [
         {
-            "ContainerPort": "15672"
+            "ContainerPort": "5672"
         },
         {
-            "ContainerPort": "5672"
+            "ContainerPort": "15672"
+        }
+    ],
+    "Environment": [
+        {
+            "Name": "RABBITMQ_DEFAULT_USER",
+            "Value": "admin"
+        },
+        {
+            "Name": "RABBITMQ_DEFAULT_PASS",
+            "Value": "admin"
         }
     ]
 }
