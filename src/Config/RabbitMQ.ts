@@ -4,7 +4,7 @@ import { logger } from './LoggerConfig';
 
 dotenv.config();
 
-const RABBIT_MQ_URL: string = process.env.RABBIT_HOST || ''; 
+const RABBIT_MQ_URL: string = process.env.RABBIT_HOST || 'amqp://localhost'; 
 
 let connection: amqp.Connection | null = null;
 let channel: amqp.Channel | null = null;

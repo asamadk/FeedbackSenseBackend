@@ -67,8 +67,7 @@ export function recordMatchCondition(flowJSONStr: string, record: any) :boolean 
             const operator = condition.operator;
             const expectedValue = condition.value;
             const actualRecordValue = parseDataType(recordValue);
-            const expectedRecordValue = parseExpectedValue(actualRecordValue, expectedValue);
-
+            const expectedRecordValue = parseExpectedValue(recordValue, expectedValue);
             switch (operator) {
                 case 'Equal':
                     if (actualRecordValue instanceof Date && expectedRecordValue instanceof Date) {
@@ -107,7 +106,7 @@ export function recordMatchCondition(flowJSONStr: string, record: any) :boolean 
                     throw new Error(`Unsupported operator: ${operator}`);
             }
         });
-        
+            
         finalResult = conditionResult[0];
         for (let i = 1; i < conditions.length; i++) {
             const condition = conditions[i];
