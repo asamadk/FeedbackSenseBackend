@@ -30,12 +30,11 @@ export class AutomationQueue<T> {
         const filteredRecords = this.filterValidWorkflowRecords(validFlows, records);
         records = [];
         const toStoreRecords = this.filterCriteriaMatchingRecords(validFlows, filteredRecords);
-        // console.log("🚀 ~ AutomationQueue<T> ~ addRecord ~ toStoreRecords:", toStoreRecords)
-        this.addRecordToQueue(toStoreRecords, type);
+        await this.addRecordToQueue(toStoreRecords, type);
     }
 
-    addRecordToQueue(filteredRecords: any[], type: 'insert' | 'update') {
-        const channel = getRabbitMQChannel();
+    async addRecordToQueue(filteredRecords: any[], type: 'insert' | 'update') {
+        const channel = await getRabbitMQChannel();
         filteredRecords.forEach(record => {
             const payload: rabbitPayload = {
                 id: record.id,

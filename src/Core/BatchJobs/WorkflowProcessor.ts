@@ -8,16 +8,9 @@ import { WorkflowCoreProcessor } from '../Automation/WorkflowCoreProcessor';
 export class WorkflowProcessor {
 
     private channel: amqp.Channel;
-
-    constructor() {
-        this.init();
-    }
-
-    async init() {
-        this.channel = getRabbitMQChannel();
-    }
-
+    
     async execute() {
+        this.channel = await getRabbitMQChannel();
         const totalProcessLimit = 1000;
         const messagePromise: Promise<amqp.GetMessage | false>[] = [];
 

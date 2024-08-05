@@ -8,7 +8,7 @@ import { rabbitPayload } from "../../Types/FlowTypes";
 export class WaitRecordProcessor {
 
     async execute() {
-        const channel = getRabbitMQChannel();
+        const channel = await getRabbitMQChannel();
         const toDeleteRecords = [];
         const waitRecords = await this.getCurrentWaitRecords();
         for (const waitRecord of waitRecords) {

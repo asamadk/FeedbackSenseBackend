@@ -32,7 +32,7 @@ export const initializeDataSource = async() => {
         await mainDataSource.initialize();
         AppDataSource.setDataSource(mainDataSource);
         logger.info('Data source initialized');
-        await new StartUp().startExecution();
+        // await new StartUp().startExecution();
       } catch (error) {
         logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
       }

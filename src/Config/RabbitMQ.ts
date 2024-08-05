@@ -4,22 +4,33 @@ import { logger } from './LoggerConfig';
 
 dotenv.config();
 
-const RABBIT_MQ_URL: string = process.env.RABBIT_HOST || 'amqp://localhost'; 
+const RABBIT_MQ_URL: string = process.env.RABBIT_HOST || 'amqp://localhost';
+const rabbitPassword :string = process.env.RABBIT_PASSWORD;
+const rabbitUser :string = process.env.RABBIT_USER;
 
 let connection: amqp.Connection | null = null;
 let channel: amqp.Channel | null = null;
 
 async function connectRabbitMQ(): Promise<void> {
     try {
-        connection = await amqp.connect(RABBIT_MQ_URL);
+        const mode : 'prod' | 'dev' = process.env.NODE_ENV as any;
+        let url = '';
+        if(mode === 'dev'){
+            url = RABBIT_MQ_URL;
+        }else{
+            url = `amqps://${rabbitUser}:${rabbitPassword}@${RABBIT_MQ_URL}`
+        }
+        connection = await amqp.connect(url);
         channel = await connection.createChannel();
-        // brew services start rabbitmq
     } catch (error) {
         logger.error(`connectRabbitMQ error - ${error.message}`);
     }
 }
 
-function getRabbitMQChannel(): amqp.Channel | null {
+async function getRabbitMQChannel(): Promise<amqp.Channel | null> {
+    if(channel == null){
+        await connectRabbitMQ();
+    }
     return channel;
 }
 

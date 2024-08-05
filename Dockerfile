@@ -1,5 +1,9 @@
+# Build Command for M1 Mac
+# export DOCKER_DEFAULT_PLATFORM=linux/amd64
+# docker build -t asamadk002/retainsensebackend .
+
 # Use node image for base image for all stages.
-FROM node:18-alpine
+FROM --platform=linux/amd64 node:18-alpine
 
 # Set working directory for all build stages.
 WORKDIR /app
@@ -10,7 +14,7 @@ WORKDIR /app
 COPY . .
 
 # Install packages and Run the build script.
-RUN npm cache clean --force && npm install
+RUN npm cache clean --force && npm install --verbose
 RUN npm run build
 
 ################################################################################

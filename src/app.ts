@@ -51,9 +51,8 @@ const app = express();
 app.use(cors({
   origin: [
     "http://localhost:3000",
-    "https://www.feedbacksense.io",
-    "https://app.feedbacksense.io",
-    "https://staging.feedbacksense.io",
+    "https://www.retainsense.com",
+    "https://app.retainsense.com",
   ],
   methods: "GET,POST,PUT,DELETE",
   credentials: true,
