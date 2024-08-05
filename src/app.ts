@@ -139,6 +139,9 @@ app.use('/webhook', express.raw({ type: 'application/json' }), logRequest, Webho
 app.use(express.json({ limit: '2mb' }));
 
 //Open endpoints
+app.get('/', (req, res) => {
+  res.send('Welcome to the RetainSense Service!');
+});
 app.use('/auth', logRequest, AuthController);
 app.use('/live', logRequest, LiveSurveyController);
 app.use('/payment', logRequest, PaymentController);
