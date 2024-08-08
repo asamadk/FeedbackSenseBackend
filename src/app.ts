@@ -6,6 +6,8 @@ import dotenv from "dotenv";
 import { Strategy } from 'passport-google-oauth20';
 import { Strategy as MicrosoftStrategy } from 'passport-microsoft';
 import cookieParser from 'cookie-parser';
+import { Strategy as LocalStrategy } from 'passport-local';
+import bcrypt from 'bcrypt';
 
 import OrgController from './Controllers/OrgController';
 import HomeController from './Controllers/HomeController';
@@ -59,6 +61,7 @@ app.use(cors({
 }));
 
 app.use(cookieParser());
+// app.use(flash());
 
 app.use(
   cookieSession({
@@ -67,12 +70,49 @@ app.use(
     maxAge: 24 * 60 * 60 * 100,
   })
 )
+
 app.use(passport.initialize());
 app.use(passport.session());
 app.use(globalAPILimiter);
 app.use(express.urlencoded({ extended: false }))
 
+
+//auth user serialization & deserialization
+passport.serializeUser((user: User, done: any) => {
+  done(null, user);
+});
+
+passport.deserializeUser((user: User, done: any) => {
+  done(null, user);
+});
+
 //authentication handler
+passport.use(new LocalStrategy({
+  usernameField: 'email',
+  passwordField: 'password'
+},
+  async (email: string, password: string, done) => {
+    try {
+      if (!email) { done(null, false) }
+      const user = await AppDataSource.getDataSource().getRepository(User).findOne({
+        where: { email: email }
+      });
+      if (!user) {
+        done(null, false, { message: 'Incorrect email.' });
+      }
+      if (!user.password) {
+        done(null, false, { message: 'User or password incorrect.' })
+      }
+      const isPasswordValid = await bcrypt.compare(password, user.password);
+      if (!isPasswordValid) {
+        done(null, false, { message: 'User or password incorrect.' });
+      }
+      done(null, user);
+    } catch (err) {
+      done(err);
+    }
+  }
+));
 
 passport.use(new MicrosoftStrategy({
   clientID: process.env.MICROSOFT_CLIENT_ID,
@@ -123,15 +163,6 @@ passport.use(
   )
 );
 
-//auth user serialization & deserialization
-passport.serializeUser((user: any, done: any) => {
-  done(null, user);
-});
-
-passport.deserializeUser((user: any, done: any) => {
-  done(null, user);
-});
-
 //This endpoint do not use JSON
 app.use('/webhook', express.raw({ type: 'application/json' }), logRequest, WebhookController);
 
@@ -145,7 +176,7 @@ app.get('/', (req, res) => {
 app.use('/auth', logRequest, AuthController);
 app.use('/live', logRequest, LiveSurveyController);
 app.use('/payment', logRequest, PaymentController);
-app.use('/usage',logRequest,UsageController);
+app.use('/usage', logRequest, UsageController);
 
 //authenticated endpoints
 app.use('/home', isLoggedIn, logRequest, HomeController);

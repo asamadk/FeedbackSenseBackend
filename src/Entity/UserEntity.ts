@@ -12,6 +12,9 @@ export class User {
     @Column()
     email!: string;
 
+    @Column({nullable : true})
+    password :string
+
     @Column()
     oauth_provider!: string;
 

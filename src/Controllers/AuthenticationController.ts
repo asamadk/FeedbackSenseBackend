@@ -1,4 +1,4 @@
-import express from "express";
+import express, { Request, Response } from "express";
 import passport from "passport";
 import dotenv from "dotenv";
 
@@ -180,6 +180,14 @@ router.post('/appsumo/init', async (req, res) => {
         res.status(500).json(getCustomResponse(null, 500, error.message, false));
     }
 });
+
+router.post(
+    '/local/login',
+    passport.authenticate('local'),
+    async (req: Request, res: Response) => {
+        res.json("Login Success!");
+    });
+
 
 
 export default router;

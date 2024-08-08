@@ -12,6 +12,7 @@ import { Repository } from "../Helpers/Repository";
 import { createOrganizationForUser } from "./OrgService";
 import { Organization } from "../Entity/OrgEntity";
 import { Coupon } from "../Entity/CouponEntity";
+import bcrypt from 'bcryptjs';
 
 //Being called from app.ts after successful authentication
 export const handleSuccessfulLogin = async (user: UserProfile, microsoftUser: any, type: 'google' | 'microsoft'): Promise<void> => {
@@ -169,7 +170,8 @@ export const handleCleanInvite = async (payload: string, deleteUser: boolean): P
     }
 }
 
-export const createUserApplyCoupon = async (payload: { email: string, orgName: string, coupon: string, name: string }): Promise<responseRest> => {
+type createUserApplyCouponPayload = { email: string, orgName: string, coupon: string, name: string, password: string }
+export const createUserApplyCoupon = async (payload: createUserApplyCouponPayload): Promise<responseRest> => {
     try {
         const response = getDefaultResponse('Coupon Applied');
         const userRepo = Repository.getUser();
@@ -179,7 +181,8 @@ export const createUserApplyCoupon = async (payload: { email: string, orgName: s
             payload.email == null || payload.email.length < 1 ||
             payload.orgName == null || payload.orgName.length < 1 ||
             payload.coupon == null || payload.coupon.length < 1 ||
-            payload.name == null || payload.name.length < 1
+            payload.name == null || payload.name.length < 1 ||
+            payload.password == null || payload.password.length < 1
         ) {
             throw new Error('Incorrect payload.');
         }
@@ -203,12 +206,16 @@ export const createUserApplyCoupon = async (payload: { email: string, orgName: s
             throw new Error('Invalid coupon. Please contact support@retainsense.com for further assistance.');
         }
 
+        const saltRounds = 10;
+        const hashedPassword = await bcrypt.hash(payload.password, saltRounds);
+
         //create user
         const user = new User();
         user.email = payload.email;
         user.name = payload.name;
         user.oauth_provider = 'GOOGLE';
-        user.emailVerified = false;
+        user.emailVerified = true;
+        user.password = hashedPassword;
         await userRepo.save(user);
 
         await MailHelper.sendMail(
@@ -219,7 +226,7 @@ export const createUserApplyCoupon = async (payload: { email: string, orgName: s
                 from: process.env.MAIL_SENDER
             }, 'customers'
         );
-        
+
         //create org
         const orgPayload = {
             orgName: payload.orgName,
