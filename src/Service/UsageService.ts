@@ -163,8 +163,7 @@ export const getUsageJavaScript = (): string => {
   const eventURL = `${process.env.SERVER_URL}usage/event/v1`;
   const sessionURL = `${process.env.SERVER_URL}usage/session/v1`;
 
-  return `
-  (function (window) {
+  return `(function (window) {
     // Configure endpoint and initialize session state
     var apiEndpointEvent = "${eventURL}";
     var apiEndpointSession = "${sessionURL}";
@@ -204,6 +203,11 @@ export const getUsageJavaScript = (): string => {
     // End the current session
     function endSession() {
         if (sessionActive && sessionId) {
+            var now = Date.now();
+            if (lastActivityTime && (now - lastActivityTime) < inactivityLimit) {
+                activeTime += now - lastActivityTime;
+            }
+
             var sessionEndTime = new Date().toISOString();
             var duration = activeTime;
             sendSession({
@@ -324,7 +328,5 @@ export const getUsageJavaScript = (): string => {
     window.onunload = function () {
         endSession();
     };
-})(window);
-       
-  `;
+})(window);`;
 }

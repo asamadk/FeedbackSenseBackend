@@ -21,19 +21,19 @@ export const getTimeSpentOverTime = async (timeInterval: string | null, personId
             const startDate = new Date(session.startTime);
             const dateKey = `${startDate.getMonth() + 1}/${startDate.getDate()}/${startDate.getFullYear()}`;
 
-            let duration = 0;
-            if (session.endTime && session.startTime) {
-                const endTime = new Date(session.endTime);
-                duration = Math.floor(
-                    (((endTime.getTime() - startDate.getTime()) / 1000) / 60) / 60
-                );
+            const duration = session.duration;
+            if (duration != null) {
+                let durationInMins = Math.floor(duration/60000);
+
+                if (timeSpentPerDate[dateKey]) {
+                    let tmpDuration = Number(timeSpentPerDate[dateKey]);
+                    tmpDuration = tmpDuration + Number(durationInMins);
+                    timeSpentPerDate[dateKey] = tmpDuration;
+                } else {
+                    timeSpentPerDate[dateKey] = Number(durationInMins);
+                }
             }
 
-            if (timeSpentPerDate[dateKey]) {
-                timeSpentPerDate[dateKey] += duration;
-            } else {
-                timeSpentPerDate[dateKey] = duration;
-            }
         }
 
         const data = Object.keys(timeSpentPerDate).map(date => ({
@@ -90,7 +90,7 @@ export const getTopUsagePeople = async (timeInterval: string | null, companyId: 
             .leftJoin("p.events", "e")
             .leftJoin("p.sessions", "s")
             .where("p.companyId = :companyId", { companyId: companyId })
-            .andWhere("s.startTime > :interval", { interval: interval })    
+            .andWhere("s.startTime > :interval", { interval: interval })
             .groupBy("p.id, c.id")
             .orderBy("totalEvents", "DESC")
             .limit(5)
@@ -115,10 +115,10 @@ export const getUsageStatus = async (): Promise<responseRest> => {
         const response = getDefaultResponse('Events fetched.');
         const usageSessionRepo = Repository.getUsageSession();
         const usageCount = await usageSessionRepo.count({
-            where : {
-                company : {
-                    organization : {
-                        id : AuthUserDetails.getInstance().getUserDetails().organization_id
+            where: {
+                company: {
+                    organization: {
+                        id: AuthUserDetails.getInstance().getUserDetails().organization_id
                     }
                 }
             }

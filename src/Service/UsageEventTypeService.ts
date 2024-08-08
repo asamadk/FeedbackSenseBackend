@@ -21,7 +21,24 @@ export const createUsageEventType = async (reqBody: any): Promise<responseRest> 
         if(reqBody.id != null && reqBody.id.length > 0){
             eventType.id = reqBody.id;
         }
-        eventType.eventName = reqBody.name;
+
+        let eventName :string = reqBody.name;
+        eventName = eventName.trim()
+
+        const sameNameEventExists = await usageEventTypeRepo.exist({
+            where : {
+                eventName : eventName,
+                organization : {
+                    id : userInfo.organization_id
+                }
+            }
+        });
+
+        if(sameNameEventExists){
+            throw new Error('Duplicate event name.')
+        }
+
+        eventType.eventName = eventName;
         eventType.eventType = reqBody.type;
         eventType.organization = userInfo.organization_id as any;
 

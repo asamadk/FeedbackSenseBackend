@@ -5,6 +5,7 @@ import { Company } from "../../Entity/CompanyEntity";
 import { mapOperatorToTypeORM, metricInfoType } from "./HealthScoreHelper";
 import { logger } from "../../Config/LoggerConfig";
 import { CompanyHistory } from "../../Entity/CompanyHistory";
+import { CompanyTrigger } from "../../Triggers/CompanyTrigger";
 
 export type configType = {
     metric: string,
@@ -52,7 +53,7 @@ export class HealthScoreProcessor {
 
         try{
             if (toUpdateCompanies.length > 0) {
-                await Repository.getCompany().save(toUpdateCompanies);
+                await CompanyTrigger.saveBulk(toUpdateCompanies);
             }
         }catch(error){
             logger.error(`HealthScoreProcessor :: execute :: saving-companies ${error}`);

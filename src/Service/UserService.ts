@@ -8,6 +8,8 @@ import { INVITE_QUERY_PARAM } from "../Helpers/Constants";
 import { CustomSettingsHelper } from "../Helpers/CustomSettingHelper";
 import { Repository } from "../Helpers/Repository";
 import { getCustomResponse, getDefaultResponse } from "../Helpers/ServiceUtils";
+import { CompanyTrigger } from "../Triggers/CompanyTrigger";
+import { TaskTrigger } from "../Triggers/TaskTrigger";
 import { InviteData, responseRest } from "../Types/ApiTypes";
 import { EncryptionHelper } from "../Utils/CryptoHelper";
 import { MailHelper } from "../Utils/MailUtils/MailHelper";
@@ -118,11 +120,11 @@ async function transferUserResources(toDeleteUserId: string) {
 
     await Promise.all([
         Repository.getActivity().save(activities),
-        Repository.getCompany().save(companies),
+        CompanyTrigger.saveBulk(companies),
         Repository.getNotes().save(notes),
         Repository.getNotifications().save(notifications),
         Repository.getSurveys().save(surveys),
-        Repository.getTask().save(task),
+        TaskTrigger.saveBulk(task)
     ])
 }
 

@@ -1,19 +1,27 @@
 import crypto from 'crypto';
 
+const IV_LENGTH = 16;
+const algorithm = 'aes-256-ctr';
+const ENCRYPTION_KEY = Buffer.from('FoCKvdLslUuB4y3EZlKate7XGottHski1LmyqJHvUhs=', 'base64');
+
 export class EncryptionHelper {
 
     static encryptData(data: string) {
-        const secretKey = process.env.ENCRYPTION_KEY;
-        const cipher = crypto.createCipher('aes-256-cbc', secretKey);
-        const encryptedData = cipher.update(data, 'utf8', 'hex') + cipher.final('hex');
-        return encryptedData;
+        let iv = crypto.randomBytes(IV_LENGTH);
+        let cipher = crypto.createCipheriv(algorithm, ENCRYPTION_KEY, iv);
+        let encrypted = cipher.update(data);
+        encrypted = Buffer.concat([encrypted, cipher.final()]);
+        return iv.toString('hex') + ':' + encrypted.toString('hex');
     }
 
     static decryptData(data: string) {
-        const secretKey = process.env.ENCRYPTION_KEY;
-        const decipher = crypto.createDecipher('aes-256-cbc', secretKey);
-        const decryptedData = decipher.update(data, 'hex', 'utf8') + decipher.final('utf8');
-        return decryptedData
+        let textParts = data.split(':');
+        let iv = Buffer.from(textParts.shift(), 'hex');
+        let encryptedText = Buffer.from(textParts.join(':'), 'hex');
+        let decipher = crypto.createDecipheriv(algorithm, ENCRYPTION_KEY, iv);
+        let decrypted = decipher.update(encryptedText);
+        decrypted = Buffer.concat([decrypted, decipher.final()]);
+        return decrypted.toString();
     }
 
 }

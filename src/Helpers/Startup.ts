@@ -1,14 +1,19 @@
 import { Repository } from "typeorm";
 import { AppDataSource } from "../Config/AppDataSource"
+import fs from 'fs';
+import csv from 'csv-parser'
 import { Plan } from "../Entity/PlanEntity";
 import { SurveyType } from "../Entity/SurveyTypeEntity";
-import { BASIC_PLAN, FREE_PLAN, PLUS_PLAN, PRO_PLAN } from "./Constants";
+import { BASIC_PLAN, FREE_PLAN, PLUS_PLAN, PRO_PLAN, recordQueue } from "./Constants";
 import { logger } from "../Config/LoggerConfig";
 import { TemplateStartupScript } from "./StartupScripts/TemplateStartupScript";
 import { CustomSettings } from "../Entity/CustomSettingsEntity";
 import { Organization } from "../Entity/OrgEntity";
 import { FSCustomSetting } from "../Utils/SettingsUtils/CustomSettingsData";
 import { createCustomSettings } from "../Service/CustomSettingsService";
+import { Repository as R } from '../Helpers/Repository';
+import path from "path";
+import { Coupon } from "../Entity/CouponEntity";
 
 export class StartUp {
 
@@ -30,6 +35,7 @@ export class StartUp {
             await this.createPlans();
             await this.createCustomerSettingsExistingUser();
             await new TemplateStartupScript().initialize();
+            await this.populateCoupons();
         } catch (error) {
             logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
         }
@@ -50,9 +56,9 @@ export class StartUp {
     }
 
     populatePlanLimit() {
-        this.planLimits.set(FREE_PLAN, JSON.stringify(
-            {}
-        ));
+        // this.planLimits.set(FREE_PLAN, JSON.stringify(
+        //     {}
+        // ));
         this.planLimits.set(BASIC_PLAN, JSON.stringify(
             {}
         ));
@@ -65,54 +71,60 @@ export class StartUp {
     }
 
     populatePlanAmount() {
-        this.planNamePrice.set(FREE_PLAN, 0);
-        this.planNamePrice.set(BASIC_PLAN, 20);
-        this.planNamePrice.set(PLUS_PLAN, 45);
-        this.planNamePrice.set(PRO_PLAN,75);
+        // this.planNamePrice.set(FREE_PLAN, 0);
+        this.planNamePrice.set(BASIC_PLAN, 39);
+        this.planNamePrice.set(PLUS_PLAN, 69);
+        this.planNamePrice.set(PRO_PLAN, 119);
         logger.info('Plan prices populated');
     }
 
     populatePlanDescription() {
-        this.planNameDescription.set(FREE_PLAN, JSON.stringify({
-            description: `Get Started for Free: Unlock the Power of FeedbackSense Without Cost`,
-            features: [
-                '1 Active Surveys',
-                '50 Response / month',
-                '1 User',
-                'Basic analysis',
-                'FeedbackSense will always have a free plan'
-            ]
-        }));
+        // this.planNameDescription.set(FREE_PLAN, JSON.stringify({
+        //     description: `Get Started for Free: Unlock the Power of FeedbackSense Without Cost`,
+        //     features: [
+        //         '1 Active Surveys',
+        //         '50 Response / month',
+        //         '1 User',
+        //         'Basic analysis',
+        //         'FeedbackSense will always have a free plan'
+        //     ]
+        // }));
         this.planNameDescription.set(BASIC_PLAN, JSON.stringify({
-            description: `Empower your company with a comprehensive solution to streamline customer feedback automation from a single source.`,
+            description: `Best option for small teams & for your customers.`,
             features: [
-                'Unlimited Active Surveys',
-                '100 Response / month',
-                '1 User',
-                'Basic analysis',
                 `All from ${FREE_PLAN} plan, plus`,
+                '2 Users (Power Users)',
+                '500 customer accounts',
+                'Unlimited Surveys',
+                'Dashboards',
+                'SLA: 48 Hours',
+                'Free Implementation',
             ]
         }));
 
         this.planNameDescription.set(PLUS_PLAN, JSON.stringify({
-            description: `Ideal for businesses seeking advanced research capabilities with robust and sophisticated features.`,
+            description: `Relevant for multiple users, extended & premium support.`,
             features: [
-                'Unlimited Active Surveys',
-                '1000 Response / month',
-                '3 Users',
-                'Detailed analysis',
                 `All from ${BASIC_PLAN} plan, plus`,
+                '5 Users (Power Users)',
+                '2000 customer accounts',
+                'Health Scores',
+                'Customer Journeys',
+                'SLA: 24 Hours',
+                'Free Implementation'
             ]
         }));
 
         this.planNameDescription.set(PRO_PLAN, JSON.stringify({
-            description: `Ideal for big businesses seeking looking for ultimate solution.`,
+            description: `Best for large scale uses and extended redistribution rights.`,
             features: [
-                'Unlimited Active Surveys',
-                '10000 Response / month',
-                '10 Users',
-                'User Role Management',
                 `All from ${PLUS_PLAN} plan, plus`,
+                '10 Users (Power Users)',
+                '5000 customer accounts',
+                'Product Usage Tracking',
+                'Revenue Compass',
+                'SLA: 24 Hours',
+                'Free Implementation'
             ]
         }));
 
@@ -122,7 +134,7 @@ export class StartUp {
     async createPlans() {
         try {
             const planNames: string[] = [
-                FREE_PLAN,
+                // FREE_PLAN,
                 BASIC_PLAN,
                 PLUS_PLAN,
                 PRO_PLAN,
@@ -160,9 +172,9 @@ export class StartUp {
             const planObj = new Plan();
             planObj.name = name;
             planObj.price_cents = this.planNamePrice.get(name);
-            if(planObj.price_cents !== 0){
+            if (planObj.price_cents !== 0) {
                 planObj.price_cents_monthly = this.planNamePrice.get(name) + 6;
-            }else{
+            } else {
                 planObj.price_cents_monthly = 0;
             }
             planObj.description = this.planNameDescription.get(name);
@@ -196,7 +208,7 @@ export class StartUp {
             const customSettings = await customSetRepo.find();
             const orgRepo = AppDataSource.getDataSource().getRepository(Organization);
             const orgList = await orgRepo.find();
-            
+
             if (customSettings.length < 1) {
                 for (const org of orgList) {
                     await createCustomSettings(org.id);
@@ -215,8 +227,8 @@ export class StartUp {
             });
 
             orgList.forEach(org => {
-                if(!orgIdVsSettingsKey.has(org.id)){
-                    orgIdVsSettingsKey.set(org.id,new Set<string>());
+                if (!orgIdVsSettingsKey.has(org.id)) {
+                    orgIdVsSettingsKey.set(org.id, new Set<string>());
                 }
             })
 
@@ -239,6 +251,32 @@ export class StartUp {
         } catch (error) {
             logger.error(`CreateCustomerSettingsExistingUser :: message - ${error.message}, stack trace - ${error.stack}`);
         }
+    }
+
+    async populateCoupons() {
+        const couponRepo = R.getCoupons();
+        const existingCouponCount = await couponRepo.count();
+        if (existingCouponCount > 0) { return; }
+        logger.info('Populating REDEEM Coupons...');
+
+        const coupons = [];
+        fs.createReadStream(path.resolve(__dirname, '../../uuid.csv'))
+            .pipe(csv({ headers: false }))
+            .on('data', (row) => {
+                const coupon = new Coupon();
+                coupon.id = row[0];
+                coupon.isUsed = false;
+                coupons.push(coupon);
+            })
+            .on('end', async () => {
+                try {
+                    await couponRepo.save(coupons);
+                    logger.info(`Successfully inserted ${coupons.length} coupons`);
+                } catch (error) {
+                    logger.error('Error inserting coupons:', error);
+                }
+
+            });
     }
 
 }

@@ -4,6 +4,7 @@ import { Company } from "../../Entity/CompanyEntity";
 import { Repository } from "../../Helpers/Repository";
 import { SurveyResponse } from "../../Entity/SurveyResponse";
 import { getAverageScore, getScoresFromResponse } from "./SurveyProcessorHelper";
+import { CompanyTrigger } from "../../Triggers/CompanyTrigger";
 
 export class SurveyScoreProcessor {
 
@@ -47,7 +48,7 @@ export class SurveyScoreProcessor {
 
         try {
             if (toUpdateCompanies.length > 0) {
-                await Repository.getCompany().save(toUpdateCompanies);
+                await CompanyTrigger.saveBulk(toUpdateCompanies);
             }
         } catch (error) {
             logger.error(`SurveyScoreProcessor :: execute :: saving-companies ${error}`);

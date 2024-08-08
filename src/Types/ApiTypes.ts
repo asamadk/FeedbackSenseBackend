@@ -22,3 +22,5 @@ export type durationType = {
     startDate: string, 
     endDate: string
 }
+
+export type recordType = 'company' | 'task' | 'person'

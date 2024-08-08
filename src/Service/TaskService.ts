@@ -6,6 +6,7 @@ import { Repository } from "../Helpers/Repository";
 import { getCustomResponse, getDefaultResponse } from "../Helpers/ServiceUtils";
 import { TaskServiceHelper } from "../ServiceHelper/TaskServiceHelper";
 import { responseRest } from "../Types/ApiTypes";
+import { TaskTrigger } from "../Triggers/TaskTrigger";
 
 export const createTask = async (reqBody: any): Promise<responseRest> => {
     try {
@@ -42,8 +43,7 @@ export const createTask = async (reqBody: any): Promise<responseRest> => {
         task.status = reqBody.status;
         task.organization = userInfo.organization_id as any;
 
-        const taskRepo = Repository.getTask();
-        await taskRepo.save(task);
+        await TaskTrigger.save(task);
 
         return response;
     } catch (error) {
@@ -116,9 +116,9 @@ export const getTask = async (
             },
             skip: offset,
             take: limit,
-            order : {
-                status : 'DESC',
-                dueDate : 'DESC'
+            order: {
+                status: 'DESC',
+                dueDate: 'DESC'
             }
         });
 
@@ -159,7 +159,7 @@ export const completeTask = async (data: any): Promise<responseRest> => {
         } else {
             task.status = 'Completed';
         }
-        await taskRepo.save(task);
+        await TaskTrigger.save(task);
         return response;
     } catch (error) {
         logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
@@ -204,7 +204,16 @@ export const updateTask = async (reqBody: any): Promise<responseRest> => {
         singleTask.dueDate = reqBody.dueDate;
         singleTask.status = reqBody.status;
 
-        if (reqBody.personID) {
+        if (reqBody.companyID && reqBody.companyID?.length > 0) {
+            const companyRepo = Repository.getCompany();
+            const company = await companyRepo.findOneBy({
+                id: reqBody.companyID
+            });
+            singleTask.company = [company];
+            singleTask.person = null;
+        }
+
+        if (reqBody.personID && reqBody.personID?.length > 0 ) {
             const personRepo = Repository.getPeople();
             const person = await personRepo.findOneBy({
                 id: reqBody.personID
@@ -212,15 +221,7 @@ export const updateTask = async (reqBody: any): Promise<responseRest> => {
             singleTask.person = [person];
         }
 
-        if (reqBody.companyID) {
-            const companyRepo = Repository.getCompany();
-            const company = await companyRepo.findOneBy({
-                id: reqBody.companyID
-            });
-            singleTask.company = [company];
-        }
-
-        await taskRepo.save(singleTask);
+        await TaskTrigger.save(singleTask)
 
         return response;
     } catch (error) {

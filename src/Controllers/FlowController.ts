@@ -1,5 +1,5 @@
 import express from 'express';
-import { createAutomationFlows, getAutomationFlowById, getAutomationFlows, publishAutomationFlow, unPublishAutomationFlow, updateAutomationFlow, updateAutomationFlowJSON } from '../Service/FlowService';
+import { createAutomationFlows, deleteAutomationFlow, getAutomationFlowById, getAutomationFlows, publishAutomationFlow, unPublishAutomationFlow, updateAutomationFlow, updateAutomationFlowJSON } from '../Service/FlowService';
 import { logger } from '../Config/LoggerConfig';
 import { getCustomResponse } from '../Helpers/ServiceUtils';
 import { ZodError, z } from 'zod';
@@ -92,6 +92,18 @@ router.post('/unpublish', async (req, res) => {
     try {
         const flowID = req.query.flowId;
         const response = await unPublishAutomationFlow(flowID as string);
+        res.statusCode = response.statusCode;
+        res.json(response);
+    } catch (error) {
+        logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
+        res.status(500).json(getCustomResponse(null, 500, error.message, false));
+    }
+});
+
+router.delete('/remove', async (req, res) => {
+    try {
+        const flowID = req.query.flowId;
+        const response = await deleteAutomationFlow(flowID as string);
         res.statusCode = response.statusCode;
         res.json(response);
     } catch (error) {

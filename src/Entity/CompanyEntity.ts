@@ -10,6 +10,7 @@ import { UsageSession } from "./UsageSession";
 import { JourneyStage } from "./JourneyStageEntity";
 import { OnboardingStage } from "./OnboardingStages";
 import { RiskStage } from "./RiskStages";
+import { Person } from "./PersonEntity";
 
 enum CompanyStatus {
     Active = "Active",
@@ -125,5 +126,9 @@ export class Company {
 
     @OneToMany(() => UsageSession, usageSession => usageSession.company)
     sessions!: UsageSession[];
+
+    @OneToOne(() => Person)
+    @JoinColumn({ name: "pointOfContactId" })
+    pointOfContact?: Person;
 
 }

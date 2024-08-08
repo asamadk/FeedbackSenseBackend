@@ -1,7 +1,7 @@
 export const FREE_PLAN = 'Free'
-export const BASIC_PLAN = 'Basic';
-export const PLUS_PLAN = 'Plus';
-export const PRO_PLAN = 'Pro';
+export const BASIC_PLAN = 'Starter';
+export const PLUS_PLAN = 'Company';
+export const PRO_PLAN = 'Enterprise';
 
 export const MONTHLY_BILLING = 'monthly';
 
@@ -17,4 +17,6 @@ export const answerNotNeededSet = new Set<string>([
 ]);
 
 export const INVITE_QUERY_PARAM = 'code';
-export const SUPPORT_MAIL = 'support@feedbacksense.io';
+export const SUPPORT_MAIL = 'support@retainsense.com';
+
+export const recordQueue = 'record-queue';
