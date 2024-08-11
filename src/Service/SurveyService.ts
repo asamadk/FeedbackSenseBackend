@@ -382,6 +382,7 @@ const updateSurveyFlow = async (surveyJson: string, surveyFlowId: string): Promi
     const flowRepository = AppDataSource.getDataSource().getRepository(Workflow);
     const flowObj = await flowRepository.findOneBy({ id: surveyFlowId });
     flowObj.json = surveyJson;
+    flowObj.flowId = null;
     return flowRepository.save(flowObj);
 }
 
@@ -390,6 +391,7 @@ export const createSurveyFlow = (surveyJson: string, surveyId: string): Promise<
     const flowObj = new Workflow();
     flowObj.json = surveyJson
     flowObj.surveyId = surveyId;
+    flowObj.flowId = null;
     return flowRepository.save(flowObj);
 }
 

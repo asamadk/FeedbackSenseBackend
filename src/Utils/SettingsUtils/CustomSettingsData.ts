@@ -34,6 +34,6 @@ FSCustomSetting.set(AI_TEXT_ANALYSIS, 'false');
 FSCustomSetting.set(WORD_CLOUD, 'false');
 FSCustomSetting.set(TEAM_ROLES, 'true');
 FSCustomSetting.set(PRODUCT_USAGE_TRACKING, 'false');
-FSCustomSetting.set(COMPANY_TAG, 'false');
+FSCustomSetting.set(COMPANY_TAG, 'true');
 FSCustomSetting.set(HEALTH_HISTORY, 'false');
 FSCustomSetting.set(PUBLISH_AUTOMATION_COUNT, '2');

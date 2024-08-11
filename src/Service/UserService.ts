@@ -213,7 +213,6 @@ export const handleInviteUsers = async (email: string, role: 'OWNER' | 'ADMIN' |
             return email;
         });
         await Promise.all(promises);
-        console.log("🚀 ~ file: UserService.ts:116 ~ handleInviteUsers ~ response:2", response)
         return response;
     } catch (error) {
         logger.error(`message - ${error.message}, stack trace - ${error.stack}`);

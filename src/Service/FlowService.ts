@@ -113,6 +113,7 @@ const createFlowWorkflow = (json: string, flowId: string): Promise<Workflow> => 
     const flowObj = new Workflow();
     flowObj.json = json
     flowObj.flowId = flowId;
+    flowObj.surveyId = null;
     return flowRepository.save(flowObj);
 }
 
@@ -120,6 +121,7 @@ const updateFlowWorkflow = async (json: string, flowId: string): Promise<Workflo
     const flowRepository = Repository.getWorkflow();
     const flowObj = await flowRepository.findOneBy({ id: flowId });
     flowObj.json = json;
+    flowObj.surveyId = null;
     return flowRepository.save(flowObj);
 }
 
