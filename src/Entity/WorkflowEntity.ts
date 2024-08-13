@@ -15,10 +15,10 @@ export class Workflow {
   flowId : string
 
   @ManyToOne(() => Survey, survey => survey.workflows, { onDelete: 'CASCADE', nullable: true })
-  survey: Survey;
+  survey: Survey | null;
 
   @ManyToOne(() => Flow, flow => flow.workflows, { onDelete: 'CASCADE', nullable: true })
-  flow: Flow;
+  flow: Flow | null;
 
   @Column("longtext")
   json: string;

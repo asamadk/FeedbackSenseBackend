@@ -203,7 +203,7 @@ export const handleInviteUsers = async (email: string, role: 'OWNER' | 'ADMIN' |
             await MailHelper.sendMail(
                 {
                     html: generateInviteEmailHtml(url, userDetails.name),
-                    subject: 'You are invited to FeedbackSense',
+                    subject: 'You are invited to RetainSense',
                     to: email,
                     from: process.env.MAIL_SENDER
                 },
@@ -213,7 +213,6 @@ export const handleInviteUsers = async (email: string, role: 'OWNER' | 'ADMIN' |
             return email;
         });
         await Promise.all(promises);
-        console.log("🚀 ~ file: UserService.ts:116 ~ handleInviteUsers ~ response:2", response)
         return response;
     } catch (error) {
         logger.error(`message - ${error.message}, stack trace - ${error.stack}`);

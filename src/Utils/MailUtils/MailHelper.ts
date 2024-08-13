@@ -1,7 +1,6 @@
 import nodemailer from 'nodemailer';
 import dotenv from 'dotenv';
 import { logger } from '../../Config/LoggerConfig';
-import { AppDataSource } from '../../Config/AppDataSource';
 
 dotenv.config();
 
@@ -15,7 +14,9 @@ export type MailDataType = {
 export class MailHelper {
 
     static transporter = nodemailer.createTransport({
-        service: 'gmail',
+        host: process.env.MAIL_SENDER_HOST,
+        port: process.env.MAIL_SENDER_PORT,
+        secure: true,
         auth: {
             user: process.env.MAIL_SENDER,
             pass: process.env.MAIL_SENDER_PASSWORD
@@ -23,29 +24,40 @@ export class MailHelper {
     });
 
     static async sendMail(data: MailDataType, receivers: 'customers' | 'support' | 'both') {
-        //Don't send mails if in test mode
-        const runningMode: string = process.env.NODE_ENV;
-        if (runningMode.toLowerCase() === 'test' || runningMode.toLowerCase() === 'dev') {
-            if (runningMode.toLowerCase() === 'dev') {
-                this.transporter = nodemailer.createTransport({
-                    host: "sandbox.smtp.mailtrap.io",
-                    port: 2525,
-                    auth: {
-                        user: process.env.MAIL_SENDER,
-                        pass: process.env.MAIL_SENDER_PASSWORD
-                    }
-                });
-            }else{
-                return;
+        try {
+            const runningMode: string = process.env.NODE_ENV;
+            if (runningMode.toLowerCase() === 'test' || runningMode.toLowerCase() === 'dev') {
+                if (runningMode.toLowerCase() === 'dev') {
+                    this.transporter = nodemailer.createTransport({
+                        host: process.env.MAIL_SENDER_HOST,
+                        port: process.env.MAIL_SENDER_PORT,
+                        secure: true,
+                        auth: {
+                            user: process.env.MAIL_SENDER,
+                            pass: process.env.MAIL_SENDER_PASSWORD
+                        }
+                    });
+                } else {
+                    return;
+                }
             }
-        }
-        data.from = process.env.MAIL_SENDER
-        if (receivers === 'support') {
-            await this.sendMailToSupport(data);
-        } else if (receivers === 'customers') {
-            await this.sendMailToCustomers(data);
-        } else {
-            await this.sendMailToSupportAndCustomers(data);
+
+            try {
+                await this.transporter.verify()
+            } catch (error) {
+                logger.error(`Error email verification - ${error}`)
+            }
+
+            data.from = process.env.MAIL_FROM
+            if (receivers === 'support') {
+                await this.sendMailToSupport(data);
+            } else if (receivers === 'customers') {
+                await this.sendMailToCustomers(data);
+            } else {
+                await this.sendMailToSupportAndCustomers(data);
+            }
+        } catch (error: any) {
+            logger.info(`MailHelper error - ${error.message}`);
         }
     }
 

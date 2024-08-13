@@ -1,12 +1,9 @@
 import { AppDataSource } from "../../Config/AppDataSource";
-import { Folder } from "../../Entity/FolderEntity";
 import { Survey } from "../../Entity/SurveyEntity";
 import { User } from "../../Entity/UserEntity";
-import { permDeleteSurvey } from "../../Service/SurveyService";
 import { InviteData } from "../../Types/ApiTypes";
 import { EncryptionHelper } from "../../Utils/CryptoHelper";
-import { MailHelper } from "../../Utils/MailUtils/MailHelper";
-import { generateLoginEmailHtml } from "../../Utils/MailUtils/MailMarkup/LoginMarkup";
+import bcrypt from 'bcryptjs';
 import { isGreaterThan24Hours } from "../DateTimeHelper";
 
 export class AuthHelper {
@@ -49,7 +46,7 @@ export class AuthHelper {
             .execute();
     }
 
-    static async createInviteUser(data: InviteData) {
+    static async createInviteUser(data: InviteData,rawPassword :string,name :string) {
         const userRepo = AppDataSource.getDataSource().getRepository(User);
         const invitedById = data.invitedBy;
         const invitedByUser = await userRepo.findOneBy({ id: invitedById });
@@ -58,13 +55,17 @@ export class AuthHelper {
             throw new Error('Invitation link is invalid.');
         }
 
+        const saltRounds = 10;
+        const hashedPassword = await bcrypt.hash(rawPassword, saltRounds);
+
         let newUser = new User();
-        newUser.name = '';
+        newUser.name = name;
         newUser.email = data.email;
         newUser.image = '';
         newUser.emailVerified = false;
         newUser.isDeleted = false;
         newUser.oauth_provider = 'NONE';
+        newUser.password = hashedPassword;
         newUser.organization_id = invitedByUser.organization_id;
         newUser.role = data.role;
         newUser = await userRepo.save(newUser);
