@@ -30,7 +30,7 @@ export const generateSurveyFilledEmailHtml = (surveyName: string, responseId: st
             necessary actions.
           </p>
           <p>Thank you!</p>
-          <p>Best regards,<br />FeedbackSense Team</p>
+          <p>Best regards,<br />RetainSense Team</p>
         </div>
       </body>
     </html>

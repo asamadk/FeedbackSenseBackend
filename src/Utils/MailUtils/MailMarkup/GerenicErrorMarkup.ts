@@ -64,7 +64,7 @@ export const generateErrorEmailHtml = (
                 Please take necessary action to resolve this issue.
             </p>
             <p>Best regards,</p>
-            <p>The FeedbackSense Team</p>
+            <p>The RetainSense Team</p>
         </div>
     </body>
     </html>

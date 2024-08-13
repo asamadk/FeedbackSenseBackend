@@ -140,7 +140,7 @@ export const handleInviteUser = async (payload: string): Promise<responseRest> =
             return getCustomResponse(null, 409, 'Removing resources', false);
         }
 
-        response.message = `${invitedByUser.name} has invited you to join their team on FeedbackSense.`;
+        response.message = `${invitedByUser.name} has invited you to join their team on RetainSense.`;
         return response;
     } catch (error) {
         logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
@@ -148,8 +148,19 @@ export const handleInviteUser = async (payload: string): Promise<responseRest> =
     }
 }
 
-export const handleCleanInvite = async (payload: string, deleteUser: boolean): Promise<responseRest> => {
+export const handleCleanInvite = async (
+    payload: string, 
+    deleteUser: boolean,
+    rawPassword :string,
+    name :string
+): Promise<responseRest> => {
     try {
+        if(rawPassword == null || rawPassword.length < 8){
+            throw new Error('Invalid password');
+        }
+        if(name == null || name.length < 1){
+            throw new Error('Please provide your name');
+        }
         const response = getDefaultResponse('Invite accepted.');
         const userRepo = AppDataSource.getDataSource().getRepository(User);
         const decryptedPayload: InviteData = AuthHelper.getPayloadDataFromQueryParam(payload);
@@ -162,7 +173,7 @@ export const handleCleanInvite = async (payload: string, deleteUser: boolean): P
                 return getCustomResponse(null, 409, 'User already exists.', false);
             }
         }
-        await AuthHelper.createInviteUser(decryptedPayload);
+        await AuthHelper.createInviteUser(decryptedPayload,rawPassword,name);
         return response;
     } catch (error) {
         logger.error(`message - ${error.message}, stack trace - ${error.stack}`);

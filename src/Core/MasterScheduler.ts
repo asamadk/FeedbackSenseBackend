@@ -12,7 +12,7 @@ export class MasterScheduler {
     numCPUs = os.cpus().length;
 
     async init() {
-        logger.info(`Initializing FeedbackSense master scheduler...`);
+        logger.info(`Initializing RetainSense master scheduler...`);
         this.handleExceptions();
         await initializeDataSource();
         await this.startServer();

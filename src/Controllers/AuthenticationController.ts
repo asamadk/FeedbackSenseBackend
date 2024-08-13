@@ -153,8 +153,15 @@ router.get('/invite', async (req, res) => {
 
 router.post('/process/clean/invite', async (req, res) => {
     try {
-        const deleteUser: boolean = req.body.deleteUser
-        const response = await handleCleanInvite(req.query[INVITE_QUERY_PARAM] as string, deleteUser);
+        const deleteUser: boolean = req.body.deleteUser;
+        const password :string = req.body.password;
+        const name :string = req.body.name;
+        const response = await handleCleanInvite(
+            req.query[INVITE_QUERY_PARAM] as string, 
+            deleteUser,
+            password,
+            name
+        );
         res.status(response.statusCode).json(response);
     } catch (error) {
         logger.error(`message - ${error.message}, stack trace - ${error.stack}`);

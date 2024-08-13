@@ -20,7 +20,7 @@ export const informSupportUserPricing = async (body: any) => {
         await MailHelper.sendMail({
             from: process.env.MAIL_SENDER,
             html: generatePriceSelectionEmail(AuthUserDetails.getInstance().getUserDetails(), body.price, body.planId),
-            subject: 'FeedbackSense App : User selected a pricing plan',
+            subject: 'RetainSense App : User selected a pricing plan',
             to: process.env.SUPPORT_EMAIL
         }, 'support');
         return response;

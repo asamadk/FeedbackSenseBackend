@@ -4,7 +4,7 @@ export const generateInviteEmailHtml = (inviteLink: string, inviteBy: string): s
     <html>
     <head>
         <meta charset="utf-8">
-        <title>Invited to FeedbackSense!</title>
+        <title>Invited to RetainSense!</title>
         <style>
             /* Add your custom styles here */
 
@@ -49,15 +49,15 @@ export const generateInviteEmailHtml = (inviteLink: string, inviteBy: string): s
     </head>
     <body>
         <div class="container">
-            <h1>FeedbackSense Invite</h1>
+            <h1>RetainSense Invite</h1>
           <p>Hi There</p>
-            <p>${inviteBy} has invited you to join their team on FeedbackSense. It will let you collaborate more easily!</p>
+            <p>${inviteBy} has invited you to join their team on RetainSense. It will let you collaborate more easily!</p>
             <p>Click the button below to join:</p>
             <p>
                 <a class="btn" href="${inviteLink}">Join the team</a>
             </p>
             <p>Best regards,</p>
-            <p>The FeedbackSense Team</p>
+            <p>The RetainSense Team</p>
         </div>
     </body>
     </html>

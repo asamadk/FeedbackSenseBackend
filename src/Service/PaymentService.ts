@@ -16,12 +16,12 @@ export const handleSuccessfulPayment = async (reqBody: PaymentSuccessBody, subId
             try {
                 MailHelper.sendMail({
                     html: generateErrorEmailHtml(
-                        `FeedbackSense is not able verify the Razorpay payment :: Local Subscription Id :: ${subId}`,
+                        `RetainSense is not able verify the Razorpay payment :: Local Subscription Id :: ${subId}`,
                         new Date().toISOString(),
                         'PaymentService :: handleSuccessfulPayment',
                         ErrorType.PAYMENT_UNVERIFIED
                     ),
-                    subject: 'FeedbackSense Error Notification',
+                    subject: 'RetainSense Error Notification',
                     to: '',
                     from: process.env.MAIL_SENDER
                 }, 'support');
