@@ -101,7 +101,7 @@ export class WorkflowCoreProcessor {
 
     async postProcessing() {
         try {
-            WorkflowInteract.getInstance(this.recordType).saveRecords();
+            await WorkflowInteract.getInstance(this.recordType).saveRecords();
         } catch (error) {
             logger.error(`WorkflowCoreProcessor :: saving records :: error - ${error.message}`);
         }finally{

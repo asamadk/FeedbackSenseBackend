@@ -49,6 +49,7 @@ export class WorkflowInteract {
         } else {
             throw new Error('Invalid record type');
         }
+        this.clearData();
     }
 
     clearData(){
