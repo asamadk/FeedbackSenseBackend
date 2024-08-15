@@ -11,13 +11,16 @@ import { RObject } from "../../../Types/FlowTypes";
 
 export class WorkflowInteract {
 
-    static instance: WorkflowInteract;
+    static instance: Map<string, WorkflowInteract>;
 
     static getInstance(recordType: recordType) {
         if (this.instance == null) {
-            this.instance = new WorkflowInteract(recordType);
+            this.instance = new Map<string, WorkflowInteract>();
         }
-        return this.instance;
+        if (this.instance.has(recordType) === false) {
+            this.instance.set(recordType, new WorkflowInteract(recordType));
+        }
+        return this.instance.get(recordType);
     }
 
     constructor(recordType: recordType) {
@@ -34,6 +37,12 @@ export class WorkflowInteract {
 
     async saveRecords() {
         logger.info(`Saving records :: Size - ${this.toUpdateRecords.length}`);
+        console.log("🚀 ~ WorkflowInteract ~ saveRecords ~ this.toUpdateRecords:", this.toUpdateRecords);
+        console.log("🚀 ~ WorkflowInteract ~ saveRecords ~ this.recordType:", this.recordType)
+        if (this.toUpdateRecords.length < 1) {
+            this.clearData();
+            return;
+        }
         if (this.recordType === 'company') {
             const tmp: Company[] = [];
             this.toUpdateRecords.forEach(r => tmp.push(r as Company));
@@ -52,7 +61,7 @@ export class WorkflowInteract {
         this.clearData();
     }
 
-    clearData(){
+    clearData() {
         this.toUpdateRecords = [];
     }
 

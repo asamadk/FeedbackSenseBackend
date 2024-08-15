@@ -1,16 +1,13 @@
 import { In, IsNull, Not } from "typeorm";
 import { Repository } from "../../Helpers/Repository";
-import { Edge, Node, rabbitPayload, RObject } from "../../Types/FlowTypes";
+import { Edge, Node, rabbitPayload, RObject, triggerType } from "../../Types/FlowTypes";
 import { Workflow } from "../../Entity/WorkflowEntity";
 import { recordType } from "../../Types/ApiTypes";
 import { getTriggerNode, recordMatchCondition } from "../../Utils/FlowUtils/FlowUtils";
-import { LiveSurveyNodes, surveyFlowType } from "../../Types/SurveyTypes";
+import { surveyFlowType } from "../../Types/SurveyTypes";
 import { NodeFactory } from "./NodeFactory";
 import { PathMapping } from "./PathMapping";
 import { logger } from "../../Config/LoggerConfig";
-import { Company } from "../../Entity/CompanyEntity";
-import { Person } from "../../Entity/PersonEntity";
-import { Task } from "../../Entity/TaskEntity";
 import { TaskInteract } from "./Interactors/TaskInteractor";
 import { EmailInteract } from "./Interactors/EmailInteract";
 import { WaitRecordInteract } from "./Interactors/WaitRecordInteract";
@@ -23,15 +20,18 @@ export class WorkflowCoreProcessor {
     private orgId: string;
     private recordType: recordType;
     private waitRecordIdComponentId: Map<string, string>
+    private recordIdType: Set<string>;
 
     constructor(records: rabbitPayload[], key: string) {
         this.waitRecordIdComponentId = new Map<string, string>();
+        this.recordIdType = new Set<string>();
         this.queuePayload = records;
         const keyArr = key.split('<>');
         this.flowId = keyArr[0];
         this.orgId = keyArr[1];
         this.recordType = keyArr[2] as recordType;
         this.filterWaitRecords();
+        this.populateRecordTypeMap(records);
     }
 
     async execute() {
@@ -40,13 +40,21 @@ export class WorkflowCoreProcessor {
         let records = await this.fetchRecords();
         const finalRecords = [];
         records.forEach((rec: RObject) => {
-            if (recordMatchCondition(workflow.json, rec)) {
+            if (recordMatchCondition(workflow.json, rec, this.recordIdType)) {
                 finalRecords.push(rec);
             }
         });
         this.queuePayload = null;
         records = this.populateWaitRecordsMaps(records);
         await this.processWorkflow(finalRecords, JSON.parse(workflow.json));
+    }
+
+    populateRecordTypeMap(records: rabbitPayload[]) {
+        if (records?.length < 1) { return; }
+        records.forEach(r => {
+            const key = `${r.id}-${r.type}`;
+            this.recordIdType.add(key);
+        });
     }
 
     populateWaitRecordsMaps(records: RObject[]): RObject[] {
@@ -104,7 +112,7 @@ export class WorkflowCoreProcessor {
             await WorkflowInteract.getInstance(this.recordType).saveRecords();
         } catch (error) {
             logger.error(`WorkflowCoreProcessor :: saving records :: error - ${error.message}`);
-        }finally{
+        } finally {
             WorkflowInteract.getInstance(this.recordType).clearData();
         }
 
@@ -112,7 +120,7 @@ export class WorkflowCoreProcessor {
             await TaskInteract.getInstance().createTasks();
         } catch (error) {
             logger.error(`WorkflowCoreProcessor :: TaskInteract :: error - ${error.message}`);
-        }finally{
+        } finally {
             TaskInteract.getInstance().clearData();
         }
 
@@ -120,7 +128,7 @@ export class WorkflowCoreProcessor {
             await EmailInteract.getInstance().sendEmails();
         } catch (error) {
             logger.error(`WorkflowCoreProcessor :: EmailInteract :: error - ${error.message}`);
-        }finally{
+        } finally {
             EmailInteract.getInstance().clearData();
         }
 
@@ -128,7 +136,7 @@ export class WorkflowCoreProcessor {
             await WaitRecordInteract.getInstance().saveWaitRecords(this.flowId);
         } catch (error) {
             logger.error(`WorkflowCoreProcessor :: WaitRecordInteract :: error - ${error.message}`);
-        }finally{
+        } finally {
             WaitRecordInteract.getInstance().clearData();
         }
 
@@ -198,7 +206,7 @@ export class WorkflowCoreProcessor {
                 },
                 relations: { flow: true }
             })
-            if (workflow !== null && workflow.id != null) {
+            if (workflow != null && workflow.id != null) {
                 return workflow;
             } else {
                 return null;

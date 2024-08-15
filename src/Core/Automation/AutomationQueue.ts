@@ -10,7 +10,7 @@ import { Person } from "../../Entity/PersonEntity";
 import { Flow } from "../../Entity/FlowEntity";
 import { logger } from "../../Config/LoggerConfig";
 import { recordMatchCondition } from "../../Utils/FlowUtils/FlowUtils";
-import { rabbitPayload } from "../../Types/FlowTypes";
+import { rabbitPayload, triggerType } from "../../Types/FlowTypes";
 
 export class AutomationQueue<T> {
 
@@ -20,7 +20,7 @@ export class AutomationQueue<T> {
         this.recordType = recordType;
     }
 
-    async addRecord(records: T[], type: 'insert' | 'update') {
+    async addRecord(records: T[], type: triggerType) {
         if (type == null || type.length < 1) { return; }
         if (records.length < 1) { return; }
         records = await this.checkAndPopulateOrgId(records);
@@ -33,7 +33,7 @@ export class AutomationQueue<T> {
         await this.addRecordToQueue(toStoreRecords, type);
     }
 
-    async addRecordToQueue(filteredRecords: any[], type: 'insert' | 'update') {
+    async addRecordToQueue(filteredRecords: any[], type: triggerType) {
         const channel = await getRabbitMQChannel();
         filteredRecords.forEach(record => {
             const payload: rabbitPayload = {
@@ -77,7 +77,7 @@ export class AutomationQueue<T> {
             if (sameOrgFlows == null || sameOrgFlows.length < 1 || sameOrgRecords == null || sameOrgRecords.length < 1) { return; }
             sameOrgRecords.forEach((rec: any) => {
                 sameOrgFlows.forEach(flow => {
-                    const isValid = recordMatchCondition(flow.workflows[0].json, rec);
+                    const isValid = recordMatchCondition(flow.workflows[0].json, rec,null);
                     if (isValid) {
                         rec.flowId = flow.id;
                         finalRecords.push(rec);

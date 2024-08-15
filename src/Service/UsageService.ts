@@ -106,7 +106,7 @@ export const createUsageSession = async (reqBody: any): Promise<responseRest> =>
 
     const personRepo = Repository.getPeople();
     const sessionRepo = Repository.getUsageSession();
-
+    
     const sessionId = reqBody.sessionId;
     const startTime = reqBody.startTime;
     const endTime = reqBody.endTime;
