@@ -22,8 +22,8 @@ export class WaitForNode extends BaseComponent {
             toAddWaitRecords.push(waitRec);
         }
 
-        WaitRecordInteract.getInstance().addWaitRecords(toAddWaitRecords);
-        const alreadyWaitingRecords = WaitRecordInteract.getInstance().getComponentWaitRecords(this.componentUiId);
+        this.batchContext.waitRecordInteract.addWaitRecords(toAddWaitRecords);
+        const alreadyWaitingRecords = this.batchContext.waitRecordInteract.getComponentWaitRecords(this.componentUiId);
         const pathMapping = new PathMapping('next', this.recordType)
         pathMapping.records = alreadyWaitingRecords;
         return pathMapping;

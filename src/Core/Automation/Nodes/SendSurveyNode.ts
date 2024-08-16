@@ -22,7 +22,7 @@ export class SendSurveyNode extends BaseComponent {
 
             if (email == null || email.length < 1) { continue; }
 
-            EmailInteract.getInstance().addEmail({
+            this.batchContext.emailInteract.addEmail({
                 body: this.createEmailBody(body,surveyId,record),
                 subject: subject,
                 email: email,

@@ -22,7 +22,7 @@ export class SendEmailNode extends BaseComponent {
             }
 
             if (email == null || email.length < 1) { continue; }
-            EmailInteract.getInstance().addEmail({
+            this.batchContext.emailInteract.addEmail({
                 body: this.createEmailBody(body),
                 subject: subject,
                 email: email,

@@ -5,13 +5,9 @@ import { Workflow } from "../../Entity/WorkflowEntity";
 import { recordType } from "../../Types/ApiTypes";
 import { getTriggerNode, recordMatchCondition } from "../../Utils/FlowUtils/FlowUtils";
 import { surveyFlowType } from "../../Types/SurveyTypes";
-import { NodeFactory } from "./NodeFactory";
 import { PathMapping } from "./PathMapping";
 import { logger } from "../../Config/LoggerConfig";
-import { TaskInteract } from "./Interactors/TaskInteractor";
-import { EmailInteract } from "./Interactors/EmailInteract";
-import { WaitRecordInteract } from "./Interactors/WaitRecordInteract";
-import { WorkflowInteract } from "./Interactors/WorkflowInteractor";
+import { BatchContext } from "./BatchContext";
 
 export class WorkflowCoreProcessor {
 
@@ -21,6 +17,7 @@ export class WorkflowCoreProcessor {
     private recordType: recordType;
     private waitRecordIdComponentId: Map<string, string>
     private recordIdType: Set<string>;
+    private batchContext: BatchContext;
 
     constructor(records: rabbitPayload[], key: string) {
         this.waitRecordIdComponentId = new Map<string, string>();
@@ -30,6 +27,7 @@ export class WorkflowCoreProcessor {
         this.flowId = keyArr[0];
         this.orgId = keyArr[1];
         this.recordType = keyArr[2] as recordType;
+        this.batchContext = new BatchContext(this.flowId, this.orgId, this.recordType);
         this.filterWaitRecords();
         this.populateRecordTypeMap(records);
     }
@@ -72,7 +70,7 @@ export class WorkflowCoreProcessor {
                 filteredRecords.push(rec);
             }
         });
-        WaitRecordInteract.getInstance().storeComponentWaitRecords(componentIdWaitRecords);
+        this.batchContext.waitRecordInteract.storeComponentWaitRecords(componentIdWaitRecords);
         //TODO handle if wait records are there and normal records are not there
         return records;
     }
@@ -99,7 +97,7 @@ export class WorkflowCoreProcessor {
         let currentNode: Node = triggerNode;
         while (currentNode) {
             logger.info(`Processing workflow - ${this.flowId} :: node - ${currentNode.data.label}`);
-            const node = NodeFactory.getNodeInstance(currentNode, this.recordType);
+            const node = this.batchContext.nodeFactory.getNodeInstance(currentNode, this.recordType);
             mapping = node.execute(mapping.records);
             currentNode = this.getNextNode(currentNode, edges, nodes);
         }
@@ -109,35 +107,35 @@ export class WorkflowCoreProcessor {
 
     async postProcessing() {
         try {
-            await WorkflowInteract.getInstance(this.recordType).saveRecords();
+            await this.batchContext.workflowInteract.saveRecords();
         } catch (error) {
             logger.error(`WorkflowCoreProcessor :: saving records :: error - ${error.message}`);
         } finally {
-            WorkflowInteract.getInstance(this.recordType).clearData();
+            this.batchContext.workflowInteract.clearData();
         }
 
         try {
-            await TaskInteract.getInstance().createTasks();
+            await this.batchContext.taskInteract.createTasks();
         } catch (error) {
             logger.error(`WorkflowCoreProcessor :: TaskInteract :: error - ${error.message}`);
         } finally {
-            TaskInteract.getInstance().clearData();
+            this.batchContext.taskInteract.clearData();
         }
 
         try {
-            await EmailInteract.getInstance().sendEmails();
+            await this.batchContext.emailInteract.sendEmails();
         } catch (error) {
             logger.error(`WorkflowCoreProcessor :: EmailInteract :: error - ${error.message}`);
         } finally {
-            EmailInteract.getInstance().clearData();
+            this.batchContext.emailInteract.clearData();
         }
 
         try {
-            await WaitRecordInteract.getInstance().saveWaitRecords(this.flowId);
+            await this.batchContext.waitRecordInteract.saveWaitRecords(this.flowId);
         } catch (error) {
             logger.error(`WorkflowCoreProcessor :: WaitRecordInteract :: error - ${error.message}`);
         } finally {
-            WaitRecordInteract.getInstance().clearData();
+            this.batchContext.waitRecordInteract.clearData();
         }
 
     }

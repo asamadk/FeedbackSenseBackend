@@ -2,16 +2,7 @@ import { Task } from "../../../Entity/TaskEntity";
 import { TaskTrigger } from "../../../Triggers/TaskTrigger";
 
 export class TaskInteract{
-
-    static instance :TaskInteract;
     
-    static getInstance(){
-        if(this.instance == null){
-            this.instance = new TaskInteract();
-        }
-        return this.instance;
-    }
-
     private toCreateTasks :Task[]= [];
 
     saveTasks(tasks :Task[]){
