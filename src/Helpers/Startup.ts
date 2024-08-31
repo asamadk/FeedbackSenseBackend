@@ -1,4 +1,3 @@
-import { Repository } from "typeorm";
 import { AppDataSource } from "../Config/AppDataSource"
 import fs from 'fs';
 import csv from 'csv-parser'
@@ -14,6 +13,9 @@ import { createCustomSettings } from "../Service/CustomSettingsService";
 import { Repository as R } from '../Helpers/Repository';
 import path from "path";
 import { Coupon } from "../Entity/CouponEntity";
+import { App, AppCategories } from "../Entity/App";
+import { Repository } from "typeorm";
+import { appSlug } from "../Constants/AppConstant";
 
 export class StartUp {
 
@@ -36,6 +38,7 @@ export class StartUp {
             await this.createCustomerSettingsExistingUser();
             await new TemplateStartupScript().initialize();
             await this.populateCoupons();
+            await this.populateApps();
         } catch (error) {
             logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
         }
@@ -277,6 +280,27 @@ export class StartUp {
                 }
 
             });
+    }
+
+    async populateApps() {
+        try {
+            const appRepo = R.getApp();
+            const googleAppExists = await appRepo.exist({
+                where: {
+                    slug: appSlug.GOOGLE
+                }
+            });
+
+            if (googleAppExists) { return; }
+            const googleApp = new App();
+            googleApp.slug = appSlug.GOOGLE;
+            googleApp.categories = AppCategories.CALENDAR;
+            googleApp.enabled = true;
+            googleApp.keys = {};
+            await R.getApp().save(googleApp);
+        } catch (error) {
+            logger.error(`Startup populateApps - ${error}`);
+        }
     }
 
 }

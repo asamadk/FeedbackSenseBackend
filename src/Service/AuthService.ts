@@ -13,6 +13,9 @@ import { createOrganizationForUser } from "./OrgService";
 import { Organization } from "../Entity/OrgEntity";
 import { Coupon } from "../Entity/CouponEntity";
 import bcrypt from 'bcryptjs';
+import { getGoogleClient } from "../Integrations/IntegrationClients";
+import { Credential } from "../Entity/Credential";
+import { appSlug } from "../Constants/AppConstant";
 
 //Being called from app.ts after successful authentication
 export const handleSuccessfulLogin = async (user: UserProfile, microsoftUser: any, type: 'google' | 'microsoft'): Promise<void> => {
@@ -149,16 +152,16 @@ export const handleInviteUser = async (payload: string): Promise<responseRest> =
 }
 
 export const handleCleanInvite = async (
-    payload: string, 
+    payload: string,
     deleteUser: boolean,
-    rawPassword :string,
-    name :string
+    rawPassword: string,
+    name: string
 ): Promise<responseRest> => {
     try {
-        if(rawPassword == null || rawPassword.length < 8){
+        if (rawPassword == null || rawPassword.length < 8) {
             throw new Error('Invalid password');
         }
-        if(name == null || name.length < 1){
+        if (name == null || name.length < 1) {
             throw new Error('Please provide your name');
         }
         const response = getDefaultResponse('Invite accepted.');
@@ -173,7 +176,7 @@ export const handleCleanInvite = async (
                 return getCustomResponse(null, 409, 'User already exists.', false);
             }
         }
-        await AuthHelper.createInviteUser(decryptedPayload,rawPassword,name);
+        await AuthHelper.createInviteUser(decryptedPayload, rawPassword, name);
         return response;
     } catch (error) {
         logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
@@ -254,6 +257,31 @@ export const createUserApplyCoupon = async (payload: createUserApplyCouponPayloa
         coupon.isUsed = true;
         coupon.organization = data;
         await couponRepo.save(coupon);
+        return response;
+    } catch (error) {
+        logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
+        return getCustomResponse(null, 500, error.message, false)
+    }
+}
+
+export const handleGoogleIntegrationAuthorization = async (
+    code: string,
+    state: string
+): Promise<responseRest> => {
+    try {
+        const response = getDefaultResponse('Invite accepted.');
+        const oauthClient = getGoogleClient();
+        const { tokens } = await oauthClient.getToken(code);
+        const credentialsRepo = Repository.getCredentials();
+        let credential = await credentialsRepo.findOneBy({ userId: state });
+        if (credential == null) {
+            credential = new Credential();
+        }
+        credential.appId = appSlug.GOOGLE;
+        credential.key = tokens;
+        credential.type = appSlug.GOOGLE;
+        credential.userId = state;
+        await credentialsRepo.save(credential);
         return response;
     } catch (error) {
         logger.error(`message - ${error.message}, stack trace - ${error.stack}`);

@@ -5,7 +5,7 @@ import dotenv from "dotenv";
 dotenv.config();
 const clienT_URL = process.env.CLIENT_URL;
 
-import { createUserApplyCoupon, getUserAfterLogin, handleCleanInvite, handleInviteUser } from "../Service/AuthService";
+import { createUserApplyCoupon, getUserAfterLogin, handleCleanInvite, handleGoogleIntegrationAuthorization, handleInviteUser } from "../Service/AuthService";
 import { getCustomResponse } from "../Helpers/ServiceUtils";
 import { logger } from "../Config/LoggerConfig";
 import { INVITE_QUERY_PARAM } from "../Helpers/Constants";
@@ -103,10 +103,6 @@ router.get("/login/failed", (req, res) => {
                 
                 </html>
         `));
-        // res.status(401).json({
-        //     error: true,
-        //     message: "Log in failure",
-        // });
     } catch (error) {
         logger.error(`message - ${error.message}, stack trace - ${error.stack}`);
         res.status(500).json(getCustomResponse(null, 500, error.message, false));
@@ -154,10 +150,10 @@ router.get('/invite', async (req, res) => {
 router.post('/process/clean/invite', async (req, res) => {
     try {
         const deleteUser: boolean = req.body.deleteUser;
-        const password :string = req.body.password;
-        const name :string = req.body.name;
+        const password: string = req.body.password;
+        const name: string = req.body.name;
         const response = await handleCleanInvite(
-            req.query[INVITE_QUERY_PARAM] as string, 
+            req.query[INVITE_QUERY_PARAM] as string,
             deleteUser,
             password,
             name
@@ -195,6 +191,16 @@ router.post(
         res.json("Login Success!");
     });
 
+router.get('/integration/google', async (req, res) => {
+    try{
+        const code = req.query.code as string;
+        const state = req.query.state as string;
+        await handleGoogleIntegrationAuthorization(code,state);
+        res.redirect(`${process.env.CLIENT_URL}settings/hub?integration=google&success=true`)
+    }catch(error){
+        res.redirect(`${process.env.CLIENT_URL}settings/hub?integration=google&success=false&message=${error.message}`)
+    }
+})
 
 
 export default router;

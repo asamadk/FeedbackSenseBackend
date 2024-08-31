@@ -1,9 +1,11 @@
 import { AppDataSource } from "../Config/AppDataSource"
 import { Activity } from "../Entity/ActivityEntity";
+import { App } from "../Entity/App";
 import { Company } from "../Entity/CompanyEntity"
 import { CompanyHistory } from "../Entity/CompanyHistory";
 import { CompanyTag } from "../Entity/CompanyTagEntity";
 import { Coupon } from "../Entity/CouponEntity";
+import { Credential } from "../Entity/Credential";
 import { Flow } from "../Entity/FlowEntity";
 import { HealthDesign } from "../Entity/HealthDesign";
 import { JourneyLog } from "../Entity/JourneyLog";
@@ -120,6 +122,14 @@ export class Repository {
 
     static getCoupons(){
         return AppDataSource.getDataSource().getRepository(Coupon);
+    }
+
+    static getApp(){
+        return AppDataSource.getDataSource().getRepository(App);
+    }
+
+    static getCredentials(){
+        return AppDataSource.getDataSource().getRepository(Credential);
     }
 
 }

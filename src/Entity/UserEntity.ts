@@ -1,4 +1,5 @@
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, OneToMany, JoinColumn, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import { Credential } from './Credential';
 
 @Entity()
 export class User {
@@ -44,6 +45,9 @@ export class User {
 
     @Column({ default: false })
     isDeleted!: boolean;
+
+    @OneToMany(() => Credential, (credential) => credential.user)
+    credentials: Credential[];
 
     surveys: any;
     flows :any;

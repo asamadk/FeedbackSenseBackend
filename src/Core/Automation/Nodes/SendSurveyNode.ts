@@ -2,7 +2,6 @@ import { Company } from "../../../Entity/CompanyEntity";
 import { Person } from "../../../Entity/PersonEntity";
 import { RObject } from "../../../Types/FlowTypes";
 import { BaseComponent } from "../BaseComponent";
-import { EmailInteract } from "../Interactors/EmailInteract";
 import { PathMapping } from "../PathMapping";
 
 export class SendSurveyNode extends BaseComponent {

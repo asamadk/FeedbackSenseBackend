@@ -29,7 +29,7 @@ export class BatchContext{
         this.nodeFactory = new NodeFactory(this);
         this.workflowInteract = new WorkflowInteract(this.recordType);
         this.taskInteract = new TaskInteract();
-        this.emailInteract = new EmailInteract();
+        this.emailInteract = new EmailInteract(this.recordType,this.orgId);
         this.waitRecordInteract = new WaitRecordInteract();
     }
 

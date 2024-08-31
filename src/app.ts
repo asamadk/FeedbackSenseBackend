@@ -36,7 +36,8 @@ import UsageEventController from './Controllers/UsageEventController';
 import JourneyStageController from './Controllers/JoruneyController';
 import HealthController from './Controllers/HealthController';
 import DashboardController from './Controllers/DashboardController';
-import FlowController from './Controllers/FlowController'
+import FlowController from './Controllers/FlowController';
+import IntegrationController from './Controllers/IntegrationController';
 
 import { AppDataSource } from './Config/AppDataSource';
 import { handleSuccessfulLogin } from './Service/AuthService';
@@ -201,6 +202,7 @@ app.use('/journey-stage', isLoggedIn, logRequest, JourneyStageController);
 app.use('/health', isLoggedIn, logRequest, HealthController);
 app.use('/dashboard', isLoggedIn, logRequest, DashboardController);
 app.use('/flow', isLoggedIn, logRequest, FlowController);
+app.use('/integration', isLoggedIn, logRequest, IntegrationController);
 
 new MasterScheduler().init();
 
