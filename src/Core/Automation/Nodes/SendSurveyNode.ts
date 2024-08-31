@@ -2,7 +2,6 @@ import { Company } from "../../../Entity/CompanyEntity";
 import { Person } from "../../../Entity/PersonEntity";
 import { RObject } from "../../../Types/FlowTypes";
 import { BaseComponent } from "../BaseComponent";
-import { EmailInteract } from "../Interactors/EmailInteract";
 import { PathMapping } from "../PathMapping";
 
 export class SendSurveyNode extends BaseComponent {
@@ -22,7 +21,7 @@ export class SendSurveyNode extends BaseComponent {
 
             if (email == null || email.length < 1) { continue; }
 
-            EmailInteract.getInstance().addEmail({
+            this.batchContext.emailInteract.addEmail({
                 body: this.createEmailBody(body,surveyId,record),
                 subject: subject,
                 email: email,

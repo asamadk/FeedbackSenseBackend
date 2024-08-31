@@ -4,15 +4,6 @@ import { RObject } from "../../../Types/FlowTypes";
 
 export class WaitRecordInteract {
 
-    static instance: WaitRecordInteract;
-
-    static getInstance() {
-        if (this.instance == null) {
-            this.instance = new WaitRecordInteract();
-        }
-        return this.instance;
-    }
-
     private waitRecords: WaitRecordsEntity[] = [];
     private componentIdWaitRecords: Map<string, RObject[]>;
 

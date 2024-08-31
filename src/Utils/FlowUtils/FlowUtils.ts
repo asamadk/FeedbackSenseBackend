@@ -1,6 +1,8 @@
 import { logger } from "../../Config/LoggerConfig";
 import { Flow } from "../../Entity/FlowEntity";
+import { RObject, triggerType } from "../../Types/FlowTypes";
 import { surveyFlowType } from "../../Types/SurveyTypes";
+import { Pair } from "../CustomDS/Pair";
 import { getDateFromLiteral } from "../DateTimeUtils";
 
 export function parseDataType(value: string): number | Date | boolean | string {
@@ -42,7 +44,18 @@ export function getTriggerCondition(flowJSON: surveyFlowType) {
     const condition = compConfig?.conditionBlock;
     const insertType = compConfig?.insertType;
     if (insertType !== 'some') { return null; }
-    return condition;
+    let type: triggerType = 'insert';
+    if (triggerNode?.data?.compId === 15) {
+        type = 'insert';
+    } else if (triggerNode?.data?.compId === 16) {
+        type = 'update';
+    } else {
+        throw new Error('Unknown trigger node.');
+    }
+    return {
+        type: type,
+        condition: condition
+    }
 }
 
 export function getTriggerNode(nodes: any[]) {
@@ -55,9 +68,13 @@ export function getTriggerNode(nodes: any[]) {
     return triggerNode;
 }
 
-export function recordMatchCondition(flowJSONStr: string, record: any) :boolean {
+export function recordMatchCondition(flowJSONStr: string, record: RObject, triggerSet :Set<string> | null): boolean {
     const flowJSON: surveyFlowType = JSON.parse(flowJSONStr);
-    const conditionArr: any[][] = getTriggerCondition(flowJSON);
+    const res = getTriggerCondition(flowJSON);
+    if(triggerSet != null && triggerSet.has(`${record.id}-${res.type}`) === false){
+        return false;
+    }
+    const conditionArr: any[][] = res.condition;
     if (conditionArr == null) { return true; }
     const conditionResult: boolean[] = [];
     let finalResult = false;
@@ -106,7 +123,7 @@ export function recordMatchCondition(flowJSONStr: string, record: any) :boolean 
                     throw new Error(`Unsupported operator: ${operator}`);
             }
         });
-            
+
         finalResult = conditionResult[0];
         for (let i = 1; i < conditions.length; i++) {
             const condition = conditions[i];

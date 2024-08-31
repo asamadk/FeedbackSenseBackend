@@ -16,7 +16,8 @@ export class UpdateRecordNode extends BaseComponent {
                 record[field.field] = this.parseData(field.value);
             }
         }
-        WorkflowInteract.getInstance(this.recordType).storeRecords(records);
+        
+        this.batchContext.workflowInteract.storeRecords(records);
         const pathMapping = new PathMapping('next', this.recordType)
         pathMapping.records = records;
         return pathMapping;

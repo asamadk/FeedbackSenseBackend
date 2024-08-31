@@ -106,7 +106,7 @@ export const createUsageSession = async (reqBody: any): Promise<responseRest> =>
 
     const personRepo = Repository.getPeople();
     const sessionRepo = Repository.getUsageSession();
-
+    
     const sessionId = reqBody.sessionId;
     const startTime = reqBody.startTime;
     const endTime = reqBody.endTime;
@@ -245,11 +245,13 @@ export const getUsageJavaScript = (): string => {
             companyId: window.feedbacksense_options.company.id,
             org: window.feedbacksense_options.organization_id,
         };
+        console.log('Session data - ',sessionData);
         var xhr = new XMLHttpRequest();
         xhr.open("POST", apiEndpointSession, true);
         xhr.setRequestHeader("Content-Type", "application/json");
         xhr.send(JSON.stringify(sessionData));
         xhr.onload = function () {
+            console.log('Session sending response - ',xhr.status);
             if (xhr.status >= 200 && xhr.status < 300) {
                 console.log("Session sent successfully");
             } else {

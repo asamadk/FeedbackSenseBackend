@@ -22,11 +22,11 @@ export class SendEmailNode extends BaseComponent {
             }
 
             if (email == null || email.length < 1) { continue; }
-            EmailInteract.getInstance().addEmail({
-                body: this.createEmailBody(body),
+            this.batchContext.emailInteract.addEmail({
+                body: this.createEmailBody(body,record),
                 subject: subject,
                 email: email,
-                recordId : record.id
+                recordId : record.id,
             });
         }
         const pathMapping = new PathMapping('next', this.recordType)
@@ -34,9 +34,11 @@ export class SendEmailNode extends BaseComponent {
         return pathMapping;
     }
 
-    createEmailBody(body :string) :string{
-        //TODO write body
-        return body;
+    createEmailBody(body :string,record :RObject) :string{
+        const result = body.replace(/{{(.*?)}}/g, (_, key) => {
+            return record[key.trim()] || '';
+        });
+        return result;
     }
 
 }

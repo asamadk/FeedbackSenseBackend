@@ -41,7 +41,7 @@ export class CreateTaskNode extends BaseComponent {
             toCreateTask.push(newTask);
         }
 
-        TaskInteract.getInstance().saveTasks(toCreateTask);
+        this.batchContext.taskInteract.saveTasks(toCreateTask);
         const pathMapping = new PathMapping('next', this.recordType)
         pathMapping.records = records;
         return pathMapping;

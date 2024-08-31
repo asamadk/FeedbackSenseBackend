@@ -1,20 +1,13 @@
 import { In, IsNull, Not } from "typeorm";
 import { Repository } from "../../Helpers/Repository";
-import { Edge, Node, rabbitPayload, RObject } from "../../Types/FlowTypes";
+import { Edge, Node, rabbitPayload, RObject, triggerType } from "../../Types/FlowTypes";
 import { Workflow } from "../../Entity/WorkflowEntity";
 import { recordType } from "../../Types/ApiTypes";
 import { getTriggerNode, recordMatchCondition } from "../../Utils/FlowUtils/FlowUtils";
-import { LiveSurveyNodes, surveyFlowType } from "../../Types/SurveyTypes";
-import { NodeFactory } from "./NodeFactory";
+import { surveyFlowType } from "../../Types/SurveyTypes";
 import { PathMapping } from "./PathMapping";
 import { logger } from "../../Config/LoggerConfig";
-import { Company } from "../../Entity/CompanyEntity";
-import { Person } from "../../Entity/PersonEntity";
-import { Task } from "../../Entity/TaskEntity";
-import { TaskInteract } from "./Interactors/TaskInteractor";
-import { EmailInteract } from "./Interactors/EmailInteract";
-import { WaitRecordInteract } from "./Interactors/WaitRecordInteract";
-import { WorkflowInteract } from "./Interactors/WorkflowInteractor";
+import { BatchContext } from "./BatchContext";
 
 export class WorkflowCoreProcessor {
 
@@ -23,15 +16,20 @@ export class WorkflowCoreProcessor {
     private orgId: string;
     private recordType: recordType;
     private waitRecordIdComponentId: Map<string, string>
+    private recordIdType: Set<string>;
+    private batchContext: BatchContext;
 
     constructor(records: rabbitPayload[], key: string) {
         this.waitRecordIdComponentId = new Map<string, string>();
+        this.recordIdType = new Set<string>();
         this.queuePayload = records;
         const keyArr = key.split('<>');
         this.flowId = keyArr[0];
         this.orgId = keyArr[1];
         this.recordType = keyArr[2] as recordType;
+        this.batchContext = new BatchContext(this.flowId, this.orgId, this.recordType);
         this.filterWaitRecords();
+        this.populateRecordTypeMap(records);
     }
 
     async execute() {
@@ -40,13 +38,21 @@ export class WorkflowCoreProcessor {
         let records = await this.fetchRecords();
         const finalRecords = [];
         records.forEach((rec: RObject) => {
-            if (recordMatchCondition(workflow.json, rec)) {
+            if (recordMatchCondition(workflow.json, rec, this.recordIdType)) {
                 finalRecords.push(rec);
             }
         });
         this.queuePayload = null;
         records = this.populateWaitRecordsMaps(records);
         await this.processWorkflow(finalRecords, JSON.parse(workflow.json));
+    }
+
+    populateRecordTypeMap(records: rabbitPayload[]) {
+        if (records?.length < 1) { return; }
+        records.forEach(r => {
+            const key = `${r.id}-${r.type}`;
+            this.recordIdType.add(key);
+        });
     }
 
     populateWaitRecordsMaps(records: RObject[]): RObject[] {
@@ -64,7 +70,7 @@ export class WorkflowCoreProcessor {
                 filteredRecords.push(rec);
             }
         });
-        WaitRecordInteract.getInstance().storeComponentWaitRecords(componentIdWaitRecords);
+        this.batchContext.waitRecordInteract.storeComponentWaitRecords(componentIdWaitRecords);
         //TODO handle if wait records are there and normal records are not there
         return records;
     }
@@ -91,7 +97,7 @@ export class WorkflowCoreProcessor {
         let currentNode: Node = triggerNode;
         while (currentNode) {
             logger.info(`Processing workflow - ${this.flowId} :: node - ${currentNode.data.label}`);
-            const node = NodeFactory.getNodeInstance(currentNode, this.recordType);
+            const node = this.batchContext.nodeFactory.getNodeInstance(currentNode, this.recordType);
             mapping = node.execute(mapping.records);
             currentNode = this.getNextNode(currentNode, edges, nodes);
         }
@@ -101,35 +107,35 @@ export class WorkflowCoreProcessor {
 
     async postProcessing() {
         try {
-            WorkflowInteract.getInstance(this.recordType).saveRecords();
+            await this.batchContext.workflowInteract.saveRecords();
         } catch (error) {
             logger.error(`WorkflowCoreProcessor :: saving records :: error - ${error.message}`);
-        }finally{
-            WorkflowInteract.getInstance(this.recordType).clearData();
+        } finally {
+            this.batchContext.workflowInteract.clearData();
         }
 
         try {
-            await TaskInteract.getInstance().createTasks();
+            await this.batchContext.taskInteract.createTasks();
         } catch (error) {
             logger.error(`WorkflowCoreProcessor :: TaskInteract :: error - ${error.message}`);
-        }finally{
-            TaskInteract.getInstance().clearData();
+        } finally {
+            this.batchContext.taskInteract.clearData();
         }
 
         try {
-            await EmailInteract.getInstance().sendEmails();
+            await this.batchContext.emailInteract.sendEmails();
         } catch (error) {
             logger.error(`WorkflowCoreProcessor :: EmailInteract :: error - ${error.message}`);
-        }finally{
-            EmailInteract.getInstance().clearData();
+        } finally {
+            this.batchContext.emailInteract.clearData();
         }
 
         try {
-            await WaitRecordInteract.getInstance().saveWaitRecords(this.flowId);
+            await this.batchContext.waitRecordInteract.saveWaitRecords(this.flowId);
         } catch (error) {
             logger.error(`WorkflowCoreProcessor :: WaitRecordInteract :: error - ${error.message}`);
-        }finally{
-            WaitRecordInteract.getInstance().clearData();
+        } finally {
+            this.batchContext.waitRecordInteract.clearData();
         }
 
     }
@@ -198,7 +204,7 @@ export class WorkflowCoreProcessor {
                 },
                 relations: { flow: true }
             })
-            if (workflow !== null && workflow.id != null) {
+            if (workflow != null && workflow.id != null) {
                 return workflow;
             } else {
                 return null;

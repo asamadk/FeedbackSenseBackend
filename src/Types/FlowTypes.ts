@@ -3,9 +3,11 @@ import { Person } from "../Entity/PersonEntity";
 import { Task } from "../Entity/TaskEntity";
 import { recordType } from "./ApiTypes";
 
+export type triggerType = "insert" | "update";
+
 export type rabbitPayload = {
     id: any;
-    type: "insert" | "update";
+    type: triggerType;
     recordType: recordType;
     flowId: any;
     orgId: any;

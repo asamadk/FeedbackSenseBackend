@@ -20,7 +20,7 @@ export class AssignOwnerNode extends BaseComponent{
             }
         }
 
-        WorkflowInteract.getInstance(this.recordType).storeRecords(records);
+        this.batchContext.workflowInteract.storeRecords(records);
         const pathMapping = new PathMapping('next',this.recordType)
         pathMapping.records = records;
         return pathMapping;

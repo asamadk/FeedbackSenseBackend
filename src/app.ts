@@ -36,7 +36,8 @@ import UsageEventController from './Controllers/UsageEventController';
 import JourneyStageController from './Controllers/JoruneyController';
 import HealthController from './Controllers/HealthController';
 import DashboardController from './Controllers/DashboardController';
-import FlowController from './Controllers/FlowController'
+import FlowController from './Controllers/FlowController';
+import IntegrationController from './Controllers/IntegrationController';
 
 import { AppDataSource } from './Config/AppDataSource';
 import { handleSuccessfulLogin } from './Service/AuthService';
@@ -60,17 +61,16 @@ app.use(cors({
   credentials: true,
 }));
 
-app.use(cookieParser());
-// app.use(flash());
+// app.use('/usage', cors(), logRequest, UsageController);
 
+app.use(cookieParser());
 app.use(
   cookieSession({
     name: "session",
     keys: ["cyberwolve"],
     maxAge: 24 * 60 * 60 * 100,
   })
-)
-
+);
 app.use(passport.initialize());
 app.use(passport.session());
 app.use(globalAPILimiter);
@@ -176,7 +176,7 @@ app.get('/', (req, res) => {
 app.use('/auth', logRequest, AuthController);
 app.use('/live', logRequest, LiveSurveyController);
 app.use('/payment', logRequest, PaymentController);
-app.use('/usage', logRequest, UsageController);
+app.use('/usage', cors(), logRequest, UsageController);
 
 //authenticated endpoints
 app.use('/home', isLoggedIn, logRequest, HomeController);
@@ -202,6 +202,7 @@ app.use('/journey-stage', isLoggedIn, logRequest, JourneyStageController);
 app.use('/health', isLoggedIn, logRequest, HealthController);
 app.use('/dashboard', isLoggedIn, logRequest, DashboardController);
 app.use('/flow', isLoggedIn, logRequest, FlowController);
+app.use('/integration', isLoggedIn, logRequest, IntegrationController);
 
 new MasterScheduler().init();
 
